@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPYFALL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    details { margin: 0 0 24px; }
+    summary { list-style: none; cursor: pointer; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: "Press Start 2P", monospace; }
+    details[open] summary::before { content: "- "; }
+    .guesses { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .guesses button { padding: 10px 4px; font-size: 0.95rem; }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 28px 16px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+    .word.place { padding: 20px 12px; font-size: 1.6rem; }
+    .word.role { margin-top: 0; padding: 10px 12px; border-width: 3px; font-size: 1.15rem; }
+    .timer { margin: 0 0 16px; text-align: center; color: var(--cyan); font: 400 1.4rem "Press Start 2P", monospace; }
+    .places { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+    .places button { margin: 0; padding: 6px 4px; border-width: 2px; box-shadow: none; font-size: 0.9rem; }
+    button.crossed { text-decoration: line-through; opacity: 0.4; }
+    .spy { color: var(--red); }
+    /* สีบอกความหมาย: เหลือง = ข้อมูลสำคัญ/ผู้ชนะ, ฟ้า = ผลดี, แดง = สายลับ/ผลร้าย */
+    .hl, .word.place { color: var(--yellow); }
+    .good, .word.role { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .gain { margin-right: 12px; color: var(--cyan); }
+    .vote { --c: var(--cyan); margin-top: 12px; }
+    .error { color: var(--red); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>SPYFALL</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กฎ</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>3 คนขึ้นไป</li>
+        <li>ทุกคนได้สถานที่และบทบาท ยกเว้นสายลับ 1 คน</li>
+        <li>ถามตอบกัน ห้ามพูดชื่อสถานที่ สายลับขีดฆ่าสถานที่ได้</li>
+        <li>หมดเวลาแล้วโหวตลับ เสมอกันสายลับรอด</li>
+        <li>สายลับทายสถานที่</li>
+        <li>ทุกคนกดรอบต่อไป ครบแล้วเริ่มเอง</li>
+      </ol>
+      <h2>คะแนน</h2>
+      <ul>
+        <li>จับสายลับได้: คนอื่น +1</li>
+        <li>สายลับรอด: สายลับ +1</li>
+        <li>สายลับทายถูก: สายลับ +1</li>
+      </ul>
+      <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script>
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    // สถานะที่หน้าจอใช้วาด (server ส่งมาให้ทุกเครื่อง แต่ละคนได้เฉพาะข้อมูลที่ตัวเองควรเห็น)
+    let view = { screen: "home" };
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code, saved) {
+      room = openRoom("spy", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }), saved);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
+      else room.create(name);
+    }
+
+    // ---------- หน้าจอ ----------
+    const scoreboard = (v) => `
+      <h2>คะแนน (เป้าหมาย ${v.target})</h2>
+      <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
+      </ul>`;
+
+    // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
+    const crossed = new Set();
+    const placeButtons = (cls, sfx = "") => view.places.map((name) =>
+      `<button class="${cls}${crossed.has(name) ? " crossed" : ""}" data-sfx="${sfx}" data-name="${esc(name)}">${esc(name)}</button>`).join("");
+
+    // นาฬิกานับถอยหลังคิดจากเวลาที่เหลือที่ server ส่งมา จึงไม่ขึ้นกับนาฬิกาของแต่ละเครื่อง
+    let deadline = 0;
+    const clock = () => {
+      const s = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    };
+    // หมดเวลาแล้วขอสถานะใหม่จาก server ครั้งเดียว (server เปิดโหวตตามเวลาของมันเอง)
+    let asked = 0;
+    setInterval(() => {
+      const t = document.getElementById("timer");
+      if (t) t.textContent = clock();
+      if (t && Date.now() >= deadline && asked !== deadline) { asked = deadline; send({ t: "sync" }); }
+    }, 250);
+
+    let lastScreen;
+    function render() {
+      const v = view;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (gameOver) playSfx("win");
+      if (v.screen !== "over" && winner.open) winner.close();
+      if (v.screen !== lastScreen && (v.screen === "word" || v.screen === "guess")) crossed.clear();
+      lastScreen = v.screen;
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">ชื่อ</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          enter(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          enter(name, code);
+        };
+        return;
+      }
+
+      const enough = v.players.length >= 3;
+
+      if (v.screen === "lobby") {
+        app.innerHTML = `
+          <h2>ห้อง</h2>
+          <div class="room-row">
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+          </div>
+          <h2>ตั้งค่า</h2>
+          ${v.isHost
+            ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
+               <input id="target" type="number" min="1" max="20" value="${v.target}">
+               <label for="minutes">เวลาต่อรอบ (1-15 นาที)</label>
+               <input id="minutes" type="number" min="1" max="15" value="${v.minutes}">`
+            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน<br>เวลาต่อรอบ : <span class="hl">${v.minutes}</span> นาที</p>`}
+          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
+          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `<p class="hint">ส่งรหัสให้เพื่อน (3 คนขึ้นไป)</p>
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        if (v.isHost) {
+          app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
+          app.querySelector("#minutes").onchange = (e) => send({ t: "minutes", value: e.target.value });
+          app.querySelector("#start").onclick = () => send({ t: "start" });
+        }
+        return;
+      }
+
+      if (v.screen === "word") {
+        if (!v.inRound) {
+          app.innerHTML = `<p class="hint">รอรอบถัดไป</p>`;
+          return;
+        }
+        deadline = Date.now() + v.endsIn;
+        app.innerHTML = `
+          ${v.voting ? "" : `<p class="timer" id="timer" aria-label="เวลาที่เหลือ">${clock()}</p>`}
+          ${v.isSpy
+            ? `<p class="word spy">คุณคือสายลับ</p>
+               <p class="hint">เนียนให้รอด เดาสถานที่</p>
+               <h2>กดเพื่อขีดฆ่า</h2>
+               <div class="places">${placeButtons("place-x")}</div>`
+            : `<h2>สถานที่</h2>
+               <p class="word place">${esc(v.location)}</p>
+               <h2>บทบาท</h2>
+               <p class="word role">${esc(v.role)}</p>
+               <p class="hint">ถามตอบกัน ห้ามพูดชื่อสถานที่</p>
+               <details class="hint"><summary>สถานที่ทั้งหมด</summary>${v.places.map(esc).join(", ")}</details>`}
+          ${!v.voting
+            ? `<p class="hint">หมดเวลาแล้วโหวต</p>
+               ${v.isHost ? `<button id="skip" data-sfx="next">โหวต</button>` : ""}`
+            : v.myVote
+              ? `<p>โหวต <span class="good">${esc(v.myVote)}</span> แล้ว</p>`
+              : `<h2 class="bad">โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
+          ${v.voting ? `<p class="hint">โหวตแล้ว ${v.voted}/${v.voters}</p>` : ""}`;
+        app.querySelectorAll(".vote").forEach((b) => (b.onclick = () => send({ t: "vote", target: b.dataset.id })));
+        if (app.querySelector("#skip")) app.querySelector("#skip").onclick = () => send({ t: "skip" });
+        app.querySelectorAll(".place-x").forEach((b) => (b.onclick = () => {
+          const name = b.dataset.name;
+          crossed.has(name) ? crossed.delete(name) : crossed.add(name);
+          b.classList.toggle("crossed", crossed.has(name));
+        }));
+        return;
+      }
+
+      const result = `
+        <h2>สายลับคือ</h2>
+        <p class="word spy">${esc(v.spyName)}</p>
+        <p class="${v.caught ? "good" : "bad"}">${v.caught ? "จับสายลับได้" : "สายลับรอด"}</p>
+        <ul class="hint">${v.tally.map((t) => `<li class="row"><span${t.name === v.spyName ? ' class="bad"' : ""}>${esc(t.name)}</span><span>${t.n} โหวต</span></li>`).join("")}</ul>`;
+
+      if (v.screen === "guess") {
+        app.innerHTML = `
+          ${result}
+          ${v.isSpy
+            ? `<h2>ทายสถานที่ (+1)</h2>
+               <div class="guesses">${placeButtons("guess alt", "confirm")}</div>`
+            : `<p class="hint"><span class="bad">${esc(v.spyName)}</span> กำลังทาย</p>`}`;
+        app.querySelectorAll(".guess").forEach((b) => (b.onclick = () => send({ t: "guess", text: b.dataset.name })));
+        return;
+      }
+
+      // score / over
+      app.innerHTML = `
+        ${result}
+        <ul>
+          <li>สถานที่: <span class="hl">${esc(v.location)}</span></li>
+          <li>${v.guess === null ? "สายลับออกก่อนทาย" : `สายลับทาย "${esc(v.guess)}" ${v.correct ? '<span class="bad">ถูก</span>' : '<span class="good">ผิด</span>'}`}</li>
+        </ul>
+        <div style="margin-top: 24px">${scoreboard(v)}</div>
+        ${v.screen === "over"
+          ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
+          : `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}
+             <p class="hint">พร้อม ${v.readyCount}/${v.players.length}${enough ? "" : " (3 คนขึ้นไป)"}</p>`}`;
+      if (gameOver) {
+        document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
+        winner.showModal();
+        fireworks();
+      }
+      if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+      if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+    }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
+
+    const saved = savedRoom("spy");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
+  </script>
+</body>
+</html>
