@@ -122,6 +122,11 @@
     .places button { margin: 0; padding: 6px 4px; border-width: 2px; box-shadow: none; font-size: 0.9rem; }
     button.crossed { text-decoration: line-through; opacity: 0.4; }
     .spy { color: var(--red); }
+    /* สีบอกความหมาย: เหลือง = ข้อมูลสำคัญ/ผู้ชนะ, ฟ้า = ผลดี, แดง = สายลับ/ผลร้าย */
+    .hl, .word.place { color: var(--yellow); }
+    .good, .word.role { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
     .gain { margin-right: 12px; color: var(--cyan); }
     .vote { --c: var(--cyan); margin-top: 12px; }
@@ -390,7 +395,7 @@
     const scoreboard = (v) => `
       <h2>คะแนน (เป้าหมาย ${v.target})</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
     // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
@@ -456,7 +461,7 @@
                <input id="target" type="number" min="1" max="20" value="${v.target}">
                <label for="minutes">เวลาต่อรอบ (1-15 นาที)</label>
                <input id="minutes" type="number" min="1" max="15" value="${v.minutes}">`
-            : `<p>เป้าหมาย : ${v.target} คะแนน<br>เวลาต่อรอบ : ${v.minutes} นาที</p>`}
+            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน<br>เวลาต่อรอบ : <span class="hl">${v.minutes}</span> นาที</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -494,8 +499,8 @@
             ? `<p class="hint">โหวตได้เมื่อหมดเวลา</p>
                ${v.isHost ? `<button id="skip" data-sfx="next">โหวต</button>` : ""}`
             : v.myVote
-              ? `<p>คุณโหวต ${esc(v.myVote)} แล้ว</p>`
-              : `<h2>หมดเวลา โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
+              ? `<p>คุณโหวต <span class="good">${esc(v.myVote)}</span> แล้ว</p>`
+              : `<h2 class="bad">หมดเวลา โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
           ${v.voting ? `<p class="hint">โหวตแล้ว ${v.voted}/${v.voters} คน</p>` : ""}`;
         app.querySelectorAll(".vote").forEach((b) => (b.onclick = () => send({ t: "vote", target: b.dataset.id })));
         if (app.querySelector("#skip")) app.querySelector("#skip").onclick = () => send({ t: "skip" });
@@ -510,8 +515,8 @@
       const result = `
         <h2>สายลับคือ</h2>
         <p class="word spy">${esc(v.spyName)}</p>
-        <p>${v.caught ? "จับสายลับได้" : "สายลับรอด"}</p>
-        <ul class="hint">${v.tally.map((t) => `<li class="row"><span>${esc(t.name)}</span><span>${t.n} โหวต</span></li>`).join("")}</ul>`;
+        <p class="${v.caught ? "good" : "bad"}">${v.caught ? "จับสายลับได้" : "สายลับรอด"}</p>
+        <ul class="hint">${v.tally.map((t) => `<li class="row"><span${t.name === v.spyName ? ' class="bad"' : ""}>${esc(t.name)}</span><span>${t.n} โหวต</span></li>`).join("")}</ul>`;
 
       if (v.screen === "guess") {
         app.innerHTML = `
@@ -519,26 +524,25 @@
           ${v.isSpy
             ? `<h2>ทายสถานที่ ถ้าถูกได้อีก 1 คะแนน</h2>
                <div class="guesses">${placeButtons("guess alt", "confirm")}</div>`
-            : `<p class="hint">รอ ${esc(v.spyName)} ทายสถานที่</p>`}`;
+            : `<p class="hint">รอ <span class="bad">${esc(v.spyName)}</span> ทายสถานที่</p>`}`;
         app.querySelectorAll(".guess").forEach((b) => (b.onclick = () => send({ t: "guess", text: b.dataset.name })));
         return;
       }
 
       // score / over
       app.innerHTML = `
-        ${v.screen === "over" ? `<h2>ผู้ชนะ</h2><p class="word">${v.winners.map(esc).join(", ")}</p>` : ""}
         ${result}
         <ul>
-          <li>สถานที่: ${esc(v.location)}</li>
-          <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายสถานที่" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? "ถูก" : "ผิด"}`}</li>
+          <li>สถานที่: <span class="hl">${esc(v.location)}</span></li>
+          <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายสถานที่" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? '<span class="bad">ถูก</span>' : '<span class="good">ผิด</span>'}`}</li>
         </ul>
         <div style="margin-top: 24px">${scoreboard(v)}</div>
         ${v.screen === "over"
           ? v.isHost ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>` : `<p class="hint">รอคนสร้างห้องเริ่มเกมใหม่</p>`
-          : `${v.ready ? `<p>คุณพร้อมแล้ว รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}
+          : `${v.ready ? `<p class="good">คุณพร้อมแล้ว รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}
              <p class="hint">พร้อมแล้ว ${v.readyCount}/${v.players.length} คน${enough ? "" : " (ต้องมีอย่างน้อย 3 คน)"}</p>`}`;
       if (gameOver) {
-        document.getElementById("winner-body").innerHTML = `<p class="word">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
+        document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
         winner.showModal();
         fireworks();
       }
