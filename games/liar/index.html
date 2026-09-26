@@ -174,6 +174,40 @@
       from { transform: translate(-3px, 2px) rotate(-8deg); }
       to { transform: translate(3px, -2px) rotate(8deg); }
     }
+    /* จับโกหก: ป้าย "โกหก!" ทับจอ แล้วเปิดเต๋าทีละคน หน้าที่นับได้เด้งเป็นสีเหลือง สุดท้ายค่อยโชว์ผล
+       --t = เวลาที่เต๋าลูกนั้นพลิก, --end = เวลาโชว์ผล, --shift = เวลาที่ผ่านไปแล้ว (วาดใหม่กลางคันไม่เริ่มใหม่) */
+    .stamp {
+      position: fixed;
+      top: 40%;
+      left: 50%;
+      z-index: 10;
+      padding: 4px 20px;
+      border: 6px solid var(--red);
+      background: var(--screen);
+      color: var(--red);
+      font: 700 3.5rem "Chakra Petch", sans-serif;
+      pointer-events: none;
+      transform: translate(-50%, -50%) rotate(-12deg);
+      animation: stamp 900ms both;
+    }
+    @keyframes stamp {
+      0% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(2.5); }
+      25%, 80% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+    }
+    .revealing .dice.small .die { animation: flip 300ms calc(var(--t) + var(--shift)) both; }
+    .revealing .dice.small .die.hit { animation: flip 300ms calc(var(--t) + var(--shift)) both, pop 400ms calc(var(--end) + var(--shift)) both; }
+    .revealing .later { animation: later 300ms calc(var(--end) + var(--shift)) both; }
+    @keyframes flip { from { opacity: 0; transform: rotateY(90deg); } }
+    @keyframes pop {
+      0% { scale: 1; color: var(--dim); border-color: var(--dim); }
+      50% { scale: 1.35; }
+      100% { scale: 1; color: var(--yellow); border-color: var(--yellow); }
+    }
+    @keyframes later { from { opacity: 0; visibility: hidden; } }
+    @media (prefers-reduced-motion: reduce) {
+      .stamp, .revealing * { animation: none !important; }
+    }
     /* สีบอกความหมาย: เหลือง = ตาคุณ/ผู้ชนะ, ฟ้า = รอด, แดง = เสียเต๋า/โกหก */
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
@@ -269,7 +303,7 @@
     // ---------- หน้าจอ ----------
     const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
     const pips = (v) => Array.from({ length: 9 }, (_, i) => `<span${PIPS[v].includes(i) ? ' class="on"' : ""}></span>`).join("");
-    const die = (v, cls = "") => `<div class="die ${cls}" role="img" aria-label="${v}">${pips(v)}</div>`;
+    const die = (v, cls = "", style = "") => `<div class="die ${cls}"${style ? ` style="${style}"` : ""} role="img" aria-label="${v}">${pips(v)}</div>`;
 
     const scoreboard = (v) => `
       <h2>ผู้เล่น</h2>
@@ -278,12 +312,25 @@
       </ul>`;
 
     // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
+    // ตอนเปิด: ป้ายโกหกขึ้นก่อน FLIP_AT แล้วเปิดเต๋าทีละคนห่างกัน FLIP_GAP
+    const FLIP_AT = 900, FLIP_GAP = 350;
+    const revealEnd = (r) => FLIP_AT + r.hands.length * FLIP_GAP + 300;
     const revealBox = (r) => `
       <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
       <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${r.n} &times; ${die(r.face)}</div>
-      <p class="center">มีจริง <span class="hl">${r.count}</span> ลูก</p>
-      <ul>${r.hands.map((h) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d) => die(d, counts(d, r.face, r.wild) ? "hit" : "")).join("")}</div></li>`).join("")}</ul>
-      <p class="status bad">${esc(r.loser)} เสีย 1 ลูก</p>`;
+      <ul>${r.hands.map((h, row) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d, i) => die(d, counts(d, r.face, r.wild) ? "hit" : "", `--t: ${FLIP_AT + row * FLIP_GAP + i * 60}ms`)).join("")}</div></li>`).join("")}</ul>
+      <p class="center later">มีจริง <span class="hl">${r.count}</span> ลูก</p>
+      <p class="status bad later">${esc(r.loser)} เสีย 1 ลูก</p>`;
+
+    function stamp() {
+      const el = document.createElement("div");
+      el.className = "stamp";
+      el.setAttribute("aria-hidden", "true");
+      el.textContent = "โกหก!";
+      document.body.append(el);
+      setTimeout(() => el.remove(), 900);
+    }
+    let revealAt = 0;
 
     // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
     let rollTimer;
@@ -341,8 +388,13 @@
       clearInterval(rollTimer);
       const v = view;
       const gameOver = v.screen === "over" && lastScreen !== "over";
-      if (gameOver) playSfx("win");
-      else if (v.screen === "reveal" && lastScreen === "play") playSfx("vote");
+      // เพิ่งจับโกหก: ป้ายโกหก เสียงพลิกเต๋าทีละคน
+      if ((v.screen === "reveal" || v.screen === "over") && lastScreen === "play") {
+        revealAt = Date.now();
+        stamp();
+        playSfx("vote");
+        v.reveal.hands.forEach((_, row) => setTimeout(() => playSfx("click"), FLIP_AT + row * FLIP_GAP));
+      }
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen === "play" && v.myTurn && !lastMyTurn && v.round === lastRound) playSfx("next");
       const newRound = v.screen === "play" && v.round !== lastRound;
@@ -470,23 +522,32 @@
         return;
       }
 
-      // reveal / over
+      // reveal / over (ยังเปิดเต๋าไม่จบ วาดต่อจากจุดเดิม)
+      const end = revealEnd(v.reveal);
+      const elapsed = Date.now() - revealAt;
       app.innerHTML = `
-        ${revealBox(v.reveal)}
-        ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้า PALIFICO</p>` : ""}
-        ${v.screen === "over"
-          ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint center">รอเกมใหม่</p>`
-          : v.out ? `<p class="hint center">รอคนอื่น</p>`
-          : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
-        ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
-        <div style="margin-top: 24px">${scoreboard(v)}</div>`;
+        <div${elapsed < end + 300 ? ` class="revealing" style="--end: ${end}ms; --shift: -${elapsed}ms"` : ""}>
+          ${revealBox(v.reveal)}
+          <div class="later">
+            ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้า PALIFICO</p>` : ""}
+            ${v.screen === "over"
+              ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint center">รอเกมใหม่</p>`
+              : v.out ? `<p class="hint center">รอคนอื่น</p>`
+              : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
+            ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
+            <div style="margin-top: 24px">${scoreboard(v)}</div>
+          </div>
+        </div>`;
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
-      if (gameOver) {
+      // ผู้ชนะ: รอเปิดเต๋าจบก่อนค่อยขึ้น popup
+      if (gameOver) setTimeout(() => {
+        if (view.screen !== "over") return;
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
         winner.showModal();
+        playSfx("win");
         fireworks();
-      }
+      }, Math.max(0, end + 300 - elapsed));
     }
 
     const rules = document.getElementById("rules");
