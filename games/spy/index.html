@@ -33,7 +33,30 @@
       background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
     }
     main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
     .back { color: var(--dim); text-decoration: none; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; }
+    .dialog-top h2 { margin: 0; }
     h1 { margin: 20px 0 28px; font-size: 1.8rem; font-weight: 700; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
@@ -85,8 +108,32 @@
 </head>
 <body>
   <main>
-    <a class="back" href="../../">กลับไปเลือกเกม</a>
+    <div class="top">
+      <a class="back" href="../../">กลับไปเลือกเกม</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
     <h1>ใครคือสายลับ</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กฎเกม</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <h2>วิธีเล่น</h2>
+      <ol>
+        <li>คนสร้างห้องตั้งคะแนนเส้นชัย แล้วส่งรหัสห้องให้เพื่อน ต้องมีอย่างน้อย 3 คน</li>
+        <li>ทุกคนได้คำเดียวกัน ยกเว้นสายลับ 1 คนที่ได้คำคล้ายๆ กัน สายลับไม่รู้ตัวว่าเป็นสายลับ</li>
+        <li>ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ</li>
+        <li>โหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
+        <li>เฉลยแล้ว สายลับได้ทายคำของทุกคน</li>
+      </ol>
+      <h2>คะแนน</h2>
+      <ul>
+        <li>จับสายลับได้: คนที่ไม่ใช่สายลับได้คนละ 1 คะแนน</li>
+        <li>สายลับรอด: สายลับได้ 1 คะแนน</li>
+        <li>สายลับทายคำของทุกคนถูก: ได้อีก 1 คะแนน</li>
+      </ul>
+      <p class="hint">ใครถึงคะแนนเส้นชัยก่อนชนะ</p>
+    </dialog>
     <div id="app"></div>
   </main>
 
@@ -324,11 +371,6 @@
             ? `<label for="target">คะแนนเส้นชัย (1-20)</label>
                <input id="target" type="number" min="1" max="20" value="${v.target}">`
             : `<p>เส้นชัย ${v.target} คะแนน</p>`}
-          <ul class="hint">
-            <li>จับสายลับได้: คนที่ไม่ใช่สายลับได้คนละ 1 คะแนน</li>
-            <li>สายลับรอด: สายลับได้ 1 คะแนน</li>
-            <li>สายลับทายคำของทุกคนถูก: ได้อีก 1 คะแนน</li>
-          </ul>
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -397,6 +439,10 @@
       if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
     }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
     window.addEventListener("pagehide", () => peer && peer.destroy());
