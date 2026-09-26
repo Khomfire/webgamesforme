@@ -155,6 +155,13 @@
       </ul>
       <p class="hint">ใครถึงคะแนนเป้าหมายก่อนชนะ</p>
     </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+    </dialog>
     <div id="app"></div>
   </main>
 
@@ -389,7 +396,9 @@
     let lastScreen;
     function render() {
       const v = view;
-      if (v.screen === "over" && lastScreen !== "over") playSfx("win");
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (gameOver) playSfx("win");
+      if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen !== lastScreen && (v.screen === "word" || v.screen === "guess")) crossed.clear();
       lastScreen = v.screen;
       if (v.screen === "home") {
@@ -516,6 +525,10 @@
             ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>`
             : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
           : `<p class="hint">รอคนสร้างห้อง${v.screen === "over" ? "เริ่มเกมใหม่" : "เริ่มรอบต่อไป"}</p>`}`;
+      if (gameOver) {
+        document.getElementById("winner-body").innerHTML = `<p class="word">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
+        winner.showModal();
+      }
       if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
     }
@@ -523,6 +536,8 @@
     const rules = document.getElementById("rules");
     document.getElementById("rules-open").onclick = () => rules.showModal();
     document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
     window.addEventListener("pagehide", () => peer && peer.destroy());
