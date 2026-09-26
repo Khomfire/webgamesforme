@@ -142,25 +142,25 @@
     <h1>ใครคือสายลับ</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">กฎเกม</h2>
+        <h2 id="rules-title">กฎ</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <h2>วิธีเล่น</h2>
       <ol>
-        <li>คนสร้างห้องตั้งคะแนนเป้าหมายและเวลาต่อรอบ แล้วส่งรหัสห้องให้เพื่อน ต้องมีอย่างน้อย 3 คน</li>
-        <li>ทุกคนได้สถานที่เดียวกันและบทบาทของตัวเอง ยกเว้นสายลับ 1 คนที่รู้ว่าตัวเองเป็นสายลับ แต่ไม่รู้สถานที่</li>
-        <li>ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ สายลับต้องเนียนให้รอด และกดขีดฆ่าสถานที่ที่ตัดทิ้งได้</li>
-        <li>หมดเวลา (หรือคนสร้างห้องกดข้าม) แล้วโหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
-        <li>เฉลยแล้ว สายลับได้เลือกทายสถานที่จากรายชื่อ</li>
-        <li>ทุกคนกดรอบต่อไปเมื่อพร้อม ครบทุกคนแล้วรอบใหม่เริ่มเอง</li>
+        <li>ตั้งเป้าหมายและเวลา ส่งรหัสให้เพื่อน (3 คนขึ้นไป)</li>
+        <li>ทุกคนได้สถานที่และบทบาท ยกเว้นสายลับ 1 คน</li>
+        <li>ถามตอบกัน ห้ามพูดชื่อสถานที่ สายลับขีดฆ่าสถานที่ได้</li>
+        <li>หมดเวลาแล้วโหวตลับ เสมอกันสายลับรอด</li>
+        <li>สายลับทายสถานที่</li>
+        <li>ทุกคนกดรอบต่อไป ครบแล้วเริ่มเอง</li>
       </ol>
       <h2>คะแนน</h2>
       <ul>
-        <li>จับสายลับได้: คนที่ไม่ใช่สายลับได้คนละ 1 คะแนน</li>
-        <li>สายลับรอด: สายลับได้ 1 คะแนน</li>
-        <li>สายลับทายสถานที่ถูก: ได้อีก 1 คะแนน</li>
+        <li>จับสายลับได้: คนอื่น +1</li>
+        <li>สายลับรอด: สายลับ +1</li>
+        <li>สายลับทายถูก: สายลับ +1</li>
       </ul>
-      <p class="hint">ใครถึงคะแนนเป้าหมายก่อนชนะ</p>
+      <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
@@ -228,7 +228,7 @@
         game = { code, target: 5, minutes: 5, phase: "lobby", round: null };
         broadcast();
       });
-      peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ ลองใหม่อีกครั้ง" })));
+      peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" })));
       peer.on("connection", (conn) => {
         conn.on("data", (msg) => handle(conn.peer, msg, conn));
         conn.on("close", () => {
@@ -246,7 +246,7 @@
       if (msg.t === "join") {
         const name = String(msg.name).trim().slice(0, 20);
         if (!name || [...players.values()].some((p) => p.name === name)) {
-          conn.send({ t: "rejected", reason: `ชื่อ "${name}" มีคนในห้องใช้แล้ว เปลี่ยนชื่อแล้วเข้าห้องใหม่` });
+          conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
           return;
         }
         players.set(id, { name, score: 0, conn });
@@ -386,16 +386,16 @@
           if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
           if (msg.t === "rejected") { leaving = true; peer.destroy(); show({ screen: "home", error: msg.reason }); }
         });
-        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว เพราะคนสร้างห้องออกจากเกม" }); });
+        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
       });
-      peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code} ตรวจรหัสห้องอีกครั้ง` : "เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง" }));
+      peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
     }
 
     // ---------- หน้าจอ ----------
     const scoreboard = (v) => `
       <h2>คะแนน (เป้าหมาย ${v.target})</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score}</span></li>`).join("")}
       </ul>`;
 
     // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
@@ -422,16 +422,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">ชื่อของคุณ</label>
+          <label for="name">ชื่อ</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
           <button id="host" data-sfx="create">สร้างห้อง</button>
-          <p class="or">หรือเข้าห้องของเพื่อน</p>
+          <p class="or">หรือ</p>
           <label for="code">รหัสห้อง</label>
           <input id="code" class="code-input" maxlength="4" autocomplete="off">
           <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
-          if (!name) return show({ error: "ใส่ชื่อก่อนสร้างห้อง" });
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
           saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
           hostRoom(name);
@@ -439,9 +439,9 @@
         app.querySelector("#join").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           const code = app.querySelector("#code").value.trim().toUpperCase();
-          if (!name) return show({ error: "ใส่ชื่อก่อนเข้าห้อง" });
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
           saveName(name);
-          if (code.length !== 4) return show({ error: "รหัสห้องมี 4 ตัวอักษร" });
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
           app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
           leaving = false;
           joinRoom(name, code);
@@ -455,7 +455,7 @@
       if (v.screen === "lobby") {
         app.innerHTML = `
           ${header}
-          <h2>ตั้งค่าเกม</h2>
+          <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
                <input id="target" type="number" min="1" max="20" value="${v.target}">
@@ -465,9 +465,9 @@
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
-            ? `<p class="hint">ส่งรหัสห้องให้เพื่อน แล้วกดเริ่มเมื่อครบ (อย่างน้อย 3 คน)</p>
-               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่มเกม</button>`
-            : `<p class="hint">รอคนสร้างห้องกดเริ่มเกม</p>`}`;
+            ? `<p class="hint">ส่งรหัสให้เพื่อน (3 คนขึ้นไป)</p>
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
         if (v.isHost) {
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
           app.querySelector("#minutes").onchange = (e) => send({ t: "minutes", value: e.target.value });
@@ -478,7 +478,7 @@
 
       if (v.screen === "word") {
         if (!v.inRound) {
-          app.innerHTML = `<p class="hint">รอบนี้เริ่มไปแล้ว รอเล่นรอบถัดไป</p>`;
+          app.innerHTML = `<p class="hint">รอรอบถัดไป</p>`;
           return;
         }
         deadline = Date.now() + v.endsIn;
@@ -486,22 +486,22 @@
           ${v.voting ? "" : `<p class="timer" id="timer" aria-label="เวลาที่เหลือ">${clock()}</p>`}
           ${v.isSpy
             ? `<p class="word spy">คุณคือสายลับ</p>
-               <p class="hint">เนียนตอบคำถามให้รอด แล้วเดาว่าทุกคนอยู่ที่ไหน</p>
-               <h2>สถานที่ทั้งหมด กดเพื่อขีดฆ่า</h2>
+               <p class="hint">เนียนให้รอด เดาสถานที่</p>
+               <h2>กดเพื่อขีดฆ่า</h2>
                <div class="places">${placeButtons("place-x")}</div>`
             : `<h2>สถานที่</h2>
                <p class="word place">${esc(v.location)}</p>
-               <h2>บทบาทของคุณ</h2>
+               <h2>บทบาท</h2>
                <p class="word role">${esc(v.role)}</p>
-               <p class="hint">ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ หมดเวลาแล้วโหวตว่าใครคือสายลับ</p>
+               <p class="hint">ถามตอบกัน ห้ามพูดชื่อสถานที่</p>
                <details class="hint"><summary>สถานที่ทั้งหมด</summary>${LOCATIONS.map((l) => esc(l.name)).join(", ")}</details>`}
           ${!v.voting
-            ? `<p class="hint">โหวตได้เมื่อหมดเวลา</p>
+            ? `<p class="hint">หมดเวลาแล้วโหวต</p>
                ${v.isHost ? `<button id="skip" data-sfx="next">โหวต</button>` : ""}`
             : v.myVote
-              ? `<p>คุณโหวต <span class="good">${esc(v.myVote)}</span> แล้ว</p>`
-              : `<h2 class="bad">หมดเวลา โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
-          ${v.voting ? `<p class="hint">โหวตแล้ว ${v.voted}/${v.voters} คน</p>` : ""}`;
+              ? `<p>โหวต <span class="good">${esc(v.myVote)}</span> แล้ว</p>`
+              : `<h2 class="bad">โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
+          ${v.voting ? `<p class="hint">โหวตแล้ว ${v.voted}/${v.voters}</p>` : ""}`;
         app.querySelectorAll(".vote").forEach((b) => (b.onclick = () => send({ t: "vote", target: b.dataset.id })));
         if (app.querySelector("#skip")) app.querySelector("#skip").onclick = () => send({ t: "skip" });
         app.querySelectorAll(".place-x").forEach((b) => (b.onclick = () => {
@@ -522,9 +522,9 @@
         app.innerHTML = `
           ${result}
           ${v.isSpy
-            ? `<h2>ทายสถานที่ ถ้าถูกได้อีก 1 คะแนน</h2>
+            ? `<h2>ทายสถานที่ (+1)</h2>
                <div class="guesses">${placeButtons("guess alt", "confirm")}</div>`
-            : `<p class="hint">รอ <span class="bad">${esc(v.spyName)}</span> ทายสถานที่</p>`}`;
+            : `<p class="hint"><span class="bad">${esc(v.spyName)}</span> กำลังทาย</p>`}`;
         app.querySelectorAll(".guess").forEach((b) => (b.onclick = () => send({ t: "guess", text: b.dataset.name })));
         return;
       }
@@ -534,13 +534,13 @@
         ${result}
         <ul>
           <li>สถานที่: <span class="hl">${esc(v.location)}</span></li>
-          <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายสถานที่" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? '<span class="bad">ถูก</span>' : '<span class="good">ผิด</span>'}`}</li>
+          <li>${v.guess === null ? "สายลับออกก่อนทาย" : `สายลับทาย "${esc(v.guess)}" ${v.correct ? '<span class="bad">ถูก</span>' : '<span class="good">ผิด</span>'}`}</li>
         </ul>
         <div style="margin-top: 24px">${scoreboard(v)}</div>
         ${v.screen === "over"
-          ? v.isHost ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>` : `<p class="hint">รอคนสร้างห้องเริ่มเกมใหม่</p>`
-          : `${v.ready ? `<p class="good">คุณพร้อมแล้ว รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}
-             <p class="hint">พร้อมแล้ว ${v.readyCount}/${v.players.length} คน${enough ? "" : " (ต้องมีอย่างน้อย 3 คน)"}</p>`}`;
+          ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
+          : `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}
+             <p class="hint">พร้อม ${v.readyCount}/${v.players.length}${enough ? "" : " (3 คนขึ้นไป)"}</p>`}`;
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
         winner.showModal();

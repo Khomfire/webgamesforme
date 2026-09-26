@@ -108,9 +108,9 @@
 <body>
   <main>
     <h1>Web Games For Me</h1>
-    <p class="sub">เลือกเกม แล้วเล่นกับเพื่อน</p>
+    <p class="sub">เลือกเกม เล่นกับเพื่อน</p>
     <div class="name">
-      <label for="name">ชื่อของคุณ</label>
+      <label for="name">ชื่อ</label>
       <input id="name" maxlength="20" autocomplete="nickname">
     </div>
     <div id="games" class="grid"></div>
@@ -132,7 +132,7 @@
 
     const list = document.getElementById("games");
     if (games.length === 0) {
-      list.outerHTML = '<p class="empty">ยังไม่มีเกมในตู้<br>เกมแรกกำลังมา</p>';
+      list.outerHTML = '<p class="empty">ยังไม่มีเกม</p>';
     } else {
       for (const g of games) {
         const a = document.createElement("a");
