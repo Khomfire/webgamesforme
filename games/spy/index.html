@@ -94,6 +94,7 @@
     button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
+    .symbol { font: 400 1.25rem "Press Start 2P", monospace; }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
     ul { margin: 0; padding: 0; list-style: none; }
@@ -397,11 +398,10 @@
 
       if (v.screen === "word") {
         if (!v.inRound) {
-          app.innerHTML = `${header}<p class="hint">รอบนี้เริ่มไปแล้ว รอเล่นรอบถัดไป</p>`;
+          app.innerHTML = `<p class="hint">รอบนี้เริ่มไปแล้ว รอเล่นรอบถัดไป</p>`;
           return;
         }
         app.innerHTML = `
-          ${header}
           <h2>คำของคุณ</h2>
           <p class="word">${esc(v.word)}</p>
           <p class="hint">ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ แล้วโหวตว่าใครคือสายลับ สายลับอาจเป็นคุณก็ได้</p>
@@ -421,7 +421,7 @@
 
       if (v.screen === "guess") {
         app.innerHTML = `
-          ${header}${result}
+          ${result}
           ${v.isSpy
             ? `<label for="guess">ทายคำของทุกคน ถ้าถูกได้อีก 1 คะแนน</label>
                <input id="guess" maxlength="40" autocomplete="off">
@@ -433,7 +433,6 @@
 
       // score / over
       app.innerHTML = `
-        ${header}
         ${v.screen === "over" ? `<h2>ผู้ชนะ</h2><p class="word">${v.winners.map(esc).join(", ")}</p>` : ""}
         ${result}
         <ul>
@@ -445,7 +444,7 @@
         ${v.isHost
           ? v.screen === "over"
             ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>`
-            : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
+            : `<button id="next" class="symbol" data-sfx="next" aria-label="รอบต่อไป" ${enough ? "" : "disabled"}>&gt;</button>`
           : `<p class="hint">รอคนสร้างห้อง${v.screen === "over" ? "เริ่มเกมใหม่" : "เริ่มรอบต่อไป"}</p>`}`;
       if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
