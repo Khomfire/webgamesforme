@@ -121,14 +121,16 @@
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
     /* ลูกเต๋า: จุด 3x3 ติดเฉพาะช่องของหน้านั้น */
-    .dice { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 12px 0; }
+    /* เต๋าอยู่กลางแถวเสมอ แม้เหลือไม่ครบ 6 ลูก */
+    .dice { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+    .dice .die { flex: 0 0 calc((100% - 40px) / 6); }
     .die {
       --c: var(--text);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12%;
       margin: 0;
-      padding: 16%;
+      padding: 8px;
       aspect-ratio: 1;
       border: 3px solid var(--c);
       background: var(--screen);
@@ -139,12 +141,13 @@
     .die span.on { background: currentColor; }
     button.die:disabled { --c: var(--text); opacity: 1; cursor: default; }
     button.die.picked { --c: var(--yellow); transform: translateY(-6px); }
-    .dice.small { grid-template-columns: repeat(8, 1fr); gap: 6px; }
+    .dice.small { gap: 6px; }
+    .dice.small .die { flex-basis: calc((100% - 42px) / 8); padding: 5px; }
     .dice.small .die { --c: var(--dim); border-width: 2px; }
     .dice.bad .die { --c: var(--red); }
+    #last { text-align: center; }
     .rolling { pointer-events: none; }
     .rolling .die { animation: shake 140ms steps(2) infinite; }
-    .rolling p { visibility: hidden; }
     @keyframes shake {
       from { transform: translate(-3px, 2px) rotate(-8deg); }
       to { transform: translate(3px, -2px) rotate(8deg); }
@@ -318,7 +321,7 @@
       game.dice = Array.from({ length: game.left }, () => 1 + Math.floor(Math.random() * 6));
       game.rolls++;
       if (!canScore(game.dice)) {
-        game.last = { name: players.get(game.order[game.turn]).name, dice: game.dice, farkle: true, lost: game.turnPts, n: game.rolls };
+        game.last = { name: players.get(game.order[game.turn]).name, dice: game.dice, kept: game.kept, farkle: true, lost: game.turnPts, n: game.rolls };
         endTurn();
       }
     }
@@ -415,9 +418,34 @@
       }, 70);
     }
 
+    // ทอยแล้วฟาร์เคิล: โชว์เต๋าหมุนในตาของคนทอยก่อน หมุนจบแล้วค่อยโชว์ผลและเปลี่ยนตา
+    let holding = false;
+    function farkleRoll(v) {
+      holding = true;
+      const shown = { ...v, players: v.players.map((p) => ({ ...p, now: p.name === v.last.name })) };
+      app.innerHTML = `
+        ${scoreboard(shown)}
+        ${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}
+        <p class="status">${lastMyTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.last.name)}`}</p>
+        <p class="turn" aria-label="แต้มตานี้">${v.last.lost}</p>
+        ${v.last.kept.length ? smallDice(v.last.kept) : ""}
+        <div class="dice">${v.last.dice.map((d) => `<div class="die" role="img" aria-label="เต๋า ${d}">${pips(d)}</div>`).join("")}</div>`;
+      animateRoll(app.querySelector(".dice:not(.small)"), () => {
+        playSfx("vote");
+        holding = false;
+        render();
+      });
+    }
+
     let lastScreen, lastMyTurn, lastRolls;
     function render() {
+      if (holding) return; // มีสถานะใหม่ระหว่างเต๋าหมุน รอวาดตอนหมุนจบ
       const v = view;
+      if (v.rolls !== lastRolls && v.last && v.last.farkle && v.last.n === v.rolls && (v.screen === "play" || v.screen === "over")) {
+        lastRolls = v.rolls;
+        picked.clear();
+        return farkleRoll(v);
+      }
       clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (gameOver) playSfx("win");
@@ -523,9 +551,8 @@
       if (app.querySelector("#roll")) app.querySelector("#roll").onclick = () => send({ t: "roll", keep: [...picked] });
       if (app.querySelector("#bank")) app.querySelector("#bank").onclick = () => send({ t: "bank", keep: [...picked] });
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
-      const farkled = v.last && v.last.farkle && v.last.n === v.rolls;
-      if (newRoll && v.screen === "play" && (farkled || v.dice.length)) {
-        animateRoll(app.querySelector(farkled ? "#last" : ".dice:not(.small)"), farkled && (() => playSfx("vote")));
+      if (newRoll && v.screen === "play" && v.dice.length) {
+        animateRoll(app.querySelector(".dice:not(.small)"));
       }
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
