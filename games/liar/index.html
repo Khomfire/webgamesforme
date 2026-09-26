@@ -141,6 +141,8 @@
     }
     .die span { aspect-ratio: 1; }
     .die span.on { background: currentColor; }
+    /* เต๋าในข้อความกฎ */
+    .die.inline { display: inline-grid; width: 1.4em; padding: 2px; border-width: 2px; gap: 8%; vertical-align: middle; }
     /* เต๋าในมือ: แถวละ 5 ลูก อยู่กลางแถว */
     .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
     .dice .die { flex: 0 0 min(64px, calc((100% - 48px) / 5)); padding: 10px; border-width: 4px; }
@@ -237,22 +239,21 @@
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
-        <li>2 คนขึ้นไป</li>
-        <li>ทอยเต๋า 2 ลูก แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่</li>
+        <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่</li>
         <li>ทุกคนทอยเต๋า เห็นแค่ของตัวเอง</li>
         <li>ผลัดกันเสนอว่าเต๋าทั้งวงมีหน้านี้อย่างน้อยกี่ลูก</li>
-        <li>หน้า 1 นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วยหน้า 1 ไม่ได้</li>
+        <li><span class="die inline" data-face="1"></span> นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วย <span class="die inline" data-face="1"></span> ไม่ได้</li>
         <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
-        <li>เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งเดียว (ปัดขึ้น) เปลี่ยนกลับใช้สองเท่า + 1</li>
+        <li>เปลี่ยนไป <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว (ปัดขึ้น) เปลี่ยนกลับใช้สองเท่า + 1</li>
         <li>ไม่เชื่อ กด "โกหก" เปิดเต๋าทุกคน</li>
-        <li>มีครบ คนกดโกหกเสีย 1 ลูก ไม่ครบ คนเสนอเสีย 1 ลูก</li>
+        <li>มีครบ คนกดโกหกเสีย <span class="die inline" data-face=""></span> ไม่ครบ คนเสนอเสีย <span class="die inline" data-face=""></span></li>
         <li>คนเสียเต๋าเริ่มรอบถัดไป เหลือเต๋าคนสุดท้ายชนะ</li>
       </ol>
       <h2>+ PALIFICO</h2>
       <ol>
-        <li>ใครเหลือ 1 ลูก รอบถัดไปเป็นรอบ PALIFICO</li>
+        <li>ใครเหลือ <span class="die inline" data-face=""></span> รอบถัดไปเป็นรอบ PALIFICO</li>
         <li>รอบนี้ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน</li>
-        <li>หน้า 1 ไม่แทนหน้าอื่น เปิดด้วยหน้า 1 ได้</li>
+        <li><span class="die inline" data-face="1"></span> ไม่แทนหน้าอื่น เปิดด้วย <span class="die inline" data-face="1"></span> ได้</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
@@ -585,6 +586,12 @@
     const rules = document.getElementById("rules");
     document.getElementById("rules-open").onclick = () => rules.showModal();
     document.getElementById("rules-close").onclick = () => rules.close();
+    // เต๋าในข้อความกฎ: data-face = หน้าเต๋า ว่างไว้ = เต๋าลูกไหนก็ได้ (ใช้คู่กับ xN บอกจำนวน)
+    document.querySelectorAll("#rules [data-face]").forEach((d) => {
+      d.innerHTML = d.dataset.face ? pips(d.dataset.face) : "<span></span>".repeat(9);
+      d.setAttribute("role", "img");
+      d.setAttribute("aria-label", d.dataset.face ? `หน้า ${d.dataset.face}` : "เต๋า");
+    });
     const winner = document.getElementById("winner");
     document.getElementById("winner-close").onclick = () => winner.close();
 
