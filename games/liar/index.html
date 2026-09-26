@@ -207,7 +207,8 @@
     <div id="app"></div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script>
@@ -242,7 +243,7 @@
 
     function hostRoom(name) {
       const code = newCode();
-      const p = (peer = new Peer(ID_PREFIX + code));
+      peer = new Peer(ID_PREFIX + code);
       hostConn = null;
       let opened = false;
       peer.once("open", () => {
@@ -255,8 +256,6 @@
         if (e.type === "unavailable-id") hostRoom(name);
         else if (!opened) show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" });
       });
-      // มือถือสลับแอปไปส่งรหัสให้เพื่อน การเชื่อมต่อกับเซิร์ฟเวอร์หลุดได้ ต่อใหม่เองให้เพื่อนยังหาห้องเจอ
-      peer.on("disconnected", () => setTimeout(() => opened && p.disconnected && !p.destroyed && p.reconnect(), 1000));
       peer.on("connection", (conn) => {
         conn.on("data", (msg) => handle(conn.peer, msg, conn));
         conn.on("close", () => {
@@ -402,9 +401,8 @@
         });
         conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
       });
-      // เข้าห้องแล้วคุยกับ host ตรงๆ เซิร์ฟเวอร์หลุดก็ไม่เป็นไร
       peer.on("error", (e) => hostConn || fail(e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ"));
-      // เจอห้องแต่ต่อตรงกับเครื่อง host ไม่ติด (มักเป็นเน็ตคนละเครือข่าย) บอกแทนการค้าง
+      // เจอห้องแต่เจ้าของห้องไม่ตอบ บอกแทนการค้าง
       setTimeout(() => hostConn || p.destroyed || fail("ต่อเครื่องเจ้าของห้องไม่ติด"), 15000);
     }
 
