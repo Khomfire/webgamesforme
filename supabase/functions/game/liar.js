@@ -67,7 +67,7 @@ function call(s, caller) {
 }
 
 export default {
-  init: () => ({ start: 5, wild: false, palifico: false, pal: false, phase: "lobby" }),
+  init: () => ({ start: 5, wild: true, palifico: false, pal: false, phase: "lobby" }),
   player: () => ({ count: 0, hand: [] }),
 
   handle(s, id, msg) {
