@@ -145,9 +145,22 @@
     .dice.small .die { flex-basis: calc((100% - 42px) / 8); padding: 5px; }
     .dice.small .die { --c: var(--dim); border-width: 2px; }
     .dice.bad .die { --c: var(--red); }
+    /* ตารางแต้มในกฎ: รูปหน้าเต๋าทางซ้าย แต้มทางขวา */
+    .rule-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .rule-row .dice { margin: 0; justify-content: flex-start; gap: 4px; }
+    .rule-row .dice .die { --c: var(--text); flex: 0 0 24px; padding: 3px; border-width: 2px; }
+    .rule-row .pts { color: var(--yellow); font-weight: 700; }
     #last { text-align: center; }
-    .rolling { pointer-events: none; }
+    /* ทอยเต๋า: เต๋าเด้งขึ้นมาหมุนกลางจอ ลอยทับหน้าเกม */
+    .roll-layer { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(13, 11, 31, 0.85); }
+    .roll-layer[hidden] { display: none; }
+    .roll-layer .dice { flex-wrap: wrap; width: min(300px, 80vw); gap: 16px; animation: pop 200ms steps(4); }
+    .roll-layer .dice .die { flex-basis: calc((100% - 32px) / 3); padding: 12px; border-width: 4px; }
     .rolling .die { animation: shake 140ms steps(2) infinite; }
+    @keyframes pop {
+      from { transform: scale(0.2); }
+      to { transform: scale(1); }
+    }
     @keyframes shake {
       from { transform: translate(-3px, 2px) rotate(-8deg); }
       to { transform: translate(3px, -2px) rotate(8deg); }
@@ -181,12 +194,7 @@
         <li>มีแต้มครบ 6 ลูก ทอยใหม่ได้ 6 ลูก</li>
       </ol>
       <h2>แต้ม</h2>
-      <ul>
-        <li>1 = 100, 5 = 50</li>
-        <li>ตอง 1 = 1000, ตองอื่น = หน้าเต๋า x 100</li>
-        <li>4 ลูกขึ้นไป: x2 ทุกลูกที่เพิ่ม</li>
-        <li>1-2-3-4-5-6 = 1500, 3 คู่ = 1500</li>
-      </ul>
+      <ul id="score-rules"></ul>
       <p class="hint">มีคนถึงเป้าหมาย คนอื่นได้อีกคนละตา แต้มสูงสุดชนะ</p>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
@@ -198,6 +206,7 @@
       <canvas id="fireworks" aria-hidden="true"></canvas>
     </dialog>
     <div id="app"></div>
+    <div class="roll-layer" id="roll-layer" aria-hidden="true" hidden><div class="dice"></div></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
@@ -216,17 +225,24 @@
     function score(dice) {
       const c = [0, 0, 0, 0, 0, 0, 0];
       dice.forEach((v) => c[v]++);
-      if (dice.length === 6 && c.slice(1).every((n) => n === 1)) return 1500;
-      if (dice.length === 6 && c.filter((n) => n === 2).length === 3) return 1500;
+      const counts = c.slice(1);
+      // ชุดพิเศษที่ใช้ครบ 6 ลูก คิดเทียบกับแต้มแบบนับทีละชุด แล้วเอาที่มากกว่า
+      let combo = 0;
+      if (dice.length === 6) {
+        if (counts.every((n) => n === 1)) combo = 1500;                       // 1-2-3-4-5-6
+        if (counts.filter((n) => n === 2).length === 3) combo = 1500;         // 3 คู่
+        if (counts.includes(4) && counts.includes(2)) combo = 1500;           // 4 ลูก + คู่
+        if (counts.filter((n) => n === 3).length === 2) combo = 2500;         // ตอง 2 ชุด
+      }
       let pts = 0;
       for (let f = 1; f <= 6; f++) {
         const n = c[f];
         if (n >= 3) pts += (f === 1 ? 1000 : f * 100) * 2 ** (n - 3);
         else if (f === 1) pts += 100 * n;
         else if (f === 5) pts += 50 * n;
-        else if (n) return 0;
+        else if (n) return combo;
       }
-      return pts;
+      return Math.max(combo, pts);
     }
     // ทอยแล้วมีเต๋าที่เก็บแต้มได้อย่างน้อยหนึ่งชุดไหม
     const canScore = (dice) =>
@@ -399,22 +415,34 @@
 
     // เต๋าที่เลือกไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างทุกครั้งที่ทอยใหม่
     const picked = new Set();
-    // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
-    let rollTimer;
-    function animateRoll(box, done) {
+    // ทอยเต๋า: เต๋าเด้งขึ้นกลางจอ สุ่มหน้าสลับไปมาพร้อมเขย่า หยุดที่หน้าจริงครู่หนึ่งแล้วค่อยปิด
+    const layer = document.getElementById("roll-layer");
+    let rollTimer, rollHold;
+    function animateRoll(faces, done, farkle) {
       clearInterval(rollTimer);
-      if (!box || matchMedia("(prefers-reduced-motion: reduce)").matches) return done && done();
-      const dice = [...box.querySelectorAll(".die")];
-      const faces = dice.map((d) => d.innerHTML);
+      clearTimeout(rollHold);
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done && done();
+      const box = layer.firstElementChild;
+      box.innerHTML = faces.map(() => `<div class="die"></div>`).join("");
+      const dice = [...box.children];
+      const show = (face) => dice.forEach((d, i) => (d.innerHTML = pips(face(i))));
+      const random = () => 1 + Math.floor(Math.random() * 6);
+      show(random);
       box.classList.add("rolling");
+      box.classList.remove("bad");
+      layer.hidden = false;
       playSfx("roll");
       let n = 0;
       rollTimer = setInterval(() => {
-        if (++n < 9) return dice.forEach((d) => (d.innerHTML = pips(1 + Math.floor(Math.random() * 6))));
+        if (++n < 9) return show(random);
         clearInterval(rollTimer);
-        dice.forEach((d, i) => (d.innerHTML = faces[i]));
+        show((i) => faces[i]);
         box.classList.remove("rolling");
-        if (done) done();
+        if (farkle) { box.classList.add("bad"); playSfx("vote"); } // ฟาร์เคิล: เต๋าเป็นสีแดงตอนหยุด
+        rollHold = setTimeout(() => {
+          layer.hidden = true;
+          if (done) done();
+        }, 500);
       }, 70);
     }
 
@@ -429,12 +457,11 @@
         <p class="status">${lastMyTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.last.name)}`}</p>
         <p class="turn" aria-label="แต้มตานี้">${v.last.lost}</p>
         ${v.last.kept.length ? smallDice(v.last.kept) : ""}
-        <div class="dice">${v.last.dice.map((d) => `<div class="die" role="img" aria-label="เต๋า ${d}">${pips(d)}</div>`).join("")}</div>`;
-      animateRoll(app.querySelector(".dice:not(.small)"), () => {
-        playSfx("vote");
+        <div class="dice" style="visibility: hidden">${v.last.dice.map((d) => `<div class="die">${pips(d)}</div>`).join("")}</div>`;
+      animateRoll(v.last.dice, () => {
         holding = false;
         render();
-      });
+      }, true);
     }
 
     let lastScreen, lastMyTurn, lastRolls;
@@ -446,7 +473,6 @@
         picked.clear();
         return farkleRoll(v);
       }
-      clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (gameOver) playSfx("win");
       if (v.screen !== "over" && winner.open) winner.close();
@@ -552,7 +578,10 @@
       if (app.querySelector("#bank")) app.querySelector("#bank").onclick = () => send({ t: "bank", keep: [...picked] });
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (newRoll && v.screen === "play" && v.dice.length) {
-        animateRoll(app.querySelector(".dice:not(.small)"));
+        // ซ่อนเต๋าบนหน้าเกมไว้จนกว่าเต๋ากลางจอจะหมุนจบ
+        const main = app.querySelector(".dice:not(.small)");
+        main.style.visibility = "hidden";
+        animateRoll(v.dice, () => (main.style.visibility = ""));
       }
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
@@ -561,6 +590,14 @@
       }
     }
 
+    // ตารางแต้มในกฎ: แต้มคำนวณจาก score() จึงตรงกับเกมเสมอ
+    const SCORE_RULES = [
+      [1], [5], [1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5], [6, 6, 6],
+      [4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4, 4],
+      [1, 2, 3, 4, 5, 6], [2, 2, 4, 4, 6, 6], [3, 3, 3, 3, 6, 6], [2, 2, 2, 4, 4, 4],
+    ];
+    document.getElementById("score-rules").innerHTML = SCORE_RULES.map((d) =>
+      `<li class="rule-row">${smallDice(d)}<span class="pts">${score(d)}</span></li>`).join("");
     const rules = document.getElementById("rules");
     document.getElementById("rules-open").onclick = () => rules.showModal();
     document.getElementById("rules-close").onclick = () => rules.close();
