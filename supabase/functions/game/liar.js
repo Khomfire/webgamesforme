@@ -1,16 +1,15 @@
 // LIAR'S DICE: ทุกคนทอยเต๋าลับ ผลัดกันเสนอ จับโกหกแล้วคนผิดเสีย 1 ลูก เหลือเต๋าคนสุดท้ายชนะ
-// กฎเสริมที่เจ้าของห้องเปิดได้: wild (หน้า 1 แทนทุกหน้า) และ palifico
+// หน้า 1 แทนทุกหน้า กฎเสริมที่เจ้าของห้องเปิดได้: palifico
 import { leaveOpening, openingView, rollOpening, startOpening } from "./opening.js";
 
 const pl = (s, id) => s.players.find((p) => p.id === id);
 
 // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
-// wild: เปิดรอบด้วยหน้า 1 ไม่ได้ เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
-// pal (รอบ palifico): ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน
+// หน้า 1 แทนทุกหน้า: เปิดรอบด้วยหน้า 1 ไม่ได้ เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
+// pal (รอบ palifico): ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน หน้า 1 ไม่แทนหน้าอื่น
 // (หน้าเกมมีสำเนาไว้เปิดปิดปุ่มเสนอ ต้องแก้ให้ตรงกัน)
-export function higher(a, b, { wild, pal }) {
+export function higher(a, b, { pal }) {
   if (pal) return !b || (a.face === b.face && a.n > b.n);
-  if (!wild) return !b || a.n > b.n || (a.n === b.n && a.face > b.face);
   if (!b) return a.face !== 1;
   if (a.face === 1) return b.face === 1 ? a.n > b.n : a.n >= Math.ceil(b.n / 2);
   if (b.face === 1) return a.n >= b.n * 2 + 1;
@@ -18,7 +17,7 @@ export function higher(a, b, { wild, pal }) {
 }
 const counts = (d, face, wild) => d === face || (wild && d === 1);
 // กฎของรอบนี้: รอบ palifico หน้า 1 ไม่แทนหน้าอื่น
-const mode = (s) => ({ wild: s.wild && !s.pal, pal: s.pal });
+const mode = (s) => ({ wild: !s.pal, pal: s.pal });
 
 const alive = (s) => s.order.filter((id) => pl(s, id).count > 0);
 const total = (s) => alive(s).reduce((n, x) => n + pl(s, x).count, 0);
@@ -69,7 +68,7 @@ function call(s, caller) {
 }
 
 export default {
-  init: () => ({ start: 5, wild: true, palifico: false, pal: false, phase: "lobby" }),
+  init: () => ({ start: 5, palifico: false, pal: false, phase: "lobby" }),
   player: () => ({ count: 0, hand: [] }),
 
   handle(s, id, msg) {
@@ -88,7 +87,7 @@ export default {
     }
     if (id === s.owner) {
       if (msg.t === "start-dice") s.start = Math.min(5, Math.max(1, Math.round(Number(msg.value)) || 5));
-      if (msg.t === "rule" && s.phase === "lobby" && (msg.key === "wild" || msg.key === "palifico")) s[msg.key] = !!msg.on;
+      if (msg.t === "rule" && s.phase === "lobby" && msg.key === "palifico") s.palifico = !!msg.on;
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
         s.order = s.players.map((p) => p.id);
         for (const p of s.players) p.count = s.start;
@@ -122,7 +121,7 @@ export default {
 
   view(s, id) {
     const v = {
-      screen: s.phase, start: s.start, rules: { wild: s.wild, palifico: s.palifico },
+      screen: s.phase, start: s.start, rules: { palifico: s.palifico },
       players: s.players.map((p) => ({ name: p.name, count: p.count, now: s.phase === "play" && s.turn === p.id })),
     };
     if (s.phase === "order") v.opening = openingView(s, id);
