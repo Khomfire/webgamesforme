@@ -126,9 +126,9 @@
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
     /* ลูกเต๋า: จุด 3x3 ติดเฉพาะช่องของหน้านั้น */
-    /* เต๋าอยู่กลางแถวเสมอ แม้เหลือไม่ครบ 6 ลูก */
-    .dice { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
-    .dice .die { flex: 0 0 calc((100% - 40px) / 6); }
+    /* เต๋าอยู่กลางแถวเสมอ แม้เหลือไม่ครบ 6 ลูก แถวละ 3 ลูกให้ใหญ่พอกดบนมือถือ */
+    .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
+    .dice .die { flex: 0 0 min(96px, calc((100% - 24px) / 3)); padding: 14px; border-width: 4px; }
     .die {
       --c: var(--text);
       display: grid;
@@ -147,7 +147,7 @@
     button.die:disabled { --c: var(--text); opacity: 1; cursor: default; }
     button.die.picked { --c: var(--yellow); transform: translateY(-6px); }
     .dice.small { gap: 6px; }
-    .dice.small .die { flex-basis: calc((100% - 42px) / 8); padding: 5px; }
+    .dice.small .die { flex-basis: min(44px, calc((100% - 30px) / 6)); padding: 6px; }
     .dice.small .die { --c: var(--dim); border-width: 2px; }
     .dice.bad .die { --c: var(--red); }
     /* ตารางแต้มในกฎ: รูปหน้าเต๋าทางซ้าย แต้มทางขวา */
