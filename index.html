@@ -41,9 +41,22 @@
       text-shadow: 4px 4px 0 #c2410c;
       text-wrap: balance;
     }
-    .sub { margin: 20px 0 48px; text-align: center; color: var(--dim); font-size: 1.125rem; }
+    .sub { margin: 20px 0 32px; text-align: center; color: var(--dim); font-size: 1.125rem; }
     .sub::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; animation: blink 1s steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
+
+    .name { max-width: 320px; margin: 0 auto 48px; }
+    .name label { display: block; margin-bottom: 6px; color: var(--dim); }
+    .name input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 1.1rem;
+    }
+    .name input:focus { outline: none; border-color: var(--yellow); }
 
     .grid {
       display: grid;
@@ -96,10 +109,22 @@
   <main>
     <h1>Web Games For Me</h1>
     <p class="sub">เลือกเกม แล้วเล่นกับเพื่อน</p>
+    <div class="name">
+      <label for="name">ชื่อของคุณ</label>
+      <input id="name" maxlength="20" autocomplete="nickname">
+    </div>
     <div id="games" class="grid"></div>
   </main>
 
+  <script src="sfx.js"></script>
   <script>
+    // ชื่อผู้เล่นเก็บไว้ในเบราว์เซอร์ ทุกเกมอ่านจาก key เดียวกัน
+    const nameInput = document.getElementById("name");
+    try { nameInput.value = localStorage.getItem("wgfm-name") || ""; } catch {}
+    nameInput.addEventListener("input", () => {
+      try { localStorage.setItem("wgfm-name", nameInput.value.trim()); } catch {}
+    });
+
     // เพิ่มเกมใหม่: สร้างโฟลเดอร์ games/<id>/index.html แล้วเพิ่มหนึ่งบรรทัดที่นี่
     const games = [
       { id: "spy", name: "ใครคือสายลับ", desc: "ทุกคนได้คำเดียวกัน ยกเว้นสายลับ" },

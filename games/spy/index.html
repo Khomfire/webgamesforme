@@ -77,6 +77,9 @@
       font-weight: 700;
     }
     .spy { color: var(--red); }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .gain { margin-right: 12px; color: var(--cyan); }
+    .vote { --c: var(--cyan); margin-top: 12px; }
     .error { color: var(--red); }
   </style>
 </head>
@@ -88,6 +91,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script src="../../sfx.js"></script>
   <script>
     // คู่คำ: ทุกคนได้คำหนึ่ง สายลับได้อีกคำ (สลับข้างแบบสุ่มทุกรอบ)
     const PAIRS = [
@@ -103,80 +107,187 @@
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
     const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
-    // สถานะที่หน้าจอใช้วาด
+    const norm = (w) => String(w).replace(/\s+/g, "").toLowerCase();
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    // สถานะที่หน้าจอใช้วาด (host ส่งมาให้ทุกเครื่อง แต่ละคนได้เฉพาะข้อมูลที่ตัวเองควรเห็น)
     let view = { screen: "home" };
     function show(next) { view = { ...view, ...next }; render(); }
 
-    // ---------- คนสร้างห้อง (host) เป็นคนคุมเกม ----------
-    let peer, hostConn;
-    const conns = new Map(); // conn -> ชื่อ
-    let round = null;        // { spy, common, spyWord }
+    let peer, hostConn, leaving = false;
+    // ส่งคำสั่งไปหา host (ถ้าเราเป็น host ก็จัดการเองเลย)
+    const send = (msg) => (hostConn ? hostConn.send(msg) : handle("host", msg));
+
+    // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
+    const players = new Map(); // id -> { name, score, conn }  id "host" คือคนสร้างห้อง
+    let game;                  // { code, target, phase, round }
 
     function hostRoom(name) {
       const code = newCode();
       peer = new Peer(ID_PREFIX + code);
-      peer.on("open", () => show({ screen: "lobby", isHost: true, code, me: name, players: [name], word: null, reveal: null }));
+      peer.on("open", () => {
+        players.set("host", { name, score: 0 });
+        game = { code, target: 5, phase: "lobby", round: null };
+        broadcast();
+      });
       peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ ลองใหม่อีกครั้ง" })));
       peer.on("connection", (conn) => {
-        conn.on("data", (msg) => {
-          if (msg.t !== "join") return;
-          conns.set(conn, String(msg.name).slice(0, 20));
-          syncLobby();
+        conn.on("data", (msg) => handle(conn.peer, msg, conn));
+        conn.on("close", () => {
+          players.delete(conn.peer);
+          if (game.phase === "guess" && game.round.spy === conn.peer) finishGuess(null);
+          else countVotes();
+          broadcast();
         });
-        conn.on("close", () => { conns.delete(conn); syncLobby(); });
       });
     }
 
-    function syncLobby() {
-      const players = [view.me, ...conns.values()];
-      for (const c of conns.keys()) c.send({ t: "lobby", players });
-      show({ players });
+    function handle(id, msg, conn) {
+      const r = game.round;
+      if (msg.t === "join") {
+        const name = String(msg.name).trim().slice(0, 20);
+        if (!name || [...players.values()].some((p) => p.name === name)) {
+          conn.send({ t: "rejected", reason: `ชื่อ "${name}" มีคนในห้องใช้แล้ว เปลี่ยนชื่อแล้วเข้าห้องใหม่` });
+          return;
+        }
+        players.set(id, { name, score: 0, conn });
+      }
+      if (!players.has(id)) return;
+      if (msg.t === "vote" && game.phase === "word" && r.ids.includes(id) && r.ids.includes(msg.target) && msg.target !== id) {
+        r.votes.set(id, msg.target);
+        countVotes();
+      }
+      if (msg.t === "guess" && game.phase === "guess" && id === r.spy) finishGuess(String(msg.text).trim().slice(0, 40));
+      if (id === "host") {
+        if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 5));
+        if (msg.t === "start" && players.size >= 3) startRound();
+        if (msg.t === "newgame") {
+          for (const p of players.values()) p.score = 0;
+          game.phase = "lobby";
+          game.round = null;
+        }
+      }
+      broadcast();
     }
 
     function startRound() {
       const [a, b] = PAIRS[Math.floor(Math.random() * PAIRS.length)];
       const [common, spyWord] = Math.random() < 0.5 ? [a, b] : [b, a];
-      const everyone = [null, ...conns.keys()]; // null = ตัว host เอง
-      const spyIndex = Math.floor(Math.random() * everyone.length);
-      round = { spy: spyIndex === 0 ? view.me : conns.get(everyone[spyIndex]), common, spyWord };
-      everyone.forEach((c, i) => {
-        const word = i === spyIndex ? spyWord : common;
-        if (c) c.send({ t: "word", word }); else show({ word, reveal: null, screen: "word" });
-      });
+      const ids = [...players.keys()];
+      game.round = {
+        ids, common, spyWord,
+        spy: ids[Math.floor(Math.random() * ids.length)],
+        names: new Map(ids.map((id) => [id, players.get(id).name])),
+        votes: new Map(), tally: new Map(), gains: new Map(),
+      };
+      game.phase = "word";
     }
 
-    function revealRound() {
-      for (const c of conns.keys()) c.send({ t: "reveal", reveal: round });
-      show({ reveal: round, screen: "reveal" });
+    function addPoint(id) {
+      const p = players.get(id);
+      if (!p) return;
+      p.score++;
+      game.round.gains.set(id, (game.round.gains.get(id) || 0) + 1);
+    }
+
+    // นับโหวตเมื่อทุกคนที่ยังอยู่ในรอบโหวตครบ: ได้โหวตมากสุดคนเดียวและเป็นสายลับ = จับได้, เสมอ = สายลับรอด
+    function countVotes() {
+      const r = game.round;
+      if (game.phase !== "word") return;
+      const voters = r.ids.filter((id) => players.has(id));
+      if (voters.some((id) => !r.votes.has(id))) return;
+      for (const v of voters) r.tally.set(r.votes.get(v), (r.tally.get(r.votes.get(v)) || 0) + 1);
+      const max = Math.max(...r.tally.values());
+      const top = [...r.tally].filter(([, n]) => n === max);
+      r.caught = top.length === 1 && top[0][0] === r.spy;
+      if (r.caught) voters.filter((id) => id !== r.spy).forEach(addPoint);
+      else addPoint(r.spy);
+      if (players.has(r.spy)) game.phase = "guess";
+      else finishGuess(null);
+    }
+
+    function finishGuess(text) {
+      const r = game.round;
+      r.guess = text;
+      r.correct = text !== null && norm(text) === norm(r.common);
+      if (r.correct) addPoint(r.spy);
+      const top = Math.max(...[...players.values()].map((p) => p.score));
+      game.phase = top >= game.target ? "over" : "score";
+    }
+
+    function viewFor(id) {
+      const r = game.round;
+      const phase = game.phase;
+      const v = {
+        screen: phase, code: game.code, target: game.target, isHost: id === "host",
+        inRound: !!r && r.ids.includes(id),
+        players: [...players].map(([pid, p]) => ({ name: p.name, score: p.score, gain: (r && r.gains.get(pid)) || 0 })),
+      };
+      if (phase === "word" && v.inRound) {
+        const voters = r.ids.filter((x) => players.has(x));
+        v.word = id === r.spy ? r.spyWord : r.common;
+        v.candidates = voters.filter((x) => x !== id).map((x) => ({ id: x, name: r.names.get(x) }));
+        v.myVote = r.votes.has(id) ? r.names.get(r.votes.get(id)) : null;
+        v.voted = voters.filter((x) => r.votes.has(x)).length;
+        v.voters = voters.length;
+      }
+      if (phase === "guess" || phase === "score" || phase === "over") {
+        v.spyName = r.names.get(r.spy);
+        v.isSpy = id === r.spy;
+        v.caught = r.caught;
+        v.tally = [...r.tally].map(([t, n]) => ({ name: r.names.get(t), n })).sort((a, b) => b.n - a.n);
+      }
+      // เฉลยคำหลังสายลับทายเสร็จแล้วเท่านั้น
+      if (phase === "score" || phase === "over") {
+        v.common = r.common;
+        v.spyWord = r.spyWord;
+        v.guess = r.guess;
+        v.correct = r.correct;
+      }
+      if (phase === "over") {
+        const top = Math.max(...v.players.map((p) => p.score));
+        v.winners = v.players.filter((p) => p.score === top).map((p) => p.name);
+      }
+      return v;
+    }
+
+    function broadcast() {
+      for (const [id, p] of players) {
+        if (id === "host") { view = viewFor("host"); render(); }
+        else p.conn.send({ t: "state", view: viewFor(id) });
+      }
     }
 
     // ---------- เพื่อนที่เข้าห้อง ----------
     function joinRoom(name, code) {
       peer = new Peer();
       peer.on("open", () => {
-        hostConn = peer.connect(ID_PREFIX + code, { reliable: true });
-        hostConn.on("open", () => {
-          hostConn.send({ t: "join", name });
-          show({ screen: "lobby", isHost: false, code, me: name, players: [], word: null, reveal: null });
+        const conn = peer.connect(ID_PREFIX + code, { reliable: true });
+        conn.on("open", () => conn.send({ t: "join", name }));
+        conn.on("data", (msg) => {
+          if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
+          if (msg.t === "rejected") { leaving = true; peer.destroy(); show({ screen: "home", error: msg.reason }); }
         });
-        hostConn.on("data", (msg) => {
-          if (msg.t === "lobby") show({ players: msg.players });
-          if (msg.t === "word") show({ word: msg.word, reveal: null, screen: "word" });
-          if (msg.t === "reveal") show({ reveal: msg.reveal, screen: "reveal" });
-        });
-        hostConn.on("close", () => show({ screen: "home", error: "ห้องปิดแล้ว เพราะคนสร้างห้องออกจากเกม" }));
+        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว เพราะคนสร้างห้องออกจากเกม" }); });
       });
       peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code} ตรวจรหัสห้องอีกครั้ง` : "เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง" }));
     }
 
     // ---------- หน้าจอ ----------
+    const scoreboard = (v) => `
+      <h2>คะแนน (เส้นชัย ${v.target})</h2>
+      <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li class="row"><span>${esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
+      </ul>`;
+
     function render() {
       const v = view;
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
           <label for="name">ชื่อของคุณ</label>
-          <input id="name" maxlength="20" value="${esc(v.me || "")}" autocomplete="nickname">
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
           <button id="host">สร้างห้อง</button>
           <p class="or">หรือเข้าห้องของเพื่อน</p>
           <label for="code">รหัสห้อง</label>
@@ -185,6 +296,7 @@
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อนสร้างห้อง" });
+          saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
           hostRoom(name);
         };
@@ -192,53 +304,98 @@
           const name = app.querySelector("#name").value.trim();
           const code = app.querySelector("#code").value.trim().toUpperCase();
           if (!name) return show({ error: "ใส่ชื่อก่อนเข้าห้อง" });
-          if (code.length !== 4) return show({ me: name, error: "รหัสห้องมี 4 ตัวอักษร" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสห้องมี 4 ตัวอักษร" });
           app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          leaving = false;
           joinRoom(name, code);
         };
         return;
       }
 
       const header = `<h2>ห้อง</h2><p class="room">${esc(v.code)}</p>`;
+      const enough = v.players.length >= 3;
+
       if (v.screen === "lobby") {
         app.innerHTML = `
           ${header}
-          <h2>ผู้เล่น ${v.players.length} คน</h2>
-          <ul>${v.players.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+          <h2>ตั้งค่าเกม</h2>
+          ${v.isHost
+            ? `<label for="target">คะแนนเส้นชัย (1-20)</label>
+               <input id="target" type="number" min="1" max="20" value="${v.target}">`
+            : `<p>เส้นชัย ${v.target} คะแนน</p>`}
+          <ul class="hint">
+            <li>จับสายลับได้: คนที่ไม่ใช่สายลับได้คนละ 1 คะแนน</li>
+            <li>สายลับรอด: สายลับได้ 1 คะแนน</li>
+            <li>สายลับทายคำของทุกคนถูก: ได้อีก 1 คะแนน</li>
+          </ul>
+          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
+          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `<p class="hint">ส่งรหัสห้องให้เพื่อน แล้วกดเริ่มเมื่อครบ (อย่างน้อย 3 คน)</p>
-               <button id="start" ${v.players.length < 3 ? "disabled" : ""}>เริ่มเกม</button>`
+               <button id="start" ${enough ? "" : "disabled"}>เริ่มเกม</button>`
             : `<p class="hint">รอคนสร้างห้องกดเริ่มเกม</p>`}`;
-        if (v.isHost) app.querySelector("#start").onclick = startRound;
+        if (v.isHost) {
+          app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
+          app.querySelector("#start").onclick = () => send({ t: "start" });
+        }
         return;
       }
 
       if (v.screen === "word") {
+        if (!v.inRound) {
+          app.innerHTML = `${header}<p class="hint">รอบนี้เริ่มไปแล้ว รอเล่นรอบถัดไป</p>`;
+          return;
+        }
         app.innerHTML = `
           ${header}
           <h2>คำของคุณ</h2>
           <p class="word">${esc(v.word)}</p>
-          <p class="hint">ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ แล้วโหวตกันว่าใครคือสายลับ สายลับอาจเป็นคุณก็ได้</p>
-          ${v.isHost ? `<button id="reveal">เฉลย</button>` : `<p class="hint">รอคนสร้างห้องกดเฉลย</p>`}`;
-        if (v.isHost) app.querySelector("#reveal").onclick = revealRound;
+          <p class="hint">ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ แล้วโหวตว่าใครคือสายลับ สายลับอาจเป็นคุณก็ได้</p>
+          ${v.myVote
+            ? `<p>คุณโหวต ${esc(v.myVote)} แล้ว</p>`
+            : `<h2>โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
+          <p class="hint">โหวตแล้ว ${v.voted}/${v.voters} คน</p>`;
+        app.querySelectorAll(".vote").forEach((b) => (b.onclick = () => send({ t: "vote", target: b.dataset.id })));
         return;
       }
 
-      if (v.screen === "reveal") {
-        const r = v.reveal;
+      const result = `
+        <h2>สายลับคือ</h2>
+        <p class="word spy">${esc(v.spyName)}</p>
+        <p>${v.caught ? "จับสายลับได้" : "สายลับรอด"}</p>
+        <ul class="hint">${v.tally.map((t) => `<li class="row"><span>${esc(t.name)}</span><span>${t.n} โหวต</span></li>`).join("")}</ul>`;
+
+      if (v.screen === "guess") {
         app.innerHTML = `
-          ${header}
-          <h2>สายลับคือ</h2>
-          <p class="word spy">${esc(r.spy)}</p>
-          <ul>
-            <li>คำของทุกคน: ${esc(r.common)}</li>
-            <li>คำของสายลับ: ${esc(r.spyWord)}</li>
-          </ul>
-          ${v.isHost
-            ? `<button id="again" ${v.players.length < 3 ? "disabled" : ""}>เริ่มรอบใหม่</button>`
-            : `<p class="hint">รอคนสร้างห้องเริ่มรอบใหม่</p>`}`;
-        if (v.isHost) app.querySelector("#again").onclick = startRound;
+          ${header}${result}
+          ${v.isSpy
+            ? `<label for="guess">ทายคำของทุกคน ถ้าถูกได้อีก 1 คะแนน</label>
+               <input id="guess" maxlength="40" autocomplete="off">
+               <button id="send-guess">ส่งคำตอบ</button>`
+            : `<p class="hint">รอ ${esc(v.spyName)} ทายคำของทุกคน</p>`}`;
+        if (v.isSpy) app.querySelector("#send-guess").onclick = () => send({ t: "guess", text: app.querySelector("#guess").value });
+        return;
       }
+
+      // score / over
+      app.innerHTML = `
+        ${header}
+        ${v.screen === "over" ? `<h2>ผู้ชนะ</h2><p class="word">${v.winners.map(esc).join(", ")}</p>` : ""}
+        ${result}
+        <ul>
+          <li>คำของทุกคน: ${esc(v.common)}</li>
+          <li>คำของสายลับ: ${esc(v.spyWord)}</li>
+          <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายคำ" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? "ถูก" : "ผิด"}`}</li>
+        </ul>
+        <div style="margin-top: 24px">${scoreboard(v)}</div>
+        ${v.isHost
+          ? v.screen === "over"
+            ? `<button id="newgame">เล่นเกมใหม่</button>`
+            : `<button id="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
+          : `<p class="hint">รอคนสร้างห้อง${v.screen === "over" ? "เริ่มเกมใหม่" : "เริ่มรอบต่อไป"}</p>`}`;
+      if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+      if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
     }
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
