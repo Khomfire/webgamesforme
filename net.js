@@ -1,167 +1,90 @@
-// ห้องเล่นออนไลน์ผ่าน Supabase Realtime: ทุกข้อความวิ่งผ่าน server เลยเล่นได้ทุกเครือข่าย
-// (เดิมใช้ PeerJS ต่อตรงระหว่างเครื่อง ซึ่งต่อไม่ติดเมื่อเน็ตคนละเครือข่าย)
-// หน้าตาเหมือน PeerJS ส่วนที่เกมใช้: new Peer(id) = สร้างห้อง, new Peer() แล้ว connect(id) = เข้าห้อง
-// ทุกเครื่องในห้องอยู่ใน channel เดียวกัน presence บอกว่าใครยังอยู่ broadcast ส่งข้อความ
-const sb = supabase.createClient("https://btbgeqlsbtdofucjajfv.supabase.co", "sb_publishable_ThWhcYubEIjJ0qsz6utF7w_rQP-6ftx");
+// ต่อห้องเกมที่ server (Supabase Edge Function "game" เป็นตัวคุมเกม)
+// ส่งคำสั่งด้วย fetch แล้วรับสถานะของตัวเองทางช่อง Realtime "p:<token>" ที่รู้แค่เครื่องนี้
+// ช่อง "r:<code>" ใช้ presence ดูว่าใครยังอยู่ ใครหลุดนานเกิน GRACE ก็แจ้ง server ให้เอาออก
+const SUPABASE_URL = "https://btbgeqlsbtdofucjajfv.supabase.co";
+const sb = supabase.createClient(SUPABASE_URL, "sb_publishable_ThWhcYubEIjJ0qsz6utF7w_rQP-6ftx");
+const GAME_FN = SUPABASE_URL + "/functions/v1/game";
 const GRACE = 60000; // เน็ตหลุดชั่วคราว (เช่นสลับแอปไปส่งรหัส) รอให้กลับมาก่อนถือว่าออก
 
-class Emitter {
-  constructor() { this.handlers = {}; }
-  on(e, f) { (this.handlers[e] ||= []).push(f); return this; }
-  once(e, f) {
-    const g = (...a) => { this.handlers[e] = this.handlers[e].filter((h) => h !== g); f(...a); };
-    return this.on(e, g);
-  }
-  emit(e, ...a) { (this.handlers[e] || []).slice().forEach((f) => f(...a)); }
-}
+// onView(view) ทุกครั้งที่สถานะเปลี่ยน, onError(ข้อความ) เมื่อเข้าห้องไม่ได้หรือไม่ได้อยู่ในห้องแล้ว
+function openRoom(game, onView, onError) {
+  const token = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  let code = null, seq = -1, last = "", closed = false, inRoom = false, watch = null;
+  const timers = new Map();
 
-class Conn extends Emitter {
-  constructor(owner, peer) { super(); this.owner = owner; this.peer = peer; this.open = false; }
-  send(data) { if (this.open) this.owner.post(this.peer, data); }
-  close() {
-    if (!this.open) return;
-    this.open = false;
-    this.emit("close");
-  }
-}
+  const close = (error) => {
+    if (closed) return;
+    closed = true;
+    timers.forEach(clearTimeout);
+    sb.removeChannel(mine);
+    if (watch) sb.removeChannel(watch);
+    if (error) onError(error);
+  };
 
-class Peer extends Emitter {
-  constructor(id) {
-    super();
-    this.destroyed = false;
-    this.conns = new Map();  // host: ผู้เล่นแต่ละคน, เพื่อน: ห้องที่เข้า
-    this.timers = new Map(); // คนที่หลุดไป รอดูว่าจะกลับมาไหม
-    if (id) {
-      this.id = id;
-      this.join(id, true);
-    } else {
-      this.id = "p" + Math.random().toString(36).slice(2, 10);
-      setTimeout(() => this.emit("open", this.id));
+  // สถานะเดียวกันมาทั้งทางคำตอบของ fetch และทาง Realtime ใช้อันแรก ไม่วาดซ้ำ (วาดซ้ำจะตัดแอนิเมชันกลางคัน)
+  const apply = (v) => {
+    const json = JSON.stringify(v);
+    if (closed || v.seq < seq || json === last) return; // มาช้ากว่าสถานะที่มีอยู่แล้ว หรือซ้ำ
+    seq = v.seq;
+    last = json;
+    code = v.code;
+    inRoom = true;
+    if (!watch) watchRoom(v.me);
+    onView(v);
+  };
+
+  // ส่งเป็น text/plain เบราว์เซอร์จะไม่ต้องถามก่อนส่ง (ไม่มี CORS preflight) เร็วขึ้นหนึ่งรอบ
+  const call = async (msg) => {
+    if (closed) return;
+    try {
+      const res = await fetch(GAME_FN, { method: "POST", body: JSON.stringify({ game, code, token, msg }), signal: AbortSignal.timeout(15000) });
+      const out = await res.json();
+      if (out.view) apply(out.view);
+      else if (out.error) close(out.error);
+    } catch {
+      if (!inRoom) close("เชื่อมต่อไม่สำเร็จ"); // ระหว่างเล่น เน็ตหลุดแป๊บเดียวไม่ต้องออก กดใหม่ได้
     }
-  }
+  };
 
-  connect(room) {
-    const conn = new Conn(this, room);
-    this.conns.set(room, conn);
-    this.join(room, false);
-    return conn;
-  }
+  const mine = sb.channel("p:" + token).on("broadcast", { event: "view" }, ({ payload }) => apply(payload));
+  let first = true;
+  const ready = new Promise((resolve) => mine.subscribe((status) => {
+    if (status !== "SUBSCRIBED") return;
+    if (first) { first = false; resolve(); }
+    else if (inRoom) call({ t: "sync" }); // ต่อกลับมาหลังเน็ตหลุด ขอสถานะล่าสุดที่อาจพลาดไป
+  }));
+  setTimeout(() => first && close("เชื่อมต่อไม่สำเร็จ"), 15000);
 
-  join(room, isHost) {
-    this.room = room;
-    this.isHost = isHost;
-    const ch = (this.ch = sb.channel(room, { config: { presence: { key: this.id } } }));
-    const here = (key) => key in ch.presenceState();
-    let checked = false, first = true;
-    // ดูครั้งแรกว่ามีห้องนี้อยู่แล้วไหม (host คือคนที่ใช้รหัสห้องเป็น presence key)
-    const check = () => {
-      if (checked || this.destroyed) return;
-      checked = true;
-      if (isHost) {
-        if (here(room)) return this.fail("unavailable-id");
-        ch.track({});
-        this.emit("open", this.id);
-      } else if (here(room)) {
-        this.enter();
-      } else {
-        this.lookup = setTimeout(() => this.fail("peer-unavailable"), 3000);
-      }
-    };
-    ch.on("presence", { event: "sync" }, check)
-      .on("presence", { event: "join" }, ({ key }) => this.seen(key))
-      .on("presence", { event: "leave" }, ({ key }) => this.gone(key))
-      .on("broadcast", { event: "m" }, ({ payload }) => this.receive(payload))
+  function watchRoom(me) {
+    watch = sb.channel("r:" + code, { config: { presence: { key: me } } });
+    let joined = false;
+    watch
+      .on("presence", { event: "join" }, ({ key }) => { clearTimeout(timers.get(key)); timers.delete(key); })
+      .on("presence", { event: "leave" }, ({ key }) => {
+        if (key === me || timers.has(key)) return;
+        timers.set(key, setTimeout(() => {
+          timers.delete(key);
+          if (!(key in watch.presenceState())) call({ t: "gone", id: key });
+        }, GRACE));
+      })
       .subscribe((status) => {
-        if (status !== "SUBSCRIBED" || this.destroyed) return;
-        if (first) {
-          first = false;
-          setTimeout(check, 2000); // ปกติ presence sync มาก่อนแล้ว กันไว้เผื่อไม่มา
-        } else if (checked) {
-          // ต่อกลับมาหลังเน็ตหลุด: บอกว่ายังอยู่ แล้วขอสถานะล่าสุดที่อาจพลาดไป
-          ch.track({});
-          if (!isHost) this.post(room, { t: "sync" });
-        }
+        if (status !== "SUBSCRIBED") return;
+        watch.track({});
+        if (joined) call({ t: "sync" });
+        joined = true;
       });
   }
 
-  enter() {
-    clearTimeout(this.lookup);
-    const conn = this.conns.get(this.room);
-    if (!conn || conn.open) return;
-    this.ch.track({});
-    conn.open = true;
-    conn.emit("open");
-  }
-
-  seen(key) {
-    if (!this.isHost && key === this.room && this.lookup) this.enter();
-    if (this.timers.has(key)) {
-      clearTimeout(this.timers.get(key));
-      this.timers.delete(key);
-      if (!this.isHost) this.post(this.room, { t: "sync" }); // host กลับมา ขอสถานะล่าสุด
-    }
-  }
-
-  gone(key) {
-    if (!this.conns.has(key) || this.timers.has(key)) return;
-    this.timers.set(key, setTimeout(() => {
-      this.timers.delete(key);
-      if (!(key in this.ch.presenceState())) this.drop(key);
-    }, GRACE));
-  }
-
-  drop(key) {
-    const conn = this.conns.get(key);
-    this.conns.delete(key);
-    if (conn) conn.close();
-  }
-
-  receive({ from, to, data, batch, bye }) {
-    if (this.destroyed) return;
-    if (this.isHost) {
-      if (to !== this.id) return;
-      if (bye) return this.drop(from);
-      let conn = this.conns.get(from);
-      if (!conn) {
-        conn = new Conn(this, from);
-        conn.open = true;
-        this.conns.set(from, conn);
-        this.emit("connection", conn);
-      }
-      conn.emit("data", data);
-    } else if (from === this.room) {
-      if (bye) return this.drop(from);
-      const conn = this.conns.get(from);
-      for (const d of (batch && batch[this.id]) || []) if (conn && conn.open) conn.emit("data", d);
-    }
-  }
-
-  // host รวมข้อความถึงทุกคนในจังหวะเดียวกันเป็น broadcast เดียว ประหยัดโควตาข้อความ
-  post(to, data) {
-    if (!this.isHost) return this.ch.send({ type: "broadcast", event: "m", payload: { from: this.id, to, data } });
-    if (!this.queue) {
-      this.queue = {};
-      queueMicrotask(() => {
-        const batch = this.queue;
-        this.queue = null;
-        this.ch.send({ type: "broadcast", event: "m", payload: { from: this.id, batch } });
-      });
-    }
-    (this.queue[to] ||= []).push(data);
-  }
-
-  fail(type) {
-    this.emit("error", Object.assign(new Error(type), { type }));
-    this.destroy(true);
-  }
-
-  destroy(silent) {
-    if (this.destroyed) return;
-    this.destroyed = true;
-    clearTimeout(this.lookup);
-    this.timers.forEach(clearTimeout);
-    if (!this.ch) return;
-    if (!silent) this.ch.send({ type: "broadcast", event: "m", payload: { from: this.id, to: this.room, bye: true } });
-    sb.removeChannel(this.ch);
-  }
+  return {
+    // รอให้ช่องรับสถานะพร้อมก่อน จะได้ไม่พลาดสถานะแรก
+    create: (name) => ready.then(() => call({ t: "create", name })),
+    join: (roomCode, name) => { code = roomCode; return ready.then(() => call({ t: "join", name })); },
+    send: (msg) => call(msg),
+    // ออกจากหน้าเกม: sendBeacon ส่งได้แม้หน้ากำลังปิด
+    leave() {
+      if (closed) return;
+      if (inRoom) navigator.sendBeacon(GAME_FN, JSON.stringify({ game, code, token, msg: { t: "leave" } }));
+      close();
+    },
+  };
 }

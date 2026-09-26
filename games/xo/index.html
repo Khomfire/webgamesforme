@@ -180,11 +180,8 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script>
-    const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
-    const ID_PREFIX = "wgfm-xo-";
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-    const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
@@ -192,129 +189,13 @@
     let view = { screen: "home" };
     function show(next) { view = { ...view, ...next }; render(); }
 
-    let peer, hostConn, leaving = false;
-    const send = (msg) => (hostConn ? hostConn.send(msg) : handle("host", msg));
-
-    // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
-    const players = new Map(); // id -> { name, score, conn }  host เป็น X เพื่อนเป็น O
-    let game;                  // { code, target, phase, board, turn, first, winner, line, ready }
-
-    function hostRoom(name) {
-      const code = newCode();
-      peer = new Peer(ID_PREFIX + code);
-      hostConn = null;
-      let opened = false;
-      peer.once("open", () => {
-        opened = true;
-        players.set("host", { name, score: 0 });
-        game = { code, target: 3, phase: "lobby" };
-        broadcast();
-      });
-      peer.on("error", (e) => {
-        if (e.type === "unavailable-id") hostRoom(name);
-        else if (!opened) show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" });
-      });
-      peer.on("connection", (conn) => {
-        conn.on("data", (msg) => handle(conn.peer, msg, conn));
-        conn.on("close", () => {
-          if (!players.delete(conn.peer)) return;
-          // เพื่อนออก กลับไปรอคนใหม่ เริ่มนับคะแนนใหม่
-          players.get("host").score = 0;
-          game.phase = "lobby";
-          broadcast();
-        });
-      });
-    }
-
-    function handle(id, msg, conn) {
-      if (msg.t === "join") {
-        const name = String(msg.name).trim().slice(0, 20);
-        if (players.size >= 2) return conn.send({ t: "rejected", reason: "ห้องเต็ม" });
-        if (!name || players.get("host").name === name) return conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
-        players.set(id, { name, score: 0, conn });
-      }
-      if (!players.has(id)) return;
-      if (msg.t === "move" && game.phase === "play" && game.turn === id && game.board[msg.i] === null) {
-        game.board[msg.i] = mark(id);
-        const line = LINES.find((l) => l.every((i) => game.board[i] === mark(id)));
-        if (line) {
-          game.phase = "end";
-          game.winner = id;
-          game.line = line;
-          players.get(id).score++;
-          if (players.get(id).score >= game.target) game.phase = "over";
-        } else if (game.board.every(Boolean)) {
-          game.phase = "end";
-        } else {
-          game.turn = other(id);
-        }
-      }
-      if (msg.t === "ready" && game.phase === "end") {
-        game.ready.add(id);
-        if (game.ready.size === 2) startRound();
-      }
-      if (id === "host") {
-        if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 3));
-        if (msg.t === "start" && game.phase === "lobby" && players.size === 2) {
-          game.first = other("host"); // สลับตอนเริ่มรอบ host จึงได้เริ่มก่อน
-          startRound();
-        }
-        if (msg.t === "newgame" && game.phase === "over") {
-          for (const p of players.values()) p.score = 0;
-          game.phase = "lobby";
-        }
-      }
-      broadcast();
-    }
-
-    const mark = (id) => (id === "host" ? "X" : "O");
-    const other = (id) => [...players.keys()].find((x) => x !== id);
-
-    function startRound() {
-      game.first = other(game.first);
-      Object.assign(game, { phase: "play", board: Array(9).fill(null), turn: game.first, winner: null, line: [], ready: new Set() });
-    }
-
-    function viewFor(id) {
-      const v = {
-        screen: game.phase, code: game.code, target: game.target, isHost: id === "host",
-        players: [...players].map(([pid, p]) => ({ name: p.name, score: p.score, mark: mark(pid) })),
-      };
-      if (game.phase !== "lobby") {
-        Object.assign(v, {
-          board: game.board, line: game.line, myTurn: game.phase === "play" && game.turn === id,
-          turnName: players.get(game.turn).name, turnMark: mark(game.turn),
-          winner: game.winner && players.get(game.winner).name, won: game.winner === id, lost: !!game.winner && game.winner !== id,
-          ready: game.ready.has(id), readyCount: game.ready.size,
-        });
-      }
-      return v;
-    }
-
-    function broadcast() {
-      for (const [id, p] of players) {
-        if (id === "host") { view = viewFor("host"); render(); }
-        else p.conn.send({ t: "state", view: viewFor(id) });
-      }
-    }
-
-    // ---------- เพื่อนที่เข้าห้อง ----------
-    function joinRoom(name, code) {
-      const p = (peer = new Peer());
-      hostConn = null;
-      const fail = (error) => { leaving = true; p.destroy(); show({ screen: "home", error }); };
-      peer.on("open", () => {
-        const conn = peer.connect(ID_PREFIX + code, { reliable: true });
-        conn.on("open", () => conn.send({ t: "join", name }));
-        conn.on("data", (msg) => {
-          if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
-          if (msg.t === "rejected") fail(msg.reason);
-        });
-        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
-      });
-      peer.on("error", (e) => hostConn || fail(e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ"));
-      // เจอห้องแต่เจ้าของห้องไม่ตอบ บอกแทนการค้าง
-      setTimeout(() => hostConn || p.destroyed || fail("ต่อเครื่องเจ้าของห้องไม่ติด"), 15000);
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code) {
+      room = openRoom("xo", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }));
+      if (code) room.join(code, name);
+      else room.create(name);
     }
 
     // ---------- หน้าจอ ----------
@@ -352,7 +233,7 @@
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
           saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
-          hostRoom(name);
+          enter(name);
         };
         // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
         app.querySelector("#paste").onclick = () => {
@@ -368,8 +249,7 @@
           saveName(name);
           if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
           app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
-          leaving = false;
-          joinRoom(name, code);
+          enter(name, code);
         };
         return;
       }
@@ -440,7 +320,7 @@
     document.getElementById("winner-close").onclick = () => winner.close();
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
-    window.addEventListener("pagehide", () => peer && peer.destroy());
+    window.addEventListener("pagehide", () => room && room.leave());
 
     render();
   </script>

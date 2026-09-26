@@ -190,229 +190,23 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script>
-    // สถานที่และบทบาท: ทุกคนได้สถานที่เดียวกัน คนละบทบาท สายลับไม่รู้สถานที่
-    const LOCATIONS = [
-      { name: "โรงพยาบาล", roles: ["หมอ", "พยาบาล", "คนไข้", "ญาติคนไข้", "เภสัชกร", "รปภ.", "แม่บ้าน"] },
-      { name: "โรงเรียน", roles: ["ครู", "นักเรียน", "ผู้อำนวยการ", "ภารโรง", "แม่ค้าโรงอาหาร", "ผู้ปกครอง", "หัวหน้าห้อง"] },
-      { name: "ห้างสรรพสินค้า", roles: ["พนักงานขาย", "ลูกค้า", "รปภ.", "แคชเชียร์", "แม่บ้าน", "ผู้จัดการ", "เด็กหลงทาง"] },
-      { name: "ตลาดนัด", roles: ["แม่ค้าส้มตำ", "ลูกค้า", "คนเก็บค่าที่", "นักดนตรีเปิดหมวก", "คนขายเสื้อผ้า", "วินมอเตอร์ไซค์", "นักท่องเที่ยว"] },
-      { name: "สนามบิน", roles: ["นักบิน", "แอร์โฮสเตส", "ผู้โดยสาร", "เจ้าหน้าที่ ตม.", "คนขนกระเป๋า", "เจ้าหน้าที่เช็กอิน", "คนมารับ"] },
-      { name: "ชายหาด", roles: ["ไลฟ์การ์ด", "นักท่องเที่ยว", "คนขายมะพร้าว", "คนนวด", "ชาวประมง", "คนเล่นเซิร์ฟ", "เด็กก่อปราสาททราย"] },
-      { name: "โรงหนัง", roles: ["คนขายตั๋ว", "คนขายป๊อปคอร์น", "คนดู", "พนักงานฉายหนัง", "คู่เดต", "แม่บ้าน", "นักวิจารณ์หนัง"] },
-      { name: "ร้านกาแฟ", roles: ["บาริสต้า", "ลูกค้า", "เจ้าของร้าน", "ฟรีแลนซ์นั่งทำงาน", "คนส่งของ", "นักศึกษาอ่านหนังสือ", "บล็อกเกอร์"] },
-      { name: "สถานีตำรวจ", roles: ["ตำรวจ", "ผู้ต้องหา", "ผู้เสียหาย", "ทนาย", "นักข่าว", "สารวัตร", "พยาน"] },
-      { name: "วัด", roles: ["พระ", "เณร", "คนมาทำบุญ", "แม่ชี", "นักท่องเที่ยว", "คนขายดอกไม้ธูปเทียน", "มัคนายก"] },
-      { name: "สวนสัตว์", roles: ["ผู้ดูแลสัตว์", "สัตวแพทย์", "นักท่องเที่ยว", "ครูพาเด็กมาทัศนศึกษา", "คนขายไอติม", "ช่างภาพ", "ไกด์"] },
-      { name: "ฟิตเนส", roles: ["เทรนเนอร์", "สมาชิกมือใหม่", "นักเพาะกาย", "พนักงานต้อนรับ", "ครูโยคะ", "แม่บ้าน", "คนมาลดน้ำหนัก"] },
-      { name: "ร้านหมูกระทะ", roles: ["เจ้าของร้าน", "พนักงานเสิร์ฟ", "ลูกค้าวัยรุ่น", "คนเติมถ่าน", "นักร้องเวที", "แคชเชียร์", "คนล้างจาน"] },
-      { name: "คอนเสิร์ต", roles: ["นักร้อง", "มือกลอง", "แฟนคลับ", "การ์ด", "ซาวด์เอนจิเนียร์", "ช่างภาพ", "คนขายของที่ระลึก"] },
-      { name: "โรงแรม", roles: ["พนักงานต้อนรับ", "แขก", "แม่บ้าน", "เชฟ", "เบลบอย", "ผู้จัดการ", "คนขับรถรับส่ง"] },
-      { name: "รถไฟ", roles: ["พนักงานขับรถไฟ", "พนักงานตรวจตั๋ว", "ผู้โดยสาร", "คนขายข้าวกล่อง", "นักท่องเที่ยวต่างชาติ", "ตำรวจรถไฟ", "นักเรียน"] },
-      { name: "ธนาคาร", roles: ["พนักงานธนาคาร", "ลูกค้า", "รปภ.", "ผู้จัดการสาขา", "โจรปล้นธนาคาร", "พนักงานเติมเงินตู้", "ที่ปรึกษาการเงิน"] },
-      { name: "ร้านตัดผม", roles: ["ช่างตัดผม", "ลูกค้า", "เด็กสระผม", "เจ้าของร้าน", "ลูกค้ารอคิว", "ช่างทำเล็บ", "เซลส์ขายน้ำยา"] },
-      { name: "สนามฟุตบอล", roles: ["นักเตะ", "ผู้รักษาประตู", "กรรมการ", "โค้ช", "แฟนบอล", "นักพากย์", "คนขายน้ำ"] },
-      { name: "เรือสำราญ", roles: ["กัปตัน", "ลูกเรือ", "นักท่องเที่ยว", "เชฟ", "นักร้องในเรือ", "หมอประจำเรือ", "คู่ฮันนีมูน"] },
-    ];
-    const ID_PREFIX = "wgfm-spy-";
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-    const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
-    // สถานะที่หน้าจอใช้วาด (host ส่งมาให้ทุกเครื่อง แต่ละคนได้เฉพาะข้อมูลที่ตัวเองควรเห็น)
+    // สถานะที่หน้าจอใช้วาด (server ส่งมาให้ทุกเครื่อง แต่ละคนได้เฉพาะข้อมูลที่ตัวเองควรเห็น)
     let view = { screen: "home" };
     function show(next) { view = { ...view, ...next }; render(); }
 
-    let peer, hostConn, leaving = false;
-    // ส่งคำสั่งไปหา host (ถ้าเราเป็น host ก็จัดการเองเลย)
-    const send = (msg) => (hostConn ? hostConn.send(msg) : handle("host", msg));
-
-    // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
-    const players = new Map(); // id -> { name, score, conn }  id "host" คือคนสร้างห้อง
-    let game;                  // { code, target, minutes, phase, round }
-    let voteTimer;             // หมดเวลาถามตอบแล้วเปิดโหวต
-
-    function hostRoom(name) {
-      const code = newCode();
-      peer = new Peer(ID_PREFIX + code);
-      hostConn = null;
-      let opened = false;
-      peer.once("open", () => {
-        opened = true;
-        players.set("host", { name, score: 0 });
-        game = { code, target: 5, minutes: 5, phase: "lobby", round: null };
-        broadcast();
-      });
-      peer.on("error", (e) => {
-        if (e.type === "unavailable-id") hostRoom(name);
-        else if (!opened) show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" });
-      });
-      peer.on("connection", (conn) => {
-        conn.on("data", (msg) => handle(conn.peer, msg, conn));
-        conn.on("close", () => {
-          players.delete(conn.peer);
-          if (game.phase === "guess" && game.round.spy === conn.peer) finishGuess(null);
-          else countVotes();
-          checkReady();
-          broadcast();
-        });
-      });
-    }
-
-    function handle(id, msg, conn) {
-      const r = game.round;
-      if (msg.t === "join") {
-        const name = String(msg.name).trim().slice(0, 20);
-        if (!name || [...players.values()].some((p) => p.name === name)) {
-          conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
-          return;
-        }
-        players.set(id, { name, score: 0, conn });
-      }
-      if (!players.has(id)) return;
-      if (msg.t === "vote" && game.phase === "word" && r.voting && r.ids.includes(id) && r.ids.includes(msg.target) && msg.target !== id) {
-        r.votes.set(id, msg.target);
-        countVotes();
-      }
-      if (msg.t === "guess" && game.phase === "guess" && id === r.spy) finishGuess(String(msg.text));
-      if (msg.t === "ready" && game.phase === "score") { r.ready.add(id); checkReady(); }
-      if (id === "host") {
-        if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 5));
-        if (msg.t === "minutes") game.minutes = Math.min(15, Math.max(1, Math.round(Number(msg.value)) || 5));
-        if (msg.t === "start" && game.phase === "lobby" && players.size >= 3) startRound();
-        if (msg.t === "skip" && game.phase === "word") { clearTimeout(voteTimer); r.voting = true; }
-        if (msg.t === "newgame") {
-          for (const p of players.values()) p.score = 0;
-          clearTimeout(voteTimer);
-          game.phase = "lobby";
-          game.round = null;
-        }
-      }
-      broadcast();
-    }
-
-    function startRound() {
-      const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
-      const roles = [...location.roles].sort(() => Math.random() - 0.5);
-      const ids = [...players.keys()];
-      game.round = {
-        ids, location: location.name,
-        roles: new Map(ids.map((id, i) => [id, roles[i % roles.length]])),
-        spy: ids[Math.floor(Math.random() * ids.length)],
-        names: new Map(ids.map((id) => [id, players.get(id).name])),
-        votes: new Map(), tally: new Map(), gains: new Map(), ready: new Set(),
-        endsAt: Date.now() + game.minutes * 60000, voting: false,
-      };
-      game.phase = "word";
-      const r = game.round;
-      clearTimeout(voteTimer);
-      voteTimer = setTimeout(() => { r.voting = true; broadcast(); }, game.minutes * 60000);
-    }
-
-    // รอบต่อไปเริ่มเมื่อทุกคนที่อยู่ในห้องกดพร้อมครบ
-    function checkReady() {
-      if (game.phase !== "score" || players.size < 3) return;
-      if ([...players.keys()].every((id) => game.round.ready.has(id))) startRound();
-    }
-
-    function addPoint(id) {
-      const p = players.get(id);
-      if (!p) return;
-      p.score++;
-      game.round.gains.set(id, (game.round.gains.get(id) || 0) + 1);
-    }
-
-    // นับโหวตเมื่อทุกคนที่ยังอยู่ในรอบโหวตครบ: ได้โหวตมากสุดคนเดียวและเป็นสายลับ = จับได้, เสมอ = สายลับรอด
-    function countVotes() {
-      const r = game.round;
-      if (game.phase !== "word") return;
-      const voters = r.ids.filter((id) => players.has(id));
-      if (voters.some((id) => !r.votes.has(id))) return;
-      for (const v of voters) r.tally.set(r.votes.get(v), (r.tally.get(r.votes.get(v)) || 0) + 1);
-      const max = Math.max(...r.tally.values());
-      const top = [...r.tally].filter(([, n]) => n === max);
-      r.caught = top.length === 1 && top[0][0] === r.spy;
-      if (r.caught) voters.filter((id) => id !== r.spy).forEach(addPoint);
-      else addPoint(r.spy);
-      if (players.has(r.spy)) game.phase = "guess";
-      else finishGuess(null);
-    }
-
-    function finishGuess(text) {
-      const r = game.round;
-      r.guess = text;
-      r.correct = text === r.location;
-      if (r.correct) addPoint(r.spy);
-      const top = Math.max(...[...players.values()].map((p) => p.score));
-      game.phase = top >= game.target ? "over" : "score";
-    }
-
-    function viewFor(id) {
-      const r = game.round;
-      const phase = game.phase;
-      const v = {
-        screen: phase, code: game.code, target: game.target, minutes: game.minutes, isHost: id === "host",
-        inRound: !!r && r.ids.includes(id),
-        players: [...players].map(([pid, p]) => ({ name: p.name, score: p.score, gain: (r && r.gains.get(pid)) || 0 })),
-      };
-      if (phase === "word" && v.inRound) {
-        const voters = r.ids.filter((x) => players.has(x));
-        v.isSpy = id === r.spy;
-        if (!v.isSpy) { v.location = r.location; v.role = r.roles.get(id); }
-        v.candidates = voters.filter((x) => x !== id).map((x) => ({ id: x, name: r.names.get(x) }));
-        v.myVote = r.votes.has(id) ? r.names.get(r.votes.get(id)) : null;
-        v.voted = voters.filter((x) => r.votes.has(x)).length;
-        v.voters = voters.length;
-        v.voting = r.voting;
-        v.endsIn = r.endsAt - Date.now();
-      }
-      if (phase === "guess" || phase === "score" || phase === "over") {
-        v.spyName = r.names.get(r.spy);
-        v.isSpy = id === r.spy;
-        v.caught = r.caught;
-        v.tally = [...r.tally].map(([t, n]) => ({ name: r.names.get(t), n })).sort((a, b) => b.n - a.n);
-      }
-      // เฉลยสถานที่หลังสายลับทายเสร็จแล้วเท่านั้น
-      if (phase === "score" || phase === "over") {
-        v.location = r.location;
-        v.guess = r.guess;
-        v.correct = r.correct;
-        v.ready = r.ready.has(id);
-        v.readyCount = [...players.keys()].filter((x) => r.ready.has(x)).length;
-      }
-      if (phase === "over") {
-        const top = Math.max(...v.players.map((p) => p.score));
-        v.winners = v.players.filter((p) => p.score === top).map((p) => p.name);
-      }
-      return v;
-    }
-
-    function broadcast() {
-      for (const [id, p] of players) {
-        if (id === "host") { view = viewFor("host"); render(); }
-        else p.conn.send({ t: "state", view: viewFor(id) });
-      }
-    }
-
-    // ---------- เพื่อนที่เข้าห้อง ----------
-    function joinRoom(name, code) {
-      const p = (peer = new Peer());
-      hostConn = null;
-      const fail = (error) => { leaving = true; p.destroy(); show({ screen: "home", error }); };
-      peer.on("open", () => {
-        const conn = peer.connect(ID_PREFIX + code, { reliable: true });
-        conn.on("open", () => conn.send({ t: "join", name }));
-        conn.on("data", (msg) => {
-          if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
-          if (msg.t === "rejected") fail(msg.reason);
-        });
-        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
-      });
-      peer.on("error", (e) => hostConn || fail(e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ"));
-      // เจอห้องแต่เจ้าของห้องไม่ตอบ บอกแทนการค้าง
-      setTimeout(() => hostConn || p.destroyed || fail("ต่อเครื่องเจ้าของห้องไม่ติด"), 15000);
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code) {
+      room = openRoom("spy", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }));
+      if (code) room.join(code, name);
+      else room.create(name);
     }
 
     // ---------- หน้าจอ ----------
@@ -424,16 +218,22 @@
 
     // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
     const crossed = new Set();
-    const placeButtons = (cls, sfx = "") => LOCATIONS.map((l) =>
-      `<button class="${cls}${crossed.has(l.name) ? " crossed" : ""}" data-sfx="${sfx}" data-name="${esc(l.name)}">${esc(l.name)}</button>`).join("");
+    const placeButtons = (cls, sfx = "") => view.places.map((name) =>
+      `<button class="${cls}${crossed.has(name) ? " crossed" : ""}" data-sfx="${sfx}" data-name="${esc(name)}">${esc(name)}</button>`).join("");
 
-    // นาฬิกานับถอยหลังคิดจากเวลาที่เหลือที่ host ส่งมา จึงไม่ขึ้นกับนาฬิกาของแต่ละเครื่อง
+    // นาฬิกานับถอยหลังคิดจากเวลาที่เหลือที่ server ส่งมา จึงไม่ขึ้นกับนาฬิกาของแต่ละเครื่อง
     let deadline = 0;
     const clock = () => {
       const s = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
     };
-    setInterval(() => { const t = document.getElementById("timer"); if (t) t.textContent = clock(); }, 250);
+    // หมดเวลาแล้วขอสถานะใหม่จาก server ครั้งเดียว (server เปิดโหวตตามเวลาของมันเอง)
+    let asked = 0;
+    setInterval(() => {
+      const t = document.getElementById("timer");
+      if (t) t.textContent = clock();
+      if (t && Date.now() >= deadline && asked !== deadline) { asked = deadline; send({ t: "sync" }); }
+    }, 250);
 
     let lastScreen;
     function render() {
@@ -461,7 +261,7 @@
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
           saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
-          hostRoom(name);
+          enter(name);
         };
         // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
         app.querySelector("#paste").onclick = () => {
@@ -477,8 +277,7 @@
           saveName(name);
           if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
           app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
-          leaving = false;
-          joinRoom(name, code);
+          enter(name, code);
         };
         return;
       }
@@ -537,7 +336,7 @@
                <h2>บทบาท</h2>
                <p class="word role">${esc(v.role)}</p>
                <p class="hint">ถามตอบกัน ห้ามพูดชื่อสถานที่</p>
-               <details class="hint"><summary>สถานที่ทั้งหมด</summary>${LOCATIONS.map((l) => esc(l.name)).join(", ")}</details>`}
+               <details class="hint"><summary>สถานที่ทั้งหมด</summary>${v.places.map(esc).join(", ")}</details>`}
           ${!v.voting
             ? `<p class="hint">หมดเวลาแล้วโหวต</p>
                ${v.isHost ? `<button id="skip" data-sfx="next">โหวต</button>` : ""}`
@@ -601,7 +400,7 @@
     document.getElementById("winner-close").onclick = () => winner.close();
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
-    window.addEventListener("pagehide", () => peer && peer.destroy());
+    window.addEventListener("pagehide", () => room && room.leave());
 
     render();
   </script>

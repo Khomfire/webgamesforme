@@ -211,15 +211,13 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script>
-    const ID_PREFIX = "wgfm-farkle-";
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-    const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
-    // แต้มของเต๋าชุดที่เลือก ถ้ามีลูกไหนไม่ได้แต้มคืน 0
+    // แต้มของเต๋าชุดที่เลือก ถ้ามีลูกไหนไม่ได้แต้มคืน 0 (สำเนาจาก supabase/functions/game/farkle.js ไว้โชว์แต้ม ต้องแก้ให้ตรงกัน)
     function score(dice) {
       const c = [0, 0, 0, 0, 0, 0, 0];
       dice.forEach((v) => c[v]++);
@@ -242,172 +240,17 @@
       }
       return Math.max(combo, pts);
     }
-    // ทอยแล้วมีเต๋าที่เก็บแต้มได้อย่างน้อยหนึ่งชุดไหม
-    const canScore = (dice) =>
-      dice.some((v) => v === 1 || v === 5) || [2, 3, 4, 6].some((f) => dice.filter((v) => v === f).length >= 3) || score(dice) > 0;
 
     let view = { screen: "home" };
     function show(next) { view = { ...view, ...next }; render(); }
 
-    let peer, hostConn, leaving = false;
-    const send = (msg) => (hostConn ? hostConn.send(msg) : handle("host", msg));
-
-    // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
-    const players = new Map(); // id -> { name, score, conn }
-    let game;                  // { code, target, phase, order, turn, dice, kept, turnPts, left, rolls, last, final, winners }
-
-    function hostRoom(name) {
-      const code = newCode();
-      peer = new Peer(ID_PREFIX + code);
-      hostConn = null;
-      let opened = false;
-      peer.once("open", () => {
-        opened = true;
-        players.set("host", { name, score: 0 });
-        game = { code, target: 5000, phase: "lobby" };
-        broadcast();
-      });
-      peer.on("error", (e) => {
-        if (e.type === "unavailable-id") hostRoom(name);
-        else if (!opened) show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" });
-      });
-      peer.on("connection", (conn) => {
-        conn.on("data", (msg) => handle(conn.peer, msg, conn));
-        conn.on("close", () => {
-          if (!players.delete(conn.peer)) return;
-          if (game.phase === "play") {
-            const i = game.order.indexOf(conn.peer);
-            game.order.splice(i, 1);
-            if (game.final) game.final.delete(conn.peer);
-            if (game.order.length < 2) {
-              for (const p of players.values()) p.score = 0;
-              game.phase = "lobby";
-            } else if (game.final && game.final.size === 0) {
-              finish();
-            } else if (i < game.turn) {
-              game.turn--;
-            } else if (i === game.turn) {
-              game.turn--;
-              nextTurn();
-            }
-          }
-          broadcast();
-        });
-      });
-    }
-
-    function handle(id, msg, conn) {
-      if (msg.t === "join") {
-        const name = String(msg.name).trim().slice(0, 20);
-        if (game.phase !== "lobby") return conn.send({ t: "rejected", reason: "เกมเริ่มแล้ว" });
-        if (!name || [...players.values()].some((p) => p.name === name)) return conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
-        players.set(id, { name, score: 0, conn });
-      }
-      if (!players.has(id)) return;
-      if (game.phase === "play" && game.order[game.turn] === id && (msg.t === "roll" || msg.t === "bank")) {
-        // เต๋าที่เลือกเก็บต้องได้แต้มทุกลูก ยกเว้นตอนเริ่มตาที่ยังไม่มีเต๋า
-        const keep = [...new Set(msg.keep)].filter((i) => Number.isInteger(i) && i >= 0 && i < game.dice.length);
-        const kept = keep.map((i) => game.dice[i]);
-        const pts = score(kept);
-        if (game.dice.length ? pts > 0 : msg.t === "roll") {
-          game.turnPts += pts;
-          game.kept.push(...kept);
-          game.left -= kept.length;
-          if (msg.t === "roll") roll();
-          else bank();
-        }
-      }
-      if (id === "host") {
-        if (msg.t === "target") game.target = Math.min(20000, Math.max(500, Math.round(Number(msg.value) / 500) * 500 || 5000));
-        if (msg.t === "start" && game.phase === "lobby" && players.size >= 2) {
-          Object.assign(game, { phase: "play", order: [...players.keys()], turn: -1, rolls: 0, last: null, final: null });
-          nextTurn();
-        }
-        if (msg.t === "newgame" && game.phase === "over") {
-          for (const p of players.values()) p.score = 0;
-          game.phase = "lobby";
-        }
-      }
-      broadcast();
-    }
-
-    function nextTurn() {
-      game.turn = (game.turn + 1) % game.order.length;
-      Object.assign(game, { dice: [], kept: [], turnPts: 0, left: 6 });
-    }
-
-    function roll() {
-      if (game.left === 0) { game.left = 6; game.kept = []; } // มีแต้มครบ 6 ลูก ทอยใหม่ทั้งหมด
-      game.dice = Array.from({ length: game.left }, () => 1 + Math.floor(Math.random() * 6));
-      game.rolls++;
-      if (!canScore(game.dice)) {
-        game.last = { name: players.get(game.order[game.turn]).name, dice: game.dice, kept: game.kept, farkle: true, lost: game.turnPts, n: game.rolls };
-        endTurn();
-      }
-    }
-
-    function bank() {
-      const id = game.order[game.turn];
-      const p = players.get(id);
-      p.score += game.turnPts;
-      game.last = { name: p.name, pts: game.turnPts, n: game.rolls };
-      endTurn();
-    }
-
-    // รอบสุดท้าย: คนแรกที่ถึงเป้าหมายจบตาแล้ว คนอื่นได้เล่นอีกคนละตา
-    function endTurn() {
-      const id = game.order[game.turn];
-      if (game.final) game.final.delete(id);
-      else if (players.get(id).score >= game.target) game.final = new Set(game.order.filter((x) => x !== id));
-      if (game.final && game.final.size === 0) finish();
-      else nextTurn();
-    }
-
-    function finish() {
-      const top = Math.max(...[...players.values()].map((p) => p.score));
-      game.phase = "over";
-      game.winners = [...players.values()].filter((p) => p.score === top).map((p) => p.name);
-    }
-
-    function viewFor(id) {
-      const v = {
-        screen: game.phase, code: game.code, target: game.target, isHost: id === "host",
-        players: [...players].map(([pid, p]) => ({ name: p.name, score: p.score, now: game.phase === "play" && game.order[game.turn] === pid })),
-      };
-      if (game.phase !== "lobby") {
-        Object.assign(v, {
-          myTurn: game.phase === "play" && game.order[game.turn] === id,
-          turnName: game.phase === "play" ? players.get(game.order[game.turn]).name : "",
-          dice: game.dice, kept: game.kept, turnPts: game.turnPts, rolls: game.rolls, last: game.last, final: !!game.final, winners: game.winners,
-        });
-      }
-      return v;
-    }
-
-    function broadcast() {
-      for (const [id, p] of players) {
-        if (id === "host") { view = viewFor("host"); render(); }
-        else p.conn.send({ t: "state", view: viewFor(id) });
-      }
-    }
-
-    // ---------- เพื่อนที่เข้าห้อง ----------
-    function joinRoom(name, code) {
-      const p = (peer = new Peer());
-      hostConn = null;
-      const fail = (error) => { leaving = true; p.destroy(); show({ screen: "home", error }); };
-      peer.on("open", () => {
-        const conn = peer.connect(ID_PREFIX + code, { reliable: true });
-        conn.on("open", () => conn.send({ t: "join", name }));
-        conn.on("data", (msg) => {
-          if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
-          if (msg.t === "rejected") fail(msg.reason);
-        });
-        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
-      });
-      peer.on("error", (e) => hostConn || fail(e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ"));
-      // เจอห้องแต่เจ้าของห้องไม่ตอบ บอกแทนการค้าง
-      setTimeout(() => hostConn || p.destroyed || fail("ต่อเครื่องเจ้าของห้องไม่ติด"), 15000);
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code) {
+      room = openRoom("farkle", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }));
+      if (code) room.join(code, name);
+      else room.create(name);
     }
 
     // ---------- หน้าจอ ----------
@@ -503,7 +346,7 @@
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
           saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
-          hostRoom(name);
+          enter(name);
         };
         // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
         app.querySelector("#paste").onclick = () => {
@@ -519,8 +362,7 @@
           saveName(name);
           if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
           app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
-          leaving = false;
-          joinRoom(name, code);
+          enter(name, code);
         };
         return;
       }
@@ -615,7 +457,7 @@
     document.getElementById("winner-close").onclick = () => winner.close();
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
-    window.addEventListener("pagehide", () => peer && peer.destroy());
+    window.addEventListener("pagehide", () => room && room.leave());
 
     render();
   </script>
