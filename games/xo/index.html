@@ -98,6 +98,7 @@
     ul { margin: 0; padding: 0; list-style: none; }
     li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
     .hint { color: var(--dim); }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
     .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 24px; }
     .board button {
@@ -134,11 +135,12 @@
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
-        <li>สร้างห้อง ส่งรหัสให้เพื่อน (2 คน)</li>
+        <li>ตั้งเป้าหมาย ส่งรหัสให้เพื่อน (2 คน)</li>
         <li>ผลัดกันลง X กับ O</li>
         <li>เรียงครบ 3 ช่องก่อนชนะ +1</li>
         <li>สลับกันเริ่มทุกรอบ</li>
       </ol>
+      <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
     <div id="app"></div>
   </main>
@@ -163,14 +165,14 @@
 
     // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
     const players = new Map(); // id -> { name, score, conn }  host เป็น X เพื่อนเป็น O
-    let game;                  // { code, phase, board, turn, first, winner, line, ready }
+    let game;                  // { code, target, phase, board, turn, first, winner, line, ready }
 
     function hostRoom(name) {
       const code = newCode();
       peer = new Peer(ID_PREFIX + code);
       peer.on("open", () => {
         players.set("host", { name, score: 0 });
-        game = { code, phase: "lobby" };
+        game = { code, target: 3, phase: "lobby" };
         broadcast();
       });
       peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" })));
@@ -192,8 +194,6 @@
         if (players.size >= 2) return conn.send({ t: "rejected", reason: "ห้องเต็ม" });
         if (!name || players.get("host").name === name) return conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
         players.set(id, { name, score: 0, conn });
-        game.first = id; // สลับตอนเริ่มรอบ host จึงได้เริ่มก่อน
-        startRound();
       }
       if (!players.has(id)) return;
       if (msg.t === "move" && game.phase === "play" && game.turn === id && game.board[msg.i] === null) {
@@ -204,6 +204,7 @@
           game.winner = id;
           game.line = line;
           players.get(id).score++;
+          if (players.get(id).score >= game.target) game.phase = "over";
         } else if (game.board.every(Boolean)) {
           game.phase = "end";
         } else {
@@ -213,6 +214,17 @@
       if (msg.t === "ready" && game.phase === "end") {
         game.ready.add(id);
         if (game.ready.size === 2) startRound();
+      }
+      if (id === "host") {
+        if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 3));
+        if (msg.t === "start" && game.phase === "lobby" && players.size === 2) {
+          game.first = other("host"); // สลับตอนเริ่มรอบ host จึงได้เริ่มก่อน
+          startRound();
+        }
+        if (msg.t === "newgame" && game.phase === "over") {
+          for (const p of players.values()) p.score = 0;
+          game.phase = "lobby";
+        }
       }
       broadcast();
     }
@@ -227,14 +239,14 @@
 
     function viewFor(id) {
       const v = {
-        screen: game.phase, code: game.code, isHost: id === "host",
+        screen: game.phase, code: game.code, target: game.target, isHost: id === "host",
         players: [...players].map(([pid, p]) => ({ name: p.name, score: p.score, mark: mark(pid) })),
       };
       if (game.phase !== "lobby") {
         Object.assign(v, {
           board: game.board, line: game.line, myTurn: game.phase === "play" && game.turn === id,
           turnName: players.get(game.turn).name, turnMark: mark(game.turn),
-          won: game.winner === id, lost: !!game.winner && game.winner !== id,
+          winner: game.winner && players.get(game.winner).name, won: game.winner === id, lost: !!game.winner && game.winner !== id,
           ready: game.ready.has(id), readyCount: game.ready.size,
         });
       }
@@ -267,7 +279,7 @@
     let lastScreen, lastMyTurn;
     function render() {
       const v = view;
-      if (v.screen === "end" && lastScreen !== "end") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
+      if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
@@ -302,32 +314,51 @@
         return;
       }
 
-      const header = `<h2>ห้อง</h2><p class="room">${esc(v.code)}</p>`;
-
       if (v.screen === "lobby") {
-        app.innerHTML = `${header}<p class="hint">ส่งรหัสให้เพื่อน รอเพื่อนเข้า</p>`;
+        const full = v.players.length === 2;
+        app.innerHTML = `
+          <h2>ห้อง</h2><p class="room">${esc(v.code)}</p>
+          <h2>ตั้งค่า</h2>
+          ${v.isHost
+            ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
+               <input id="target" type="number" min="1" max="20" value="${v.target}">`
+            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>`}
+          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/2</h2>
+          <ul>${v.players.map((p) => `<li><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${esc(p.name)}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `${full ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${full ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        if (v.isHost) {
+          app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
+          app.querySelector("#start").onclick = () => send({ t: "start" });
+        }
         return;
       }
 
-      // play / end
+      // play / end / over
       const status = v.screen === "play"
         ? v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา <span class="${v.turnMark.toLowerCase()}">${esc(v.turnName)}</span>`
         : v.won ? `<span class="good">ชนะ</span>` : v.lost ? `<span class="bad">แพ้</span>` : `<span class="hint">เสมอ</span>`;
+      const over = v.screen === "over";
       app.innerHTML = `
-        ${header}
+        <h2>คะแนน (เป้าหมาย ${v.target})</h2>
         <ul>${v.players.map((p) => `
-          <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+          <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${over && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
         </ul>
         <div class="board" role="grid" aria-label="กระดาน">${v.board.map((c, i) => `
           <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
         </div>
         <p class="status">${status}</p>
-        ${v.screen === "end"
+        ${over
+          ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
+          : v.screen === "end"
           ? `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
              <p class="hint">พร้อม ${v.readyCount}/2</p>`
           : ""}`;
       app.querySelectorAll(".cell").forEach((b) => (b.onclick = () => send({ t: "move", i: Number(b.dataset.i) })));
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+      if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
     }
 
     const rules = document.getElementById("rules");
