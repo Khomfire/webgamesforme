@@ -336,18 +336,21 @@
         <li class="row"><span>${esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
+    let lastScreen;
     function render() {
       const v = view;
+      if (v.screen === "over" && lastScreen !== "over") playSfx("win");
+      lastScreen = v.screen;
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
           <label for="name">ชื่อของคุณ</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host">สร้างห้อง</button>
+          <button id="host" data-sfx="create">สร้างห้อง</button>
           <p class="or">หรือเข้าห้องของเพื่อน</p>
           <label for="code">รหัสห้อง</label>
           <input id="code" class="code-input" maxlength="4" autocomplete="off">
-          <button id="join" class="alt">เข้าห้อง</button>`;
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อนสร้างห้อง" });
@@ -383,7 +386,7 @@
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `<p class="hint">ส่งรหัสห้องให้เพื่อน แล้วกดเริ่มเมื่อครบ (อย่างน้อย 3 คน)</p>
-               <button id="start" ${enough ? "" : "disabled"}>เริ่มเกม</button>`
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่มเกม</button>`
             : `<p class="hint">รอคนสร้างห้องกดเริ่มเกม</p>`}`;
         if (v.isHost) {
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
@@ -404,7 +407,7 @@
           <p class="hint">ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ แล้วโหวตว่าใครคือสายลับ สายลับอาจเป็นคุณก็ได้</p>
           ${v.myVote
             ? `<p>คุณโหวต ${esc(v.myVote)} แล้ว</p>`
-            : `<h2>โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
+            : `<h2>โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
           <p class="hint">โหวตแล้ว ${v.voted}/${v.voters} คน</p>`;
         app.querySelectorAll(".vote").forEach((b) => (b.onclick = () => send({ t: "vote", target: b.dataset.id })));
         return;
@@ -422,7 +425,7 @@
           ${v.isSpy
             ? `<label for="guess">ทายคำของทุกคน ถ้าถูกได้อีก 1 คะแนน</label>
                <input id="guess" maxlength="40" autocomplete="off">
-               <button id="send-guess">ส่งคำตอบ</button>`
+               <button id="send-guess" data-sfx="confirm">ส่งคำตอบ</button>`
             : `<p class="hint">รอ ${esc(v.spyName)} ทายคำของทุกคน</p>`}`;
         if (v.isSpy) app.querySelector("#send-guess").onclick = () => send({ t: "guess", text: app.querySelector("#guess").value });
         return;
@@ -441,8 +444,8 @@
         <div style="margin-top: 24px">${scoreboard(v)}</div>
         ${v.isHost
           ? v.screen === "over"
-            ? `<button id="newgame">เล่นเกมใหม่</button>`
-            : `<button id="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
+            ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>`
+            : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
           : `<p class="hint">รอคนสร้างห้อง${v.screen === "over" ? "เริ่มเกมใหม่" : "เริ่มรอบต่อไป"}</p>`}`;
       if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
