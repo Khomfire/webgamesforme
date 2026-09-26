@@ -238,22 +238,40 @@
         <h2 id="rules-title">กฎ</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
+      <h2>เริ่ม</h2>
       <ol>
-        <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่</li>
-        <li>ทุกคนทอยเต๋า เห็นแค่ของตัวเอง</li>
-        <li>ผลัดกันเสนอว่าเต๋าทั้งวงมีหน้านี้อย่างน้อยกี่ลูก</li>
-        <li><span class="die inline" data-face="1"></span> นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วย <span class="die inline" data-face="1"></span> ไม่ได้</li>
-        <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
-        <li>เปลี่ยนเป็น <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว (ปัดขึ้น) เปลี่ยนกลับใช้สองเท่า + 1</li>
-        <li>ไม่เชื่อ กด "โกหก" เปิดเต๋าทุกคน</li>
-        <li>มีครบ คนกดโกหกเสีย <span class="die inline" data-face=""></span> ไม่ครบ คนเสนอเสีย <span class="die inline" data-face=""></span></li>
-        <li>คนเสียเต๋าเริ่มรอบถัดไป เหลือเต๋าคนสุดท้ายชนะ</li>
+        <li>ทุกคนเริ่มด้วยเต๋าเท่ากัน ตามที่ตั้งในห้อง</li>
+        <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่เฉพาะคนที่เสมอ</li>
+        <li>ต้นรอบ ทุกคนทอยเต๋าที่เหลือ เห็นแค่ของตัวเอง</li>
+        <li>เล่นวนตามลำดับรายชื่อ ข้ามคนที่ออกแล้ว</li>
+      </ol>
+      <h2>เสนอ</h2>
+      <ol>
+        <li>เสนอว่าเต๋าทั้งวง (รวมของทุกคน) มีหน้านี้อย่างน้อยกี่ลูก เช่น <span class="die inline" data-face="4"></span> x5</li>
+        <li><span class="die inline" data-face="1"></span> นับเป็นหน้าอะไรก็ได้ เช่น เสนอ <span class="die inline" data-face="4"></span> ให้นับทั้ง <span class="die inline" data-face="4"></span> และ <span class="die inline" data-face="1"></span></li>
+        <li>คนแรกของรอบต้องเสนอ เปิดด้วย <span class="die inline" data-face="1"></span> ไม่ได้</li>
+        <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า (หน้าไหนก็ได้) หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
+        <li>เปลี่ยนเป็น <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว ปัดขึ้น เช่น <span class="die inline" data-face="4"></span> x5 เป็น <span class="die inline" data-face="1"></span> x3</li>
+        <li>เปลี่ยนจาก <span class="die inline" data-face="1"></span> ใช้สองเท่า + 1 เช่น <span class="die inline" data-face="1"></span> x3 เป็น <span class="die inline" data-face="4"></span> x7</li>
+        <li>เสนอเกินจำนวนเต๋าทั้งวงไม่ได้</li>
+      </ol>
+      <h2>โกหก</h2>
+      <ol>
+        <li>ถึงตาแล้วไม่เชื่อที่คนก่อนหน้าเสนอ กด "โกหก" แทนการเสนอ</li>
+        <li>กดโกหกได้แค่คนที่ถึงตา</li>
+        <li>เปิดเต๋าทุกคน นับหน้าที่เสนอ รวม <span class="die inline" data-face="1"></span></li>
+        <li>มีครบหรือมากกว่า คนกดโกหกเสีย <span class="die inline" data-face=""></span></li>
+        <li>มีไม่ครบ คนเสนอเสีย <span class="die inline" data-face=""></span></li>
+        <li>ทุกคนกด "รอบต่อไป" คนเสียเต๋าเริ่มรอบใหม่ ถ้าเขาออกแล้ว คนถัดไปเริ่ม</li>
+        <li>เต๋าหมดออกจากเกม เหลือเต๋าคนสุดท้ายชนะ</li>
       </ol>
       <h2>+ PALIFICO</h2>
+      <p class="hint">กฎเสริม เจ้าของห้องเปิดได้</p>
       <ol>
-        <li>ใครเหลือ <span class="die inline" data-face=""></span> รอบถัดไปเป็นรอบ PALIFICO</li>
-        <li>รอบนี้ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน</li>
-        <li><span class="die inline" data-face="1"></span> ไม่แทนหน้าอื่น เปิดด้วย <span class="die inline" data-face="1"></span> ได้</li>
+        <li>ใครเหลือ <span class="die inline" data-face=""></span> รอบถัดไปเป็นรอบ PALIFICO เขาเริ่มก่อน</li>
+        <li><span class="die inline" data-face="1"></span> ไม่แทนหน้าอื่น นับแค่หน้าที่เสนอ</li>
+        <li>เปิดด้วย <span class="die inline" data-face="1"></span> ได้</li>
+        <li>ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
