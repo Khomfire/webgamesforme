@@ -79,6 +79,11 @@
     }
     input:focus { outline: none; border-color: var(--yellow); }
     .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
     button {
       display: block;
       width: 100%;
@@ -152,16 +157,8 @@
     .rule-row .note { margin-left: auto; color: var(--dim); font-size: 0.9rem; }
     .rule-row .pts { min-width: 3em; text-align: right; color: var(--yellow); font-weight: 700; }
     #last { text-align: center; }
-    /* ทอยเต๋า: เต๋าเด้งขึ้นมาหมุนกลางจอ ลอยทับหน้าเกม */
-    .roll-layer { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(13, 11, 31, 0.85); }
-    .roll-layer[hidden] { display: none; }
-    .roll-layer .dice { flex-wrap: wrap; width: min(300px, 80vw); gap: 16px; animation: pop 200ms steps(4); }
-    .roll-layer .dice .die { flex-basis: calc((100% - 32px) / 3); padding: 12px; border-width: 4px; }
+    .rolling { pointer-events: none; }
     .rolling .die { animation: shake 140ms steps(2) infinite; }
-    @keyframes pop {
-      from { transform: scale(0.2); }
-      to { transform: scale(1); }
-    }
     @keyframes shake {
       from { transform: translate(-3px, 2px) rotate(-8deg); }
       to { transform: translate(3px, -2px) rotate(8deg); }
@@ -207,7 +204,6 @@
       <canvas id="fireworks" aria-hidden="true"></canvas>
     </dialog>
     <div id="app"></div>
-    <div class="roll-layer" id="roll-layer" aria-hidden="true" hidden><div class="dice"></div></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
@@ -416,34 +412,27 @@
 
     // เต๋าที่เลือกไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างทุกครั้งที่ทอยใหม่
     const picked = new Set();
-    // ทอยเต๋า: เต๋าเด้งขึ้นกลางจอ สุ่มหน้าสลับไปมาพร้อมเขย่า หยุดที่หน้าจริงครู่หนึ่งแล้วค่อยปิด
-    const layer = document.getElementById("roll-layer");
+    // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่าในแถวเต๋า แล้วค่อยโชว์หน้าจริง
     let rollTimer, rollHold;
-    function animateRoll(faces, done, farkle) {
+    function animateRoll(box, done, farkle) {
       clearInterval(rollTimer);
       clearTimeout(rollHold);
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done && done();
-      const box = layer.firstElementChild;
-      box.innerHTML = faces.map(() => `<div class="die"></div>`).join("");
-      const dice = [...box.children];
-      const show = (face) => dice.forEach((d, i) => (d.innerHTML = pips(face(i))));
-      const random = () => 1 + Math.floor(Math.random() * 6);
-      show(random);
+      if (!box || matchMedia("(prefers-reduced-motion: reduce)").matches) return done && done();
+      const dice = [...box.querySelectorAll(".die")];
+      const faces = dice.map((d) => d.innerHTML);
       box.classList.add("rolling");
-      box.classList.remove("bad");
-      layer.hidden = false;
       playSfx("roll");
       let n = 0;
       rollTimer = setInterval(() => {
-        if (++n < 9) return show(random);
+        if (++n < 9) return dice.forEach((d) => (d.innerHTML = pips(1 + Math.floor(Math.random() * 6))));
         clearInterval(rollTimer);
-        show((i) => faces[i]);
+        dice.forEach((d, i) => (d.innerHTML = faces[i]));
         box.classList.remove("rolling");
-        if (farkle) { box.classList.add("bad"); playSfx("vote"); } // ฟาร์เคิล: เต๋าเป็นสีแดงตอนหยุด
-        rollHold = setTimeout(() => {
-          layer.hidden = true;
-          if (done) done();
-        }, 500);
+        if (!farkle) return done && done();
+        // ฟาร์เคิล: เต๋าเป็นสีแดงค้างไว้ครู่หนึ่งก่อนเปลี่ยนตา
+        box.classList.add("bad");
+        playSfx("vote");
+        rollHold = setTimeout(() => done && done(), 500);
       }, 70);
     }
 
@@ -458,8 +447,8 @@
         <p class="status">${lastMyTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.last.name)}`}</p>
         <p class="turn" aria-label="แต้มตานี้">${v.last.lost}</p>
         ${v.last.kept.length ? smallDice(v.last.kept) : ""}
-        <div class="dice" style="visibility: hidden">${v.last.dice.map((d) => `<div class="die">${pips(d)}</div>`).join("")}</div>`;
-      animateRoll(v.last.dice, () => {
+        <div class="dice">${v.last.dice.map((d) => `<div class="die" role="img" aria-label="เต๋า ${d}">${pips(d)}</div>`).join("")}</div>`;
+      animateRoll(app.querySelector(".dice:not(.small)"), () => {
         holding = false;
         render();
       }, true);
@@ -468,6 +457,7 @@
     let lastScreen, lastMyTurn, lastRolls;
     function render() {
       if (holding) return; // มีสถานะใหม่ระหว่างเต๋าหมุน รอวาดตอนหมุนจบ
+      clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const v = view;
       if (v.rolls !== lastRolls && v.last && v.last.farkle && v.last.n === v.rolls && (v.screen === "play" || v.screen === "over")) {
         lastRolls = v.rolls;
@@ -492,7 +482,10 @@
           <button id="host" data-sfx="create">สร้างห้อง</button>
           <p class="or">หรือ</p>
           <label for="code">รหัสห้อง</label>
-          <input id="code" class="code-input" maxlength="4" autocomplete="off">
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
           <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
@@ -500,6 +493,13 @@
           saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
           hostRoom(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
         };
         app.querySelector("#join").onclick = () => {
           const name = app.querySelector("#name").value.trim();
@@ -579,10 +579,7 @@
       if (app.querySelector("#bank")) app.querySelector("#bank").onclick = () => send({ t: "bank", keep: [...picked] });
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (newRoll && v.screen === "play" && v.dice.length) {
-        // ซ่อนเต๋าบนหน้าเกมไว้จนกว่าเต๋ากลางจอจะหมุนจบ
-        const main = app.querySelector(".dice:not(.small)");
-        main.style.visibility = "hidden";
-        animateRoll(v.dice, () => (main.style.visibility = ""));
+        animateRoll(app.querySelector(".dice:not(.small)"));
       }
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;

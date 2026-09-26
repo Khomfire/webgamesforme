@@ -79,6 +79,11 @@
     }
     input:focus { outline: none; border-color: var(--yellow); }
     .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
     button {
       display: block;
       width: 100%;
@@ -326,7 +331,10 @@
           <button id="host" data-sfx="create">สร้างห้อง</button>
           <p class="or">หรือ</p>
           <label for="code">รหัสห้อง</label>
-          <input id="code" class="code-input" maxlength="4" autocomplete="off">
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
           <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
@@ -334,6 +342,13 @@
           saveName(name);
           app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
           hostRoom(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
         };
         app.querySelector("#join").onclick = () => {
           const name = app.querySelector("#name").value.trim();
