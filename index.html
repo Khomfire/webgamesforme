@@ -6,80 +6,90 @@
   <title>Web Games For Me</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Mitr:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --felt: #1f5a43;
-      --felt-edge: #143d2d;
-      --chalk: #f3efe2;
-      --chalk-dim: #b9c9bd;
-      --ink: #2a1f14;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: radial-gradient(ellipse at 50% 30%, var(--felt) 55%, var(--felt-edge));
-      background-attachment: fixed;
-      color: var(--chalk);
-      font: 300 1rem/1.6 "Mitr", system-ui, sans-serif;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    /* เส้นสแกนไลน์จอ CRT */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
     }
     main { max-width: 960px; margin: 0 auto; padding: 56px 20px 80px; }
 
     h1 {
       margin: 0;
-      font: 400 clamp(2rem, 8vw, 4.5rem)/1.05 "Chonburi", serif;
-      letter-spacing: -0.01em;
+      text-align: center;
+      color: var(--yellow);
+      font: 400 clamp(1.25rem, 5.5vw, 2.75rem)/1.4 "Press Start 2P", monospace;
+      text-shadow: 4px 4px 0 #c2410c;
       text-wrap: balance;
     }
-    .sub { margin: 12px 0 48px; color: var(--chalk-dim); font-size: 1.125rem; }
+    .sub { margin: 20px 0 48px; text-align: center; color: var(--dim); font-size: 1.125rem; }
+    .sub::before { content: "▶ "; color: var(--yellow); animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
 
-    .table {
+    .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 36px 28px;
+      gap: 28px;
     }
 
-    /* กล่องเกมวางบนโต๊ะ: สีและมุมเอียงวนตามลำดับ */
-    .box {
-      --lid: #e3a92f; --side: #a8791c; --text: var(--ink); --tilt: -2deg;
+    /* กล่องเกม: สีวนตามลำดับ */
+    .tile {
+      --c: var(--yellow);
       display: block;
-      padding: 22px 20px 24px;
-      background: var(--lid);
+      padding: 20px;
+      border: 4px solid var(--c);
+      background: var(--screen);
       color: var(--text);
-      border-radius: 6px;
       text-decoration: none;
-      transform: rotate(var(--tilt));
-      box-shadow: 0 8px 0 var(--side), 0 18px 24px rgba(0, 0, 0, 0.35);
-      transition: transform 160ms ease, box-shadow 160ms ease;
+      box-shadow: 6px 6px 0 var(--c);
+      transition: transform 80ms steps(2), box-shadow 80ms steps(2);
     }
-    .box:nth-child(4n+2) { --lid: #c4452c; --side: #8a2d1b; --text: #fff; --tilt: 1.5deg; }
-    .box:nth-child(4n+3) { --lid: #2d6cad; --side: #1d4a78; --text: #fff; --tilt: -1deg; }
-    .box:nth-child(4n+4) { --lid: #f1ece0; --side: #c9bfa8; --tilt: 2deg; }
-    .box:hover, .box:focus-visible {
-      transform: rotate(0) translateY(-6px);
-      box-shadow: 0 14px 0 var(--side), 0 28px 30px rgba(0, 0, 0, 0.4);
+    .tile:nth-child(4n+2) { --c: #ff4d4d; }
+    .tile:nth-child(4n+3) { --c: #3ee0e0; }
+    .tile:nth-child(4n+4) { --c: #ff5ec8; }
+    .tile:hover, .tile:focus-visible {
+      transform: translate(6px, 6px);
+      box-shadow: 0 0 0 var(--c);
     }
-    .box:focus-visible { outline: 3px solid var(--chalk); outline-offset: 6px; }
-    .box .icon { font-size: 2.5rem; line-height: 1; }
-    .box h2 { margin: 14px 0 6px; font: 400 1.35rem/1.2 "Chonburi", serif; }
-    .box p { margin: 0; font-size: 0.95rem; opacity: 0.85; }
+    .tile:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .tile .icon { font-size: 2.25rem; line-height: 1; }
+    .tile h2 { margin: 14px 0 4px; color: var(--c); font-size: 1.3rem; font-weight: 700; line-height: 1.3; }
+    .tile p { margin: 0; color: var(--dim); font-size: 0.95rem; }
 
     .empty {
       display: grid;
       place-items: center;
-      max-width: 260px;
-      min-height: 170px;
+      max-width: 280px;
+      min-height: 160px;
+      margin: 0 auto;
       padding: 20px;
-      border: 2px dashed var(--chalk-dim);
-      border-radius: 6px;
-      color: var(--chalk-dim);
+      border: 4px dashed var(--dim);
+      color: var(--dim);
       text-align: center;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .box { transition: none; }
+      .sub::before { animation: none; }
+      .tile { transition: none; }
     }
   </style>
 </head>
@@ -87,7 +97,7 @@
   <main>
     <h1>Web Games For Me</h1>
     <p class="sub">เลือกเกม แล้วเล่นกับเพื่อน</p>
-    <div id="games" class="table"></div>
+    <div id="games" class="grid"></div>
   </main>
 
   <script>
@@ -98,11 +108,11 @@
 
     const list = document.getElementById("games");
     if (games.length === 0) {
-      list.outerHTML = '<p class="empty">ยังไม่มีเกมบนโต๊ะ<br>เกมแรกกำลังมา</p>';
+      list.outerHTML = '<p class="empty">ยังไม่มีเกมในตู้<br>เกมแรกกำลังมา</p>';
     } else {
       for (const g of games) {
         const a = document.createElement("a");
-        a.className = "box";
+        a.className = "tile";
         a.href = `games/${g.id}/`;
         a.innerHTML = `<div class="icon"></div><h2></h2><p></p>`;
         a.querySelector(".icon").textContent = g.icon;
