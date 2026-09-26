@@ -94,6 +94,13 @@
     button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
+    details { margin: 0 0 24px; }
+    summary { list-style: none; cursor: pointer; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: "Press Start 2P", monospace; }
+    details[open] summary::before { content: "- "; }
+    .guesses { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .guesses button { padding: 10px 4px; font-size: 0.95rem; }
     .symbol { font: 400 1.25rem "Press Start 2P", monospace; }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
@@ -130,16 +137,16 @@
       <h2>วิธีเล่น</h2>
       <ol>
         <li>คนสร้างห้องตั้งคะแนนเส้นชัย แล้วส่งรหัสห้องให้เพื่อน ต้องมีอย่างน้อย 3 คน</li>
-        <li>ทุกคนได้คำเดียวกัน ยกเว้นสายลับ 1 คนที่ได้คำคล้ายๆ กัน สายลับไม่รู้ตัวว่าเป็นสายลับ</li>
-        <li>ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ</li>
+        <li>ทุกคนได้สถานที่เดียวกันและบทบาทของตัวเอง ยกเว้นสายลับ 1 คนที่รู้ว่าตัวเองเป็นสายลับ แต่ไม่รู้สถานที่</li>
+        <li>ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ สายลับต้องเนียนให้รอด</li>
         <li>โหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
-        <li>เฉลยแล้ว สายลับได้ทายคำของทุกคน</li>
+        <li>เฉลยแล้ว สายลับได้เลือกทายสถานที่จากรายชื่อ</li>
       </ol>
       <h2>คะแนน</h2>
       <ul>
         <li>จับสายลับได้: คนที่ไม่ใช่สายลับได้คนละ 1 คะแนน</li>
         <li>สายลับรอด: สายลับได้ 1 คะแนน</li>
-        <li>สายลับทายคำของทุกคนถูก: ได้อีก 1 คะแนน</li>
+        <li>สายลับทายสถานที่ถูก: ได้อีก 1 คะแนน</li>
       </ul>
       <p class="hint">ใครถึงคะแนนเส้นชัยก่อนชนะ</p>
     </dialog>
@@ -149,21 +156,34 @@
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script src="../../sfx.js"></script>
   <script>
-    // คู่คำ: ทุกคนได้คำหนึ่ง สายลับได้อีกคำ (สลับข้างแบบสุ่มทุกรอบ)
-    const PAIRS = [
-      ["ก๋วยเตี๋ยว", "บะหมี่"], ["ส้มตำ", "ยำ"], ["ชานมไข่มุก", "กาแฟเย็น"], ["ข้าวมันไก่", "ข้าวหมูแดง"],
-      ["ทะเล", "สระว่ายน้ำ"], ["โรงหนัง", "คอนเสิร์ต"], ["ห้างสรรพสินค้า", "ตลาดนัด"], ["โรงเรียน", "มหาวิทยาลัย"],
-      ["แมว", "หมา"], ["เสือ", "สิงโต"], ["ไก่", "เป็ด"], ["ยุง", "แมลงวัน"],
-      ["มอเตอร์ไซค์", "จักรยาน"], ["รถไฟฟ้า", "รถเมล์"], ["เครื่องบิน", "เฮลิคอปเตอร์"],
-      ["หมอ", "พยาบาล"], ["ตำรวจ", "ทหาร"], ["ครู", "ติวเตอร์"],
-      ["ฟุตบอล", "บาสเกตบอล"], ["มือถือ", "แท็บเล็ต"], ["สงกรานต์", "ลอยกระทง"], ["ร่ม", "เสื้อกันฝน"],
+    // สถานที่และบทบาท: ทุกคนได้สถานที่เดียวกัน คนละบทบาท สายลับไม่รู้สถานที่
+    const LOCATIONS = [
+      { name: "โรงพยาบาล", roles: ["หมอ", "พยาบาล", "คนไข้", "ญาติคนไข้", "เภสัชกร", "รปภ.", "แม่บ้าน"] },
+      { name: "โรงเรียน", roles: ["ครู", "นักเรียน", "ผู้อำนวยการ", "ภารโรง", "แม่ค้าโรงอาหาร", "ผู้ปกครอง", "หัวหน้าห้อง"] },
+      { name: "ห้างสรรพสินค้า", roles: ["พนักงานขาย", "ลูกค้า", "รปภ.", "แคชเชียร์", "แม่บ้าน", "ผู้จัดการ", "เด็กหลงทาง"] },
+      { name: "ตลาดนัด", roles: ["แม่ค้าส้มตำ", "ลูกค้า", "คนเก็บค่าที่", "นักดนตรีเปิดหมวก", "คนขายเสื้อผ้า", "วินมอเตอร์ไซค์", "นักท่องเที่ยว"] },
+      { name: "สนามบิน", roles: ["นักบิน", "แอร์โฮสเตส", "ผู้โดยสาร", "เจ้าหน้าที่ ตม.", "คนขนกระเป๋า", "เจ้าหน้าที่เช็กอิน", "คนมารับ"] },
+      { name: "ชายหาด", roles: ["ไลฟ์การ์ด", "นักท่องเที่ยว", "คนขายมะพร้าว", "คนนวด", "ชาวประมง", "คนเล่นเซิร์ฟ", "เด็กก่อปราสาททราย"] },
+      { name: "โรงหนัง", roles: ["คนขายตั๋ว", "คนขายป๊อปคอร์น", "คนดู", "พนักงานฉายหนัง", "คู่เดต", "แม่บ้าน", "นักวิจารณ์หนัง"] },
+      { name: "ร้านกาแฟ", roles: ["บาริสต้า", "ลูกค้า", "เจ้าของร้าน", "ฟรีแลนซ์นั่งทำงาน", "คนส่งของ", "นักศึกษาอ่านหนังสือ", "บล็อกเกอร์"] },
+      { name: "สถานีตำรวจ", roles: ["ตำรวจ", "ผู้ต้องหา", "ผู้เสียหาย", "ทนาย", "นักข่าว", "สารวัตร", "พยาน"] },
+      { name: "วัด", roles: ["พระ", "เณร", "คนมาทำบุญ", "แม่ชี", "นักท่องเที่ยว", "คนขายดอกไม้ธูปเทียน", "มัคนายก"] },
+      { name: "สวนสัตว์", roles: ["ผู้ดูแลสัตว์", "สัตวแพทย์", "นักท่องเที่ยว", "ครูพาเด็กมาทัศนศึกษา", "คนขายไอติม", "ช่างภาพ", "ไกด์"] },
+      { name: "ฟิตเนส", roles: ["เทรนเนอร์", "สมาชิกมือใหม่", "นักเพาะกาย", "พนักงานต้อนรับ", "ครูโยคะ", "แม่บ้าน", "คนมาลดน้ำหนัก"] },
+      { name: "ร้านหมูกระทะ", roles: ["เจ้าของร้าน", "พนักงานเสิร์ฟ", "ลูกค้าวัยรุ่น", "คนเติมถ่าน", "นักร้องเวที", "แคชเชียร์", "คนล้างจาน"] },
+      { name: "คอนเสิร์ต", roles: ["นักร้อง", "มือกลอง", "แฟนคลับ", "การ์ด", "ซาวด์เอนจิเนียร์", "ช่างภาพ", "คนขายของที่ระลึก"] },
+      { name: "โรงแรม", roles: ["พนักงานต้อนรับ", "แขก", "แม่บ้าน", "เชฟ", "เบลบอย", "ผู้จัดการ", "คนขับรถรับส่ง"] },
+      { name: "รถไฟ", roles: ["พนักงานขับรถไฟ", "พนักงานตรวจตั๋ว", "ผู้โดยสาร", "คนขายข้าวกล่อง", "นักท่องเที่ยวต่างชาติ", "ตำรวจรถไฟ", "นักเรียน"] },
+      { name: "ธนาคาร", roles: ["พนักงานธนาคาร", "ลูกค้า", "รปภ.", "ผู้จัดการสาขา", "โจรปล้นธนาคาร", "พนักงานเติมเงินตู้", "ที่ปรึกษาการเงิน"] },
+      { name: "ร้านตัดผม", roles: ["ช่างตัดผม", "ลูกค้า", "เด็กสระผม", "เจ้าของร้าน", "ลูกค้ารอคิว", "ช่างทำเล็บ", "เซลส์ขายน้ำยา"] },
+      { name: "สนามฟุตบอล", roles: ["นักเตะ", "ผู้รักษาประตู", "กรรมการ", "โค้ช", "แฟนบอล", "นักพากย์", "คนขายน้ำ"] },
+      { name: "เรือสำราญ", roles: ["กัปตัน", "ลูกเรือ", "นักท่องเที่ยว", "เชฟ", "นักร้องในเรือ", "หมอประจำเรือ", "คู่ฮันนีมูน"] },
     ];
     const ID_PREFIX = "wgfm-spy-";
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
     const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
-    const norm = (w) => String(w).replace(/\s+/g, "").toLowerCase();
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
@@ -214,7 +234,7 @@
         r.votes.set(id, msg.target);
         countVotes();
       }
-      if (msg.t === "guess" && game.phase === "guess" && id === r.spy) finishGuess(String(msg.text).trim().slice(0, 40));
+      if (msg.t === "guess" && game.phase === "guess" && id === r.spy) finishGuess(String(msg.text));
       if (id === "host") {
         if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 5));
         if (msg.t === "start" && players.size >= 3) startRound();
@@ -228,11 +248,12 @@
     }
 
     function startRound() {
-      const [a, b] = PAIRS[Math.floor(Math.random() * PAIRS.length)];
-      const [common, spyWord] = Math.random() < 0.5 ? [a, b] : [b, a];
+      const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+      const roles = [...location.roles].sort(() => Math.random() - 0.5);
       const ids = [...players.keys()];
       game.round = {
-        ids, common, spyWord,
+        ids, location: location.name,
+        roles: new Map(ids.map((id, i) => [id, roles[i % roles.length]])),
         spy: ids[Math.floor(Math.random() * ids.length)],
         names: new Map(ids.map((id) => [id, players.get(id).name])),
         votes: new Map(), tally: new Map(), gains: new Map(),
@@ -266,7 +287,7 @@
     function finishGuess(text) {
       const r = game.round;
       r.guess = text;
-      r.correct = text !== null && norm(text) === norm(r.common);
+      r.correct = text === r.location;
       if (r.correct) addPoint(r.spy);
       const top = Math.max(...[...players.values()].map((p) => p.score));
       game.phase = top >= game.target ? "over" : "score";
@@ -282,7 +303,8 @@
       };
       if (phase === "word" && v.inRound) {
         const voters = r.ids.filter((x) => players.has(x));
-        v.word = id === r.spy ? r.spyWord : r.common;
+        v.isSpy = id === r.spy;
+        if (!v.isSpy) { v.location = r.location; v.role = r.roles.get(id); }
         v.candidates = voters.filter((x) => x !== id).map((x) => ({ id: x, name: r.names.get(x) }));
         v.myVote = r.votes.has(id) ? r.names.get(r.votes.get(id)) : null;
         v.voted = voters.filter((x) => r.votes.has(x)).length;
@@ -294,10 +316,9 @@
         v.caught = r.caught;
         v.tally = [...r.tally].map(([t, n]) => ({ name: r.names.get(t), n })).sort((a, b) => b.n - a.n);
       }
-      // เฉลยคำหลังสายลับทายเสร็จแล้วเท่านั้น
+      // เฉลยสถานที่หลังสายลับทายเสร็จแล้วเท่านั้น
       if (phase === "score" || phase === "over") {
-        v.common = r.common;
-        v.spyWord = r.spyWord;
+        v.location = r.location;
         v.guess = r.guess;
         v.correct = r.correct;
       }
@@ -402,9 +423,14 @@
           return;
         }
         app.innerHTML = `
-          <h2>คำของคุณ</h2>
-          <p class="word">${esc(v.word)}</p>
-          <p class="hint">ผลัดกันใบ้คำของตัวเองทีละคน อย่าพูดคำตรงๆ แล้วโหวตว่าใครคือสายลับ สายลับอาจเป็นคุณก็ได้</p>
+          ${v.isSpy
+            ? `<p class="word spy">คุณคือสายลับ</p>
+               <p class="hint">เนียนตอบคำถามให้รอด แล้วเดาว่าทุกคนอยู่ที่ไหน</p>`
+            : `<h2>สถานที่</h2>
+               <p class="word">${esc(v.location)}</p>
+               <p>บทบาทของคุณ: ${esc(v.role)}</p>
+               <p class="hint">ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ แล้วโหวตว่าใครคือสายลับ</p>`}
+          <details class="hint"><summary>สถานที่ทั้งหมด</summary>${LOCATIONS.map((l) => esc(l.name)).join(", ")}</details>
           ${v.myVote
             ? `<p>คุณโหวต ${esc(v.myVote)} แล้ว</p>`
             : `<h2>โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
@@ -423,11 +449,10 @@
         app.innerHTML = `
           ${result}
           ${v.isSpy
-            ? `<label for="guess">ทายคำของทุกคน ถ้าถูกได้อีก 1 คะแนน</label>
-               <input id="guess" maxlength="40" autocomplete="off">
-               <button id="send-guess" data-sfx="confirm">ส่งคำตอบ</button>`
-            : `<p class="hint">รอ ${esc(v.spyName)} ทายคำของทุกคน</p>`}`;
-        if (v.isSpy) app.querySelector("#send-guess").onclick = () => send({ t: "guess", text: app.querySelector("#guess").value });
+            ? `<h2>ทายสถานที่ ถ้าถูกได้อีก 1 คะแนน</h2>
+               <div class="guesses">${LOCATIONS.map((l) => `<button class="guess alt" data-sfx="confirm">${esc(l.name)}</button>`).join("")}</div>`
+            : `<p class="hint">รอ ${esc(v.spyName)} ทายสถานที่</p>`}`;
+        app.querySelectorAll(".guess").forEach((b) => (b.onclick = () => send({ t: "guess", text: b.textContent })));
         return;
       }
 
@@ -436,9 +461,8 @@
         ${v.screen === "over" ? `<h2>ผู้ชนะ</h2><p class="word">${v.winners.map(esc).join(", ")}</p>` : ""}
         ${result}
         <ul>
-          <li>คำของทุกคน: ${esc(v.common)}</li>
-          <li>คำของสายลับ: ${esc(v.spyWord)}</li>
-          <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายคำ" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? "ถูก" : "ผิด"}`}</li>
+          <li>สถานที่: ${esc(v.location)}</li>
+          <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายสถานที่" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? "ถูก" : "ผิด"}`}</li>
         </ul>
         <div style="margin-top: 24px">${scoreboard(v)}</div>
         ${v.isHost
