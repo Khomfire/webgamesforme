@@ -157,6 +157,8 @@
     .stepper { display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 20px; }
     .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
     .liar { --c: var(--red); }
+    /* กฎเสริม: ปิดอยู่เป็นสีจาง กดแล้วเป็นสีเหลือง */
+    .rule[aria-pressed="false"] { --c: var(--dim); }
     .center { text-align: center; }
     .rolling { pointer-events: none; }
     .rolling .die { animation: shake 140ms steps(2) infinite; }
@@ -188,12 +190,21 @@
         <li>2 คนขึ้นไป</li>
         <li>ทุกคนทอยเต๋า เห็นแค่ของตัวเอง</li>
         <li>ผลัดกันเสนอว่าเต๋าทั้งวงมีหน้านี้อย่างน้อยกี่ลูก</li>
-        <li>หน้า 1 นับเป็นหน้าอะไรก็ได้</li>
         <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
-        <li>เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งเดียว (ปัดขึ้น) เปลี่ยนกลับใช้สองเท่า + 1 เปิดรอบด้วยหน้า 1 ไม่ได้</li>
         <li>ไม่เชื่อ กด "โกหก" เปิดเต๋าทุกคน</li>
         <li>มีครบ คนกดโกหกเสีย 1 ลูก ไม่ครบ คนเสนอเสีย 1 ลูก</li>
         <li>คนเสียเต๋าเริ่มรอบถัดไป เหลือเต๋าคนสุดท้ายชนะ</li>
+      </ol>
+      <h2>+ 1 แทนทุกหน้า</h2>
+      <ol>
+        <li>หน้า 1 นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วยหน้า 1 ไม่ได้</li>
+        <li>เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งเดียว (ปัดขึ้น) เปลี่ยนกลับใช้สองเท่า + 1</li>
+      </ol>
+      <h2>+ PALIFICO</h2>
+      <ol>
+        <li>ใครเหลือ 1 ลูก รอบถัดไปเป็นรอบ PALIFICO</li>
+        <li>รอบนี้ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน</li>
+        <li>หน้า 1 ไม่แทนหน้าอื่น เปิดด้วยหน้า 1 ได้</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
@@ -218,17 +229,20 @@
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
-    // กติกา Perudo (สำเนาจาก supabase/functions/game/liar.js ไว้เปิดปิดปุ่มเสนอ ต้องแก้ให้ตรงกัน)
-    // หน้า 1 นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วยหน้า 1 ไม่ได้
+    // กติกา (สำเนาจาก supabase/functions/game/liar.js ไว้เปิดปิดปุ่มเสนอ ต้องแก้ให้ตรงกัน)
     // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
-    // เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
-    function higher(a, b) {
+    // wild: เปิดรอบด้วยหน้า 1 ไม่ได้ เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
+    // pal (รอบ palifico): ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน
+    function higher(a, b, { wild, pal }) {
+      if (pal) return !b || (a.face === b.face && a.n > b.n);
+      if (!wild) return !b || a.n > b.n || (a.n === b.n && a.face > b.face);
       if (!b) return a.face !== 1;
       if (a.face === 1) return b.face === 1 ? a.n > b.n : a.n >= Math.ceil(b.n / 2);
       if (b.face === 1) return a.n >= b.n * 2 + 1;
       return a.n > b.n || (a.n === b.n && a.face > b.face);
     }
-    const counts = (d, face) => d === face || d === 1;
+    const counts = (d, face, wild) => d === face || (wild && d === 1);
+    const RULES = { wild: "1 แทนทุกหน้า", palifico: "PALIFICO" };
 
     let view = { screen: "home" };
     function show(next) { view = { ...view, ...next }; render(); }
@@ -259,7 +273,7 @@
       <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
       <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${r.n} &times; ${die(r.face)}</div>
       <p class="center">มีจริง <span class="hl">${r.count}</span> ลูก</p>
-      <ul>${r.hands.map((h) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d) => die(d, counts(d, r.face) ? "hit" : "")).join("")}</div></li>`).join("")}</ul>
+      <ul>${r.hands.map((h) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d) => die(d, counts(d, r.face, r.wild) ? "hit" : "")).join("")}</div></li>`).join("")}</ul>
       <p class="status bad">${esc(r.loser)} เสีย 1 ลูก</p>`;
 
     // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
@@ -349,6 +363,10 @@
             ? `<label for="start-dice">เต๋าคนละ (1-5 ลูก)</label>
                <input id="start-dice" type="number" min="1" max="5" value="${v.start}">`
             : `<p>เต๋าคนละ <span class="hl">${v.start}</span> ลูก</p>`}
+          <label id="rules-label">กฎเสริม</label>
+          ${v.isHost
+            ? `<div class="buttons" role="group" aria-labelledby="rules-label">${Object.entries(RULES).map(([k, name]) => `<button class="rule" data-rule="${k}" aria-pressed="${v.rules[k]}">${v.rules[k] ? "" : "+ "}${name}</button>`).join("")}</div>`
+            : `<p>${Object.keys(RULES).filter((k) => v.rules[k]).map((k) => `<span class="hl">${RULES[k]}</span>`).join(", ") || "ไม่มี"}</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -362,6 +380,7 @@
         });
         if (v.isHost) {
           app.querySelector("#start-dice").onchange = (e) => send({ t: "start-dice", value: e.target.value });
+          app.querySelectorAll("[data-rule]").forEach((b) => (b.onclick = () => send({ t: "rule", key: b.dataset.rule, on: !v.rules[b.dataset.rule] })));
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;
@@ -373,7 +392,8 @@
           pickKey = key;
           pick = v.bid ? { n: Math.min(v.bid.n + 1, v.total), face: v.bid.face } : { n: 1, face: 2 };
         }
-        const canBid = higher(pick, v.bid);
+        const canBid = higher(pick, v.bid, v);
+        const locked = v.pal && v.bid; // รอบ palifico เปลี่ยนหน้าไม่ได้
         app.innerHTML = `
           ${scoreboard(v)}
           <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
@@ -381,7 +401,7 @@
             ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${v.bid.n} &times; ${die(v.bid.face)}</div>
                <p class="center">${esc(v.bid.name)} เสนอ</p>`
             : ""}
-          <p class="hint center">ทั้งวง ${v.total} ลูก</p>
+          <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">PALIFICO</span>` : v.wild ? " / 1 แทนทุกหน้า" : ""}</p>
           <h2 style="margin-top: 24px">เต๋าคุณ</h2>
           ${v.out ? `<p class="bad">ออกแล้ว</p>` : `<div class="dice" id="hand">${v.hand.map((d) => die(d)).join("")}</div>`}
           ${v.myTurn
@@ -390,7 +410,7 @@
                  <span class="qty" aria-label="จำนวน">${pick.n}</span>
                  <button class="icon-btn" id="more" aria-label="เพิ่มจำนวน" ${pick.n < v.total ? "" : "disabled"}>+</button>
                </div>
-               <div class="dice faces">${[1, 2, 3, 4, 5, 6].map((f) => `<button class="die${f === pick.face ? " picked" : ""}" data-face="${f}" aria-label="หน้า ${f}" aria-pressed="${f === pick.face}">${pips(f)}</button>`).join("")}</div>
+               <div class="dice faces">${[1, 2, 3, 4, 5, 6].map((f) => `<button class="die${f === pick.face ? " picked" : ""}" data-face="${f}" aria-label="หน้า ${f}" aria-pressed="${f === pick.face}" ${locked && f !== v.bid.face ? "disabled" : ""}>${pips(f)}</button>`).join("")}</div>
                <div class="buttons">
                  <button id="bid" data-sfx="confirm" ${canBid ? "" : "disabled"}>เสนอ</button>
                  <button id="liar" class="liar" data-sfx="vote" ${v.bid ? "" : "disabled"}>โกหก</button>
@@ -410,6 +430,7 @@
       // reveal / over
       app.innerHTML = `
         ${revealBox(v.reveal)}
+        ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้า PALIFICO</p>` : ""}
         ${v.screen === "over"
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint center">รอเกมใหม่</p>`
           : v.out ? `<p class="hint center">รอคนอื่น</p>`

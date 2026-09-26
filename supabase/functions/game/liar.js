@@ -1,17 +1,22 @@
-// LIAR'S DICE (กติกา Perudo): ทุกคนทอยเต๋าลับ ผลัดกันเสนอ จับโกหกแล้วคนผิดเสีย 1 ลูก เหลือเต๋าคนสุดท้ายชนะ
+// LIAR'S DICE: ทุกคนทอยเต๋าลับ ผลัดกันเสนอ จับโกหกแล้วคนผิดเสีย 1 ลูก เหลือเต๋าคนสุดท้ายชนะ
+// กฎเสริมที่เจ้าของห้องเปิดได้: wild (หน้า 1 แทนทุกหน้า) และ palifico
 const pl = (s, id) => s.players.find((p) => p.id === id);
 
-// หน้า 1 นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วยหน้า 1 ไม่ได้
 // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
-// เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
+// wild: เปิดรอบด้วยหน้า 1 ไม่ได้ เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
+// pal (รอบ palifico): ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน
 // (หน้าเกมมีสำเนาไว้เปิดปิดปุ่มเสนอ ต้องแก้ให้ตรงกัน)
-export function higher(a, b) {
+export function higher(a, b, { wild, pal }) {
+  if (pal) return !b || (a.face === b.face && a.n > b.n);
+  if (!wild) return !b || a.n > b.n || (a.n === b.n && a.face > b.face);
   if (!b) return a.face !== 1;
   if (a.face === 1) return b.face === 1 ? a.n > b.n : a.n >= Math.ceil(b.n / 2);
   if (b.face === 1) return a.n >= b.n * 2 + 1;
   return a.n > b.n || (a.n === b.n && a.face > b.face);
 }
-const counts = (d, face) => d === face || d === 1;
+const counts = (d, face, wild) => d === face || (wild && d === 1);
+// กฎของรอบนี้: รอบ palifico หน้า 1 ไม่แทนหน้าอื่น
+const mode = (s) => ({ wild: s.wild && !s.pal, pal: s.pal });
 
 const alive = (s) => s.order.filter((id) => pl(s, id).count > 0);
 const total = (s) => alive(s).reduce((n, x) => n + pl(s, x).count, 0);
@@ -28,6 +33,7 @@ function nextAlive(s, id) {
 function toLobby(s) {
   for (const p of s.players) Object.assign(p, { count: 0, hand: [] });
   s.phase = "lobby";
+  s.pal = false;
 }
 
 function startRound(s, first) {
@@ -40,13 +46,16 @@ function startRound(s, first) {
 }
 
 // จับโกหก: เปิดเต๋าทุกคน นับหน้าที่เสนอ คนผิดเสีย 1 ลูก
+// palifico: ใครเหลือ 1 ลูก รอบถัดไป (ที่เขาเริ่ม) เป็นรอบ palifico
 function call(s, caller) {
   const { n, face, by } = s.bid;
+  const { wild } = mode(s);
   const hands = alive(s).map((id) => ({ name: pl(s, id).name, dice: pl(s, id).hand }));
-  const count = hands.reduce((c, h) => c + h.dice.filter((d) => counts(d, face)).length, 0);
+  const count = hands.reduce((c, h) => c + h.dice.filter((d) => counts(d, face, wild)).length, 0);
   const loser = count >= n ? caller : by;
   pl(s, loser).count--;
-  s.reveal = { n, face, count, bidder: pl(s, by).name, caller: pl(s, caller).name, loser: pl(s, loser).name, hands };
+  s.pal = s.palifico && pl(s, loser).count === 1;
+  s.reveal = { n, face, count, wild, bidder: pl(s, by).name, caller: pl(s, caller).name, loser: pl(s, loser).name, hands };
   const left = alive(s);
   if (left.length === 1) {
     s.phase = "over";
@@ -58,13 +67,13 @@ function call(s, caller) {
 }
 
 export default {
-  init: () => ({ start: 5, phase: "lobby" }),
+  init: () => ({ start: 5, wild: false, palifico: false, pal: false, phase: "lobby" }),
   player: () => ({ count: 0, hand: [] }),
 
   handle(s, id, msg) {
     if (s.phase === "play" && s.turn === id) {
       const bid = { n: Number(msg.n), face: Number(msg.face) };
-      if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total(s) && bid.face >= 1 && bid.face <= 6 && higher(bid, s.bid)) {
+      if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total(s) && bid.face >= 1 && bid.face <= 6 && higher(bid, s.bid, mode(s))) {
         s.bid = { ...bid, by: id };
         s.turn = nextAlive(s, id);
       }
@@ -76,6 +85,7 @@ export default {
     }
     if (id === s.owner) {
       if (msg.t === "start-dice") s.start = Math.min(5, Math.max(1, Math.round(Number(msg.value)) || 5));
+      if (msg.t === "rule" && s.phase === "lobby" && (msg.key === "wild" || msg.key === "palifico")) s[msg.key] = !!msg.on;
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
         s.order = s.players.map((p) => p.id);
         for (const p of s.players) p.count = s.start;
@@ -103,7 +113,7 @@ export default {
 
   view(s, id) {
     const v = {
-      screen: s.phase, start: s.start,
+      screen: s.phase, start: s.start, rules: { wild: s.wild, palifico: s.palifico },
       players: s.players.map((p) => ({ name: p.name, count: p.count, now: s.phase === "play" && s.turn === p.id })),
     };
     if (s.phase !== "lobby") {
@@ -115,7 +125,7 @@ export default {
         out: me.count === 0,
         total: total(s),
         bid: s.bid && { n: s.bid.n, face: s.bid.face, name: (pl(s, s.bid.by) || {}).name },
-        round: s.round, reveal: s.reveal, winner: s.winner,
+        round: s.round, reveal: s.reveal, winner: s.winner, ...mode(s),
         ready: s.ready.includes(id), readyCount: s.ready.length, aliveCount: alive(s).length,
       });
     }
