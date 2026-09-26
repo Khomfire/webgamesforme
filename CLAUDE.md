@@ -9,6 +9,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - **No emoji, anywhere.** Not in UI text, code, comments, docs, or commit messages. This includes symbols that phones render as emoji, such as triangle arrows, check marks, and stars; use plain text or CSS instead.
 - **Prefer symbols over words in the UI.** Wherever a symbol stays clear, use it instead of text: `<` for back, `?` for help or rules, `×` for close. Symbols still follow the no-emoji rule (plain text characters or CSS only), and each one gets an `aria-label` with the full meaning.
 - **Keep UI text as short as possible.** Cut every word that doesn't change the meaning; prefer a short label over a sentence.
+- **Every game ends with a winner popup and fireworks.** When someone wins the game, open a `<dialog>` with the winner's name, the scoreboard, and a `×` close button, and call `fireworks()` from `fireworks.js` with a `<canvas id="fireworks">` inside that dialog.
 
 ## 1. Think Before Coding
 

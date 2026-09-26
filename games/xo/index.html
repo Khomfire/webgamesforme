@@ -60,10 +60,12 @@
       color: var(--text);
     }
     dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
     dialog ol { margin: 0; padding-left: 20px; }
     dialog li { padding: 4px 0; border: 0; }
     .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .dialog-top h2 { margin: 0; color: var(--yellow); }
+    .dialog-top h2 { margin: 0; }
     h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
@@ -98,6 +100,14 @@
     ul { margin: 0; padding: 0; list-style: none; }
     li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
     .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
     .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 24px; }
@@ -142,11 +152,20 @@
       </ol>
       <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
     <div id="app"></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
   <script>
     const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
     const ID_PREFIX = "wgfm-xo-";
@@ -276,9 +295,17 @@
     }
 
     // ---------- หน้าจอ ----------
+    const scoreboard = (v) => `
+      <h2>คะแนน (เป้าหมาย ${v.target})</h2>
+      <ul>${v.players.map((p) => `
+        <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+      </ul>`;
+
     let lastScreen, lastMyTurn;
     function render() {
       const v = view;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (v.screen !== "over" && winner.open) winner.close();
       if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       lastScreen = v.screen;
@@ -342,10 +369,7 @@
         : v.won ? `<span class="good">ชนะ</span>` : v.lost ? `<span class="bad">แพ้</span>` : `<span class="hint">เสมอ</span>`;
       const over = v.screen === "over";
       app.innerHTML = `
-        <h2>คะแนน (เป้าหมาย ${v.target})</h2>
-        <ul>${v.players.map((p) => `
-          <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${over && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
-        </ul>
+        ${scoreboard(v)}
         <div class="board" role="grid" aria-label="กระดาน">${v.board.map((c, i) => `
           <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
         </div>
@@ -358,12 +382,19 @@
           : ""}`;
       app.querySelectorAll(".cell").forEach((b) => (b.onclick = () => send({ t: "move", i: Number(b.dataset.i) })));
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+      if (gameOver) {
+        document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
+        winner.showModal();
+        fireworks();
+      }
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
     }
 
     const rules = document.getElementById("rules");
     document.getElementById("rules-open").onclick = () => rules.showModal();
     document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
 
     // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
     window.addEventListener("pagehide", () => peer && peer.destroy());
