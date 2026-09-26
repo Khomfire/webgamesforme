@@ -10,6 +10,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - **Prefer symbols over words in the UI.** Wherever a symbol stays clear, use it instead of text: `<` for back, `?` for help or rules, `×` for close. Symbols still follow the no-emoji rule (plain text characters or CSS only), and each one gets an `aria-label` with the full meaning.
 - **Keep UI text as short as possible.** Cut every word that doesn't change the meaning; prefer a short label over a sentence.
 - **Game names are English and all uppercase.** Use the same name, such as `SPYFALL`, `XO` or `FARKLE`, in the hub's `games` array, the page `<title>` and the game's `<h1>`.
+- **Games use their standard rules.** Build a new game with the rules most people play, not a simplified or invented version.
 - **Rules don't state the player count.** The lobby already says how many players a game needs.
 - **Every game ends with a winner popup and fireworks.** When someone wins the game, open a `<dialog>` with the winner's name, the scoreboard, and a `×` close button, and call `fireworks()` from `fireworks.js` with a `<canvas id="fireworks">` inside that dialog.
 

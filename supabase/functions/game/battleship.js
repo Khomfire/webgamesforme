@@ -1,4 +1,4 @@
-// BATTLESHIP: 2 คน กระดาน 10x10 เรือคนละ 5 ลำ วางแบบสุ่ม (กดสุ่มใหม่ได้) ผลัดกันยิงทีละนัด จมเรืออีกฝ่ายหมดก่อนชนะ
+// BATTLESHIP: 2 คน กระดาน 10x10 เรือคนละ 5 ลำ วางแบบสุ่ม (กดสุ่มใหม่ได้) ยิงทีละนัด โดนยิงต่อ พลาดเปลี่ยนตา จมเรืออีกฝ่ายหมดก่อนชนะ
 // ช่องเป็นเลข 0-99 (แถว x 10 + คอลัมน์)
 const SIZE = 10;
 const FLEET = [5, 4, 3, 3, 2];
@@ -71,7 +71,7 @@ export default {
       if (!afloat(foe, me.shots)) {
         s.phase = "over";
         s.winner = id;
-      } else s.turn = foe.id;
+      } else if (!ship) s.turn = foe.id; // โดนได้ยิงต่อ
     }
     if (id === s.owner) {
       if (msg.t === "start" && s.phase === "lobby" && s.players.length === 2) {
