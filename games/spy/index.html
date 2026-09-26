@@ -145,7 +145,7 @@
         <li>คนสร้างห้องตั้งคะแนนเส้นชัยและเวลาต่อรอบ แล้วส่งรหัสห้องให้เพื่อน ต้องมีอย่างน้อย 3 คน</li>
         <li>ทุกคนได้สถานที่เดียวกันและบทบาทของตัวเอง ยกเว้นสายลับ 1 คนที่รู้ว่าตัวเองเป็นสายลับ แต่ไม่รู้สถานที่</li>
         <li>ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ สายลับต้องเนียนให้รอด และกดขีดฆ่าสถานที่ที่ตัดทิ้งได้</li>
-        <li>หมดเวลาแล้วโหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
+        <li>หมดเวลา (หรือคนสร้างห้องกดข้าม) แล้วโหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
         <li>เฉลยแล้ว สายลับได้เลือกทายสถานที่จากรายชื่อ</li>
       </ol>
       <h2>คะแนน</h2>
@@ -246,6 +246,7 @@
         if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 5));
         if (msg.t === "minutes") game.minutes = Math.min(15, Math.max(1, Math.round(Number(msg.value)) || 5));
         if (msg.t === "start" && players.size >= 3) startRound();
+        if (msg.t === "skip" && game.phase === "word") { clearTimeout(voteTimer); r.voting = true; }
         if (msg.t === "newgame") {
           for (const p of players.values()) p.score = 0;
           clearTimeout(voteTimer);
@@ -469,12 +470,14 @@
                <p class="hint">ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ หมดเวลาแล้วโหวตว่าใครคือสายลับ</p>
                <details class="hint"><summary>สถานที่ทั้งหมด</summary>${LOCATIONS.map((l) => esc(l.name)).join(", ")}</details>`}
           ${!v.voting
-            ? `<p class="hint">โหวตได้เมื่อหมดเวลา</p>`
+            ? `<p class="hint">โหวตได้เมื่อหมดเวลา</p>
+               ${v.isHost ? `<button id="skip" class="symbol" data-sfx="next" aria-label="ข้ามไปโหวตเลย">&gt;&gt;</button>` : ""}`
             : v.myVote
               ? `<p>คุณโหวต ${esc(v.myVote)} แล้ว</p>`
               : `<h2>หมดเวลา โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
           ${v.voting ? `<p class="hint">โหวตแล้ว ${v.voted}/${v.voters} คน</p>` : ""}`;
         app.querySelectorAll(".vote").forEach((b) => (b.onclick = () => send({ t: "vote", target: b.dataset.id })));
+        if (app.querySelector("#skip")) app.querySelector("#skip").onclick = () => send({ t: "skip" });
         app.querySelectorAll(".place-x").forEach((b) => (b.onclick = () => {
           const name = b.dataset.name;
           crossed.has(name) ? crossed.delete(name) : crossed.add(name);
