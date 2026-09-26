@@ -135,6 +135,13 @@
     .dice.small { grid-template-columns: repeat(8, 1fr); gap: 6px; }
     .dice.small .die { --c: var(--dim); border-width: 2px; }
     .dice.bad .die { --c: var(--red); }
+    .rolling { pointer-events: none; }
+    .rolling .die { animation: shake 140ms steps(2) infinite; }
+    .rolling p { visibility: hidden; }
+    @keyframes shake {
+      from { transform: translate(-3px, 2px) rotate(-8deg); }
+      to { transform: translate(3px, -2px) rotate(8deg); }
+    }
     .turn { margin: 16px 0 0; text-align: center; font: 400 1.2rem "Press Start 2P", monospace; color: var(--yellow); }
     /* สีบอกความหมาย: เหลือง = แต้ม/ผู้ชนะ, ฟ้า = เก็บแต้มได้, แดง = ฟาร์เคิล/ผิด */
     .hl { color: var(--yellow); }
@@ -170,7 +177,7 @@
         <li>4 ลูกขึ้นไป: x2 ทุกลูกที่เพิ่ม</li>
         <li>1-2-3-4-5-6 = 1500, 3 คู่ = 1500</li>
       </ul>
-      <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
+      <p class="hint">มีคนถึงเป้าหมาย คนอื่นได้อีกคนละตา แต้มสูงสุดชนะ</p>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
@@ -223,7 +230,7 @@
 
     // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
     const players = new Map(); // id -> { name, score, conn }
-    let game;                  // { code, target, phase, order, turn, dice, kept, turnPts, left, rolls, last, winner }
+    let game;                  // { code, target, phase, order, turn, dice, kept, turnPts, left, rolls, last, final, winners }
 
     function hostRoom(name) {
       const code = newCode();
@@ -241,9 +248,12 @@
           if (game.phase === "play") {
             const i = game.order.indexOf(conn.peer);
             game.order.splice(i, 1);
+            if (game.final) game.final.delete(conn.peer);
             if (game.order.length < 2) {
               for (const p of players.values()) p.score = 0;
               game.phase = "lobby";
+            } else if (game.final && game.final.size === 0) {
+              finish();
             } else if (i < game.turn) {
               game.turn--;
             } else if (i === game.turn) {
@@ -280,7 +290,7 @@
       if (id === "host") {
         if (msg.t === "target") game.target = Math.min(20000, Math.max(500, Math.round(Number(msg.value) / 500) * 500 || 5000));
         if (msg.t === "start" && game.phase === "lobby" && players.size >= 2) {
-          Object.assign(game, { phase: "play", order: [...players.keys()], turn: -1, rolls: 0, last: null });
+          Object.assign(game, { phase: "play", order: [...players.keys()], turn: -1, rolls: 0, last: null, final: null });
           nextTurn();
         }
         if (msg.t === "newgame" && game.phase === "over") {
@@ -302,7 +312,7 @@
       game.rolls++;
       if (!canScore(game.dice)) {
         game.last = { name: players.get(game.order[game.turn]).name, dice: game.dice, farkle: true, lost: game.turnPts, n: game.rolls };
-        nextTurn();
+        endTurn();
       }
     }
 
@@ -311,10 +321,22 @@
       const p = players.get(id);
       p.score += game.turnPts;
       game.last = { name: p.name, pts: game.turnPts, n: game.rolls };
-      if (p.score >= game.target) {
-        game.phase = "over";
-        game.winner = p.name;
-      } else nextTurn();
+      endTurn();
+    }
+
+    // รอบสุดท้าย: คนแรกที่ถึงเป้าหมายจบตาแล้ว คนอื่นได้เล่นอีกคนละตา
+    function endTurn() {
+      const id = game.order[game.turn];
+      if (game.final) game.final.delete(id);
+      else if (players.get(id).score >= game.target) game.final = new Set(game.order.filter((x) => x !== id));
+      if (game.final && game.final.size === 0) finish();
+      else nextTurn();
+    }
+
+    function finish() {
+      const top = Math.max(...[...players.values()].map((p) => p.score));
+      game.phase = "over";
+      game.winners = [...players.values()].filter((p) => p.score === top).map((p) => p.name);
     }
 
     function viewFor(id) {
@@ -326,7 +348,7 @@
         Object.assign(v, {
           myTurn: game.phase === "play" && game.order[game.turn] === id,
           turnName: game.phase === "play" ? players.get(game.order[game.turn]).name : "",
-          dice: game.dice, kept: game.kept, turnPts: game.turnPts, rolls: game.rolls, last: game.last, winner: game.winner,
+          dice: game.dice, kept: game.kept, turnPts: game.turnPts, rolls: game.rolls, last: game.last, final: !!game.final, winners: game.winners,
         });
       }
       return v;
@@ -362,24 +384,43 @@
     const scoreboard = (v) => `
       <h2>คะแนน (เป้าหมาย ${v.target})</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
     // เต๋าที่เลือกไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างทุกครั้งที่ทอยใหม่
     const picked = new Set();
-    let lastScreen, lastMyTurn, lastRolls, lastEvent;
+    // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
+    let rollTimer;
+    function animateRoll(box, done) {
+      clearInterval(rollTimer);
+      if (!box || matchMedia("(prefers-reduced-motion: reduce)").matches) return done && done();
+      const dice = [...box.querySelectorAll(".die")];
+      const faces = dice.map((d) => d.innerHTML);
+      box.classList.add("rolling");
+      playSfx("roll");
+      let n = 0;
+      rollTimer = setInterval(() => {
+        if (++n < 9) return dice.forEach((d) => (d.innerHTML = pips(1 + Math.floor(Math.random() * 6))));
+        clearInterval(rollTimer);
+        dice.forEach((d, i) => (d.innerHTML = faces[i]));
+        box.classList.remove("rolling");
+        if (done) done();
+      }, 70);
+    }
+
+    let lastScreen, lastMyTurn, lastRolls;
     function render() {
       const v = view;
+      clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (gameOver) playSfx("win");
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
-      if (v.last && v.last.farkle && v.last.n !== lastEvent) playSfx("vote");
-      if (v.rolls !== lastRolls) picked.clear();
+      const newRoll = v.rolls !== lastRolls;
+      if (newRoll) picked.clear();
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
       lastRolls = v.rolls;
-      lastEvent = v.last && v.last.n;
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -442,7 +483,8 @@
         ${scoreboard(v)}
         ${v.screen === "over"
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
-          : `<p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
+          : `${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}
+             <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
              <p class="turn" aria-label="แต้มตานี้">${v.turnPts}${picked.size ? ` <span class="${pickedPts ? "good" : "bad"}">+${pickedPts}</span>` : ""}</p>
              ${v.kept.length ? smallDice(v.kept) : ""}
              <div class="dice">${v.dice.map((d, i) => `<button class="die${picked.has(i) ? " picked" : ""}" data-i="${i}" aria-label="เต๋า ${d}" aria-pressed="${picked.has(i)}" ${v.myTurn ? "" : "disabled"}>${pips(d)}</button>`).join("")}</div>
@@ -455,7 +497,7 @@
                     <p class="hint">เลือกเต๋าที่มีแต้ม</p>`
                  : `<button id="roll" data-sfx="next">ทอย</button>`
                : ""}
-             <div style="margin-top: 24px">${last}</div>`}`;
+             <div id="last" style="margin-top: 24px">${last}</div>`}`;
       app.querySelectorAll("button.die").forEach((b) => (b.onclick = () => {
         const i = Number(b.dataset.i);
         picked.has(i) ? picked.delete(i) : picked.add(i);
@@ -464,8 +506,12 @@
       if (app.querySelector("#roll")) app.querySelector("#roll").onclick = () => send({ t: "roll", keep: [...picked] });
       if (app.querySelector("#bank")) app.querySelector("#bank").onclick = () => send({ t: "bank", keep: [...picked] });
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+      const farkled = v.last && v.last.farkle && v.last.n === v.rolls;
+      if (newRoll && v.screen === "play" && (farkled || v.dice.length)) {
+        animateRoll(app.querySelector(farkled ? "#last" : ".dice:not(.small)"), farkled && (() => playSfx("vote")));
+      }
       if (gameOver) {
-        document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
+        document.getElementById("winner-body").innerHTML = `<p class="word hl">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
         winner.showModal();
         fireworks();
       }
