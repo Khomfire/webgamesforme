@@ -34,7 +34,15 @@
     }
     main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
     .top { display: flex; justify-content: space-between; align-items: center; }
-    .back { color: var(--dim); text-decoration: none; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
     .icon-btn {
       width: 44px;
       height: 44px;
@@ -109,7 +117,7 @@
 <body>
   <main>
     <div class="top">
-      <a class="back" href="../../">กลับไปเลือกเกม</a>
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
       <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
     </div>
     <h1>ใครคือสายลับ</h1>
