@@ -35,3 +35,24 @@ document.addEventListener("pointerdown", (e) => {
   const el = e.target.closest("button:not(:disabled), a");
   if (el) playSfx(el.dataset.sfx);
 });
+
+// เสียงระเบิดของพลุ: เสียงซ่า (noise) ที่ตัดเสียงแหลมออกแล้วค่อยๆ เบาลง
+function playBoom() {
+  audio ??= new AudioContext();
+  const t = audio.currentTime;
+  const length = 0.6;
+  const buffer = audio.createBuffer(1, audio.sampleRate * length, audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const noise = audio.createBufferSource();
+  noise.buffer = buffer;
+  const filter = audio.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1200 + Math.random() * 800, t);
+  filter.frequency.exponentialRampToValueAtTime(200, t + length);
+  const gain = audio.createGain();
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + length);
+  noise.connect(filter).connect(gain).connect(audio.destination);
+  noise.start(t);
+}

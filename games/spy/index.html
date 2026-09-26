@@ -147,6 +147,7 @@
         <li>ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ สายลับต้องเนียนให้รอด และกดขีดฆ่าสถานที่ที่ตัดทิ้งได้</li>
         <li>หมดเวลา (หรือคนสร้างห้องกดข้าม) แล้วโหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
         <li>เฉลยแล้ว สายลับได้เลือกทายสถานที่จากรายชื่อ</li>
+        <li>ทุกคนกดรอบต่อไปเมื่อพร้อม ครบทุกคนแล้วรอบใหม่เริ่มเอง</li>
       </ol>
       <h2>คะแนน</h2>
       <ul>
@@ -229,6 +230,7 @@
           players.delete(conn.peer);
           if (game.phase === "guess" && game.round.spy === conn.peer) finishGuess(null);
           else countVotes();
+          checkReady();
           broadcast();
         });
       });
@@ -250,10 +252,11 @@
         countVotes();
       }
       if (msg.t === "guess" && game.phase === "guess" && id === r.spy) finishGuess(String(msg.text));
+      if (msg.t === "ready" && game.phase === "score") { r.ready.add(id); checkReady(); }
       if (id === "host") {
         if (msg.t === "target") game.target = Math.min(20, Math.max(1, Math.round(Number(msg.value)) || 5));
         if (msg.t === "minutes") game.minutes = Math.min(15, Math.max(1, Math.round(Number(msg.value)) || 5));
-        if (msg.t === "start" && players.size >= 3) startRound();
+        if (msg.t === "start" && game.phase === "lobby" && players.size >= 3) startRound();
         if (msg.t === "skip" && game.phase === "word") { clearTimeout(voteTimer); r.voting = true; }
         if (msg.t === "newgame") {
           for (const p of players.values()) p.score = 0;
@@ -274,13 +277,19 @@
         roles: new Map(ids.map((id, i) => [id, roles[i % roles.length]])),
         spy: ids[Math.floor(Math.random() * ids.length)],
         names: new Map(ids.map((id) => [id, players.get(id).name])),
-        votes: new Map(), tally: new Map(), gains: new Map(),
+        votes: new Map(), tally: new Map(), gains: new Map(), ready: new Set(),
         endsAt: Date.now() + game.minutes * 60000, voting: false,
       };
       game.phase = "word";
       const r = game.round;
       clearTimeout(voteTimer);
       voteTimer = setTimeout(() => { r.voting = true; broadcast(); }, game.minutes * 60000);
+    }
+
+    // รอบต่อไปเริ่มเมื่อทุกคนที่อยู่ในห้องกดพร้อมครบ
+    function checkReady() {
+      if (game.phase !== "score" || players.size < 3) return;
+      if ([...players.keys()].every((id) => game.round.ready.has(id))) startRound();
     }
 
     function addPoint(id) {
@@ -345,6 +354,8 @@
         v.location = r.location;
         v.guess = r.guess;
         v.correct = r.correct;
+        v.ready = r.ready.has(id);
+        v.readyCount = [...players.keys()].filter((x) => r.ready.has(x)).length;
       }
       if (phase === "over") {
         const top = Math.max(...v.players.map((p) => p.score));
@@ -522,18 +533,17 @@
           <li>${v.guess === null ? "สายลับออกจากเกมก่อนทายสถานที่" : `สายลับทายว่า "${esc(v.guess)}" ${v.correct ? "ถูก" : "ผิด"}`}</li>
         </ul>
         <div style="margin-top: 24px">${scoreboard(v)}</div>
-        ${v.isHost
-          ? v.screen === "over"
-            ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>`
-            : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
-          : `<p class="hint">รอคนสร้างห้อง${v.screen === "over" ? "เริ่มเกมใหม่" : "เริ่มรอบต่อไป"}</p>`}`;
+        ${v.screen === "over"
+          ? v.isHost ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>` : `<p class="hint">รอคนสร้างห้องเริ่มเกมใหม่</p>`
+          : `${v.ready ? `<p>คุณพร้อมแล้ว รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}
+             <p class="hint">พร้อมแล้ว ${v.readyCount}/${v.players.length} คน${enough ? "" : " (ต้องมีอย่างน้อย 3 คน)"}</p>`}`;
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word">${v.winners.map(esc).join(", ")}</p>${scoreboard(v)}`;
         winner.showModal();
         fireworks();
       }
       if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
-      if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
+      if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
     }
 
     const rules = document.getElementById("rules");
@@ -553,6 +563,7 @@
       const stop = performance.now() + 4000;
       let nextBurst = 0;
       function burst() {
+        playBoom();
         const x = canvas.width * (0.15 + Math.random() * 0.7);
         const y = canvas.height * (0.1 + Math.random() * 0.4);
         const color = colors[Math.floor(Math.random() * colors.length)];
