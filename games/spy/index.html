@@ -101,7 +101,6 @@
     details[open] summary::before { content: "- "; }
     .guesses { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
     .guesses button { padding: 10px 4px; font-size: 0.95rem; }
-    .symbol { font: 400 1.25rem "Press Start 2P", monospace; }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
     ul { margin: 0; padding: 0; list-style: none; }
@@ -142,7 +141,7 @@
       </div>
       <h2>วิธีเล่น</h2>
       <ol>
-        <li>คนสร้างห้องตั้งคะแนนเส้นชัยและเวลาต่อรอบ แล้วส่งรหัสห้องให้เพื่อน ต้องมีอย่างน้อย 3 คน</li>
+        <li>คนสร้างห้องตั้งคะแนนเป้าหมายและเวลาต่อรอบ แล้วส่งรหัสห้องให้เพื่อน ต้องมีอย่างน้อย 3 คน</li>
         <li>ทุกคนได้สถานที่เดียวกันและบทบาทของตัวเอง ยกเว้นสายลับ 1 คนที่รู้ว่าตัวเองเป็นสายลับ แต่ไม่รู้สถานที่</li>
         <li>ผลัดกันถามตอบเกี่ยวกับสถานที่ อย่าพูดชื่อสถานที่ตรงๆ สายลับต้องเนียนให้รอด และกดขีดฆ่าสถานที่ที่ตัดทิ้งได้</li>
         <li>หมดเวลา (หรือคนสร้างห้องกดข้าม) แล้วโหวตลับว่าใครคือสายลับ ถ้าโหวตเสมอกัน ถือว่าสายลับรอด</li>
@@ -154,7 +153,7 @@
         <li>สายลับรอด: สายลับได้ 1 คะแนน</li>
         <li>สายลับทายสถานที่ถูก: ได้อีก 1 คะแนน</li>
       </ul>
-      <p class="hint">ใครถึงคะแนนเส้นชัยก่อนชนะ</p>
+      <p class="hint">ใครถึงคะแนนเป้าหมายก่อนชนะ</p>
     </dialog>
     <div id="app"></div>
   </main>
@@ -369,12 +368,12 @@
 
     // ---------- หน้าจอ ----------
     const scoreboard = (v) => `
-      <h2>คะแนน (เส้นชัย ${v.target})</h2>
+      <h2>คะแนน (เป้าหมาย ${v.target})</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
         <li class="row"><span>${esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
-    // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างทุกรอบใหม่
+    // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
     const crossed = new Set();
     const placeButtons = (cls, sfx = "") => LOCATIONS.map((l) =>
       `<button class="${cls}${crossed.has(l.name) ? " crossed" : ""}" data-sfx="${sfx}" data-name="${esc(l.name)}">${esc(l.name)}</button>`).join("");
@@ -391,7 +390,7 @@
     function render() {
       const v = view;
       if (v.screen === "over" && lastScreen !== "over") playSfx("win");
-      if (v.screen === "word" && lastScreen !== "word") crossed.clear();
+      if (v.screen !== lastScreen && (v.screen === "word" || v.screen === "guess")) crossed.clear();
       lastScreen = v.screen;
       if (v.screen === "home") {
         app.innerHTML = `
@@ -431,7 +430,7 @@
           ${header}
           <h2>ตั้งค่าเกม</h2>
           ${v.isHost
-            ? `<label for="target">คะแนนเส้นชัย (1-20)</label>
+            ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
                <input id="target" type="number" min="1" max="20" value="${v.target}">
                <label for="minutes">เวลาต่อรอบ (1-15 นาที)</label>
                <input id="minutes" type="number" min="1" max="15" value="${v.minutes}">`
@@ -471,7 +470,7 @@
                <details class="hint"><summary>สถานที่ทั้งหมด</summary>${LOCATIONS.map((l) => esc(l.name)).join(", ")}</details>`}
           ${!v.voting
             ? `<p class="hint">โหวตได้เมื่อหมดเวลา</p>
-               ${v.isHost ? `<button id="skip" class="symbol" data-sfx="next" aria-label="ข้ามไปโหวตเลย">&gt;&gt;</button>` : ""}`
+               ${v.isHost ? `<button id="skip" data-sfx="next">โหวต</button>` : ""}`
             : v.myVote
               ? `<p>คุณโหวต ${esc(v.myVote)} แล้ว</p>`
               : `<h2>หมดเวลา โหวตสายลับ</h2>${v.candidates.map((c) => `<button class="vote" data-sfx="vote" data-id="${esc(c.id)}">${esc(c.name)}</button>`).join("")}`}
@@ -515,7 +514,7 @@
         ${v.isHost
           ? v.screen === "over"
             ? `<button id="newgame" data-sfx="start">เล่นเกมใหม่</button>`
-            : `<button id="next" class="symbol" data-sfx="next" aria-label="รอบต่อไป" ${enough ? "" : "disabled"}>&gt;</button>`
+            : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`
           : `<p class="hint">รอคนสร้างห้อง${v.screen === "over" ? "เริ่มเกมใหม่" : "เริ่มรอบต่อไป"}</p>`}`;
       if (v.isHost && v.screen === "over") app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (v.isHost && v.screen === "score") app.querySelector("#next").onclick = () => send({ t: "start" });
