@@ -97,6 +97,13 @@
     .alt { --c: var(--cyan); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
     ul { margin: 0; padding: 0; list-style: none; }
     li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
     .hint { color: var(--dim); }
@@ -344,7 +351,12 @@
       if (v.screen === "lobby") {
         const full = v.players.length === 2;
         app.innerHTML = `
-          <h2>ห้อง</h2><p class="room">${esc(v.code)}</p>
+          <h2>ห้อง</h2>
+          <div class="room-row">
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+          </div>
           <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
@@ -356,6 +368,11 @@
             ? `${full ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
                <button id="start" data-sfx="start" ${full ? "" : "disabled"}>เริ่ม</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
         if (v.isHost) {
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
