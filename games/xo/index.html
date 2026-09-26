@@ -200,13 +200,21 @@
 
     function hostRoom(name) {
       const code = newCode();
-      peer = new Peer(ID_PREFIX + code);
-      peer.on("open", () => {
+      const p = (peer = new Peer(ID_PREFIX + code));
+      hostConn = null;
+      let opened = false;
+      peer.once("open", () => {
+        opened = true;
         players.set("host", { name, score: 0 });
         game = { code, target: 3, phase: "lobby" };
         broadcast();
       });
-      peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" })));
+      peer.on("error", (e) => {
+        if (e.type === "unavailable-id") hostRoom(name);
+        else if (!opened) show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" });
+      });
+      // มือถือสลับแอปไปส่งรหัสให้เพื่อน การเชื่อมต่อกับเซิร์ฟเวอร์หลุดได้ ต่อใหม่เองให้เพื่อนยังหาห้องเจอ
+      peer.on("disconnected", () => setTimeout(() => opened && p.disconnected && !p.destroyed && p.reconnect(), 1000));
       peer.on("connection", (conn) => {
         conn.on("data", (msg) => handle(conn.peer, msg, conn));
         conn.on("close", () => {
@@ -294,6 +302,7 @@
     // ---------- เพื่อนที่เข้าห้อง ----------
     function joinRoom(name, code) {
       peer = new Peer();
+      hostConn = null;
       peer.on("open", () => {
         const conn = peer.connect(ID_PREFIX + code, { reliable: true });
         conn.on("open", () => conn.send({ t: "join", name }));
@@ -303,7 +312,8 @@
         });
         conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
       });
-      peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
+      // เข้าห้องแล้วคุยกับ host ตรงๆ เซิร์ฟเวอร์หลุดก็ไม่เป็นไร
+      peer.on("error", (e) => hostConn || show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
     }
 
     // ---------- หน้าจอ ----------

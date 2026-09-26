@@ -188,7 +188,9 @@
         <li>ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</li>
         <li>ทุกคนทอยเต๋า เห็นแค่ของตัวเอง</li>
         <li>ผลัดกันเสนอว่าเต๋าทั้งวงมีหน้านี้อย่างน้อยกี่ลูก</li>
+        <li>หน้า 1 นับเป็นหน้าอะไรก็ได้</li>
         <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
+        <li>เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งเดียว (ปัดขึ้น) เปลี่ยนกลับใช้สองเท่า + 1 เปิดรอบด้วยหน้า 1 ไม่ได้</li>
         <li>ไม่เชื่อ กด "โกหก" เปิดเต๋าทุกคน</li>
         <li>มีครบ คนกดโกหกเสีย 1 ลูก ไม่ครบ คนเสนอเสีย 1 ลูก</li>
         <li>คนเสียเต๋าเริ่มรอบถัดไป เหลือเต๋าคนสุดท้ายชนะ</li>
@@ -217,8 +219,16 @@
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
+    // กติกา Perudo: หน้า 1 นับเป็นหน้าอะไรก็ได้ เปิดรอบด้วยหน้า 1 ไม่ได้
     // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
-    const higher = (a, b) => !b || a.n > b.n || (a.n === b.n && a.face > b.face);
+    // เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
+    function higher(a, b) {
+      if (!b) return a.face !== 1;
+      if (a.face === 1) return b.face === 1 ? a.n > b.n : a.n >= Math.ceil(b.n / 2);
+      if (b.face === 1) return a.n >= b.n * 2 + 1;
+      return a.n > b.n || (a.n === b.n && a.face > b.face);
+    }
+    const counts = (d, face) => d === face || d === 1;
 
     let view = { screen: "home" };
     function show(next) { view = { ...view, ...next }; render(); }
@@ -232,13 +242,21 @@
 
     function hostRoom(name) {
       const code = newCode();
-      peer = new Peer(ID_PREFIX + code);
-      peer.on("open", () => {
+      const p = (peer = new Peer(ID_PREFIX + code));
+      hostConn = null;
+      let opened = false;
+      peer.once("open", () => {
+        opened = true;
         players.set("host", { name, count: 0, hand: [] });
         game = { code, start: 5, phase: "lobby" };
         broadcast();
       });
-      peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" })));
+      peer.on("error", (e) => {
+        if (e.type === "unavailable-id") hostRoom(name);
+        else if (!opened) show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" });
+      });
+      // มือถือสลับแอปไปส่งรหัสให้เพื่อน การเชื่อมต่อกับเซิร์ฟเวอร์หลุดได้ ต่อใหม่เองให้เพื่อนยังหาห้องเจอ
+      peer.on("disconnected", () => setTimeout(() => opened && p.disconnected && !p.destroyed && p.reconnect(), 1000));
       peer.on("connection", (conn) => {
         conn.on("data", (msg) => handle(conn.peer, msg, conn));
         conn.on("close", () => {
@@ -258,7 +276,7 @@
             }
           } else {
             players.delete(id);
-            if (game.order) game.order.splice(game.order.indexOf(id), 1);
+            if (game.order && game.order.includes(id)) game.order.splice(game.order.indexOf(id), 1);
           }
           broadcast();
         });
@@ -328,7 +346,7 @@
     function call(caller) {
       const { n, face, by } = game.bid;
       const hands = alive().map((id) => ({ name: players.get(id).name, dice: players.get(id).hand }));
-      const count = hands.reduce((s, h) => s + h.dice.filter((d) => d === face).length, 0);
+      const count = hands.reduce((s, h) => s + h.dice.filter((d) => counts(d, face)).length, 0);
       const loser = count >= n ? caller : by;
       players.get(loser).count--;
       game.reveal = { n, face, count, bidder: players.get(by).name, caller: players.get(caller).name, loser: players.get(loser).name, hands };
@@ -373,6 +391,7 @@
     // ---------- เพื่อนที่เข้าห้อง ----------
     function joinRoom(name, code) {
       peer = new Peer();
+      hostConn = null;
       peer.on("open", () => {
         const conn = peer.connect(ID_PREFIX + code, { reliable: true });
         conn.on("open", () => conn.send({ t: "join", name }));
@@ -382,7 +401,8 @@
         });
         conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
       });
-      peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
+      // เข้าห้องแล้วคุยกับ host ตรงๆ เซิร์ฟเวอร์หลุดก็ไม่เป็นไร
+      peer.on("error", (e) => hostConn || show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
     }
 
     // ---------- หน้าจอ ----------
@@ -401,7 +421,7 @@
       <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
       <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${r.n} &times; ${die(r.face)}</div>
       <p class="center">มีจริง <span class="hl">${r.count}</span> ลูก</p>
-      <ul>${r.hands.map((h) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d) => die(d, d === r.face ? "hit" : "")).join("")}</div></li>`).join("")}</ul>
+      <ul>${r.hands.map((h) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d) => die(d, counts(d, r.face) ? "hit" : "")).join("")}</div></li>`).join("")}</ul>
       <p class="status bad">${esc(r.loser)} เสีย 1 ลูก</p>`;
 
     // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
@@ -514,7 +534,7 @@
         const key = `${v.round}:${v.bid ? `${v.bid.n}-${v.bid.face}` : ""}`;
         if (key !== pickKey) {
           pickKey = key;
-          pick = v.bid ? { n: Math.min(v.bid.n + 1, v.total), face: v.bid.face } : { n: 1, face: 1 };
+          pick = v.bid ? { n: Math.min(v.bid.n + 1, v.total), face: v.bid.face } : { n: 1, face: 2 };
         }
         const canBid = higher(pick, v.bid);
         app.innerHTML = `
