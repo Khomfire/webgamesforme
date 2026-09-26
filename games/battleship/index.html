@@ -122,11 +122,13 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
-    /* กระดาน 10x10: s เรือ (ฟ้า), m พลาด (จุด), h โดน (สี่เหลี่ยมแดงกลางช่อง), x จม (แดงทั้งช่อง) */
-    .sea { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; margin: 8px 0 20px; }
+    /* กระดาน 10x10: รูปเรืออยู่ชั้นล่าง (.fleet) ช่องโปร่งใสอยู่ชั้นบน
+       เครื่องหมายในช่องวาดทับตัวเรือ: m พลาด (จุด), h โดน (สี่เหลี่ยมแดง), เรือที่จมเป็นสีแดงทั้งลำ */
+    .sea { position: relative; display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; margin: 8px 0 20px; }
     .sea.small { width: 62%; margin-left: auto; margin-right: auto; }
-    .sea > * {
+    .cell {
       position: relative;
+      z-index: 1;
       margin: 0;
       padding: 0;
       aspect-ratio: 1;
@@ -135,16 +137,41 @@
       box-shadow: none;
     }
     .sea button:disabled { opacity: 1; cursor: default; }
-    .sea button:not(:disabled):hover { background: #2c2950; }
+    .sea button:not(:disabled):hover { background: rgba(62, 224, 224, 0.15); }
     .sea button:active:not(:disabled) { transform: none; }
     .sea.aim { outline: 3px solid var(--yellow); outline-offset: 4px; }
-    .sea .s { background: var(--cyan); border-color: var(--cyan); }
-    .sea .m::after, .sea .h::after, .key.m::after, .key.h::after { content: ""; position: absolute; inset: 38%; background: var(--dim); }
-    .sea .h::after, .key.h::after { inset: 22%; background: var(--red); }
-    .mine .h { background: var(--cyan); border-color: var(--cyan); }
-    .sea .x, .key.x { background: var(--red); border-color: var(--red); }
-    /* จบเกม เปิดเรือที่ยังไม่โดนของอีกฝ่าย */
-    .theirs .s { background: transparent; border: 2px solid var(--cyan); }
+    .cell.m::after, .cell.h::after, .key.m::after, .key.h::after { content: ""; position: absolute; inset: 38%; background: var(--dim); }
+    .cell.h::after, .key.h::after { inset: 22%; background: var(--red); }
+    .key.x { background: var(--red); border-color: var(--red); }
+    /* เรือวางบนตาราง 10x10 ชุดเดียวกับช่อง: ฟ้า = เรือ, เหลือง = ลำที่เลือก, แดง = จม หรือวางตรงนั้นไม่ได้
+       เส้นขอบฟ้า = เรือที่ยังไม่โดนของอีกฝ่าย เปิดให้ดูตอนจบเกม */
+    .fleet {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 2px;
+      pointer-events: none;
+    }
+    .ship svg { display: block; width: 100%; height: 100%; }
+    .ship path { fill: var(--cyan); }
+    .ship .cabin { fill: var(--screen); opacity: 0.4; }
+    .ship.sel path { fill: var(--yellow); }
+    .ship.sunk path, .ship.bad path { fill: var(--red); }
+    .ship.ghost path { fill: none; stroke: var(--cyan); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+    .ship.ghost .cabin { display: none; }
+    /* อู่: เรือที่ยังไม่ได้วาง ยาวเท่ากับตอนอยู่บนกระดาน */
+    .dock { display: flex; flex-wrap: wrap; gap: 12px 5%; margin: 0 0 8px; }
+    .dock .ship {
+      width: calc(var(--len) * 10% - 2px);
+      aspect-ratio: var(--len) / 1;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      box-shadow: none;
+    }
     /* นัดล่าสุด: กรอบเหลืองกะพริบตอนเพิ่งยิง */
     .sea .last { outline: 3px solid var(--yellow); outline-offset: -1px; z-index: 1; animation: blink 480ms steps(1) 2; }
     @keyframes blink { 50% { outline-color: transparent; } }
@@ -174,7 +201,8 @@
       </div>
       <ol>
         <li>เรือคนละ 5 ลำ ยาว 5, 4, 3, 3, 2 ช่อง บนกระดาน 10x10</li>
-        <li>เรือวางแบบสุ่ม ไม่ติดกัน กดสุ่มใหม่ได้จนพอใจ แล้วกดพร้อม</li>
+        <li>วางเรือเอง: แตะเรือ แล้วแตะช่องที่จะวาง แตะเรือซ้ำเพื่อหมุน หรือกดสุ่ม</li>
+        <li>เรือห้ามติดกัน รวมแนวทแยง</li>
         <li>ยิงทีละนัดบนกระดานอีกฝ่าย โดนยิงต่อ พลาดเปลี่ยนตา</li>
         <li><span class="key m"></span> พลาด <span class="key h"></span> โดน <span class="key x"></span> จม (โดนครบทุกช่องของลำนั้น)</li>
         <li>สลับกันยิงก่อนทุกเกม</li>
@@ -225,12 +253,72 @@
     // ช่อง 0-99 เป็นพิกัด A1-J10 (คอลัมน์เป็นตัวอักษร แถวเป็นตัวเลข)
     const at = (i) => "ABCDEFGHIJ"[i % 10] + (Math.floor(i / 10) + 1);
     const STATE = { "": "", s: "เรือ", m: "พลาด", h: "โดน", x: "จม" };
-    // กระดานอีกฝ่ายเป็นปุ่มไว้ยิง กระดานเราเป็นแค่ภาพ
-    const sea = (cells, cls, last, shoot) => `
-      <div class="sea ${cls}${shoot ? " aim" : ""}">${cells.map((c, i) => {
-        const attrs = `class="${c}${i === last ? " last" : ""}" aria-label="${at(i)} ${STATE[c]}"`;
-        return cls === "theirs" ? `<button ${attrs} data-i="${i}" ${shoot && !c ? "" : "disabled"}></button>` : `<div ${attrs} role="img"></div>`;
+    const FLEET = [5, 4, 3, 3, 2];
+    const isDown = (cells) => cells[1] - cells[0] === 10;
+
+    // รูปเรือ: หัวแหลม ท้ายมน มีห้องบังคับการกลางลำ วาดในกรอบยาว len ช่อง (down = แนวตั้ง)
+    function shipSvg(len, down) {
+      const P = (x, y) => (down ? `${y} ${x}` : `${x} ${y}`);
+      const hull = `M${P(0.06, 0.5)} L${P(0.6, 0.14)} L${P(len - 0.25, 0.14)} Q${P(len - 0.06, 0.14)} ${P(len - 0.06, 0.5)} Q${P(len - 0.06, 0.86)} ${P(len - 0.25, 0.86)} L${P(0.6, 0.86)} Z`;
+      const [x, y, w, h] = down ? [0.3, len * 0.45, 0.4, len * 0.25] : [len * 0.45, 0.3, len * 0.25, 0.4];
+      return `<svg viewBox="0 0 ${down ? 1 : len} ${down ? len : 1}" preserveAspectRatio="none" aria-hidden="true"><path d="${hull}"/><rect class="cabin" x="${x}" y="${y}" width="${w}" height="${h}"/></svg>`;
+    }
+    // ships = [{ cells, cls }] วางบนตาราง 10x10 ชุดเดียวกับช่อง
+    const fleetLayer = (ships) => `<div class="fleet">${ships.map(({ cells, cls }) => {
+      const down = isDown(cells);
+      const area = `${Math.floor(cells[0] / 10) + 1} / ${(cells[0] % 10) + 1} / span ${down ? cells.length : 1} / span ${down ? 1 : cells.length}`;
+      return `<div class="ship ${cls}" style="grid-area: ${area}">${shipSvg(cells.length, down)}</div>`;
+    }).join("")}</div>`;
+    // กระดาน: marks = เครื่องหมายแต่ละช่อง, tap(i) = ช่องนั้นกดได้ไหม (ไม่ใส่ = เป็นแค่ภาพ)
+    const sea = (marks, cls, ships, last, tap) => `
+      <div class="sea ${cls}">${fleetLayer(ships)}${marks.map((c, i) => {
+        const attrs = `class="cell ${c}${i === last ? " last" : ""}" aria-label="${at(i)} ${STATE[c]}"`;
+        return tap ? `<button ${attrs} data-i="${i}" ${tap(i) ? "" : "disabled"}></button>` : `<div ${attrs} role="img"></div>`;
       }).join("")}</div>`;
+
+    // วางเรือ: เก็บในเครื่องจนกดพร้อม ships[k] = ช่องของลำที่ k (null = ยังอยู่ในอู่), sel = ลำที่เลือก, bad = ลำที่เพิ่งวางไม่ได้
+    let place = null;
+    const near = (a, b) => Math.abs(Math.floor(a / 10) - Math.floor(b / 10)) <= 1 && Math.abs((a % 10) - (b % 10)) <= 1;
+    // ลำ k หัวเรืออยู่ช่อง i: เลื่อนเข้ามาให้อยู่ในกระดาน แล้วต้องไม่ติดลำอื่นรวมแนวทแยง (ตรงกับ server) ไม่ได้คืน null
+    function fit(k, i, down) {
+      const len = FLEET[k];
+      const r = Math.min(Math.floor(i / 10), down ? 10 - len : 9);
+      const c = Math.min(i % 10, down ? 9 : 10 - len);
+      const cells = Array.from({ length: len }, (_, n) => (down ? (r + n) * 10 + c : r * 10 + c + n));
+      const others = place.ships.filter((ship, j) => j !== k && ship).flat();
+      return cells.some((x) => others.some((y) => near(x, y))) ? null : cells;
+    }
+    function move(k, i, down) {
+      const cells = fit(k, i, down);
+      if (!cells) {
+        place.bad = k;
+        setTimeout(() => { if (place) { place.bad = null; render(); } }, 400);
+        return;
+      }
+      const fromDock = !place.ships[k];
+      place.ships[k] = cells;
+      if (fromDock) place.sel = place.ships.findIndex((ship) => !ship); // วางจากอู่แล้ว เลือกลำถัดไปในอู่ให้เลย
+    }
+    // แตะช่อง: บนเรือ = เลือกลำนั้น (แตะลำที่เลือกอยู่ = หมุน), ช่องว่าง = ย้ายลำที่เลือกมา หัวเรืออยู่ช่องนั้น
+    function tapCell(i) {
+      const k = place.ships.findIndex((ship) => ship && ship.includes(i));
+      const sel = place.ships[place.sel];
+      if (k >= 0 && k !== place.sel) place.sel = k;
+      else if (k >= 0) move(k, sel[0], !isDown(sel));
+      else if (place.sel >= 0) move(place.sel, i, !!sel && isDown(sel));
+      render();
+    }
+    // สุ่มวางครบทุกลำ ลองใหม่ทั้งชุดถ้าลำหลังๆ หาที่ลงไม่ได้
+    function shuffle() {
+      do {
+        place.ships = FLEET.map(() => null);
+        for (let k = 0, tries = 0; k < FLEET.length && tries < 500; tries++) {
+          const cells = fit(k, Math.floor(Math.random() * 100), Math.random() < 0.5);
+          if (cells) place.ships[k++] = cells;
+        }
+      } while (!place.ships.every(Boolean));
+      place.sel = -1;
+    }
 
     let lastScreen, lastShots;
     function render() {
@@ -243,6 +331,7 @@
       else if (newShot && lastScreen === "play") v.last.hit ? playBoom() : playSfx("vote");
       lastScreen = v.screen;
       lastShots = v.last && v.last.shots;
+      if (v.screen !== "place" || v.ready) place = null;
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -307,23 +396,39 @@
         return;
       }
 
-      // วางเรือ: สุ่มใหม่ได้จนกดพร้อม
+      // วางเรือ: เรือเริ่มอยู่ในอู่ใต้กระดาน กดพร้อมได้เมื่อวางครบ
       if (v.screen === "place") {
         const foe = v.players.find((p) => !p.me);
-        app.innerHTML = `
-          <h2>เรือของคุณ</h2>
-          ${sea(v.mine, "mine")}
-          ${v.ready
-            ? `<p class="status">${foe.ready ? "" : `รอ ${esc(foe.name)}`}</p>`
-            : `<div class="buttons">
-                 <button id="shuffle" class="alt" data-sfx="roll">สุ่มใหม่</button>
-                 <button id="ready" data-sfx="confirm">พร้อม</button>
-               </div>
-               ${foe.ready ? `<p class="hint center">${esc(foe.name)} พร้อมแล้ว</p>` : ""}`}`;
-        if (!v.ready) {
-          app.querySelector("#shuffle").onclick = () => send({ t: "shuffle" });
-          app.querySelector("#ready").onclick = () => send({ t: "ready" });
+        if (v.ready) {
+          app.innerHTML = `
+            <h2>เรือของคุณ</h2>
+            ${sea(Array.from({ length: 100 }, (_, i) => (v.myFleet.some((ship) => ship.cells.includes(i)) ? "s" : "")), "mine", v.myFleet.map((ship) => ({ cells: ship.cells, cls: "" })))}
+            <p class="status">${foe.ready ? "" : `รอ ${esc(foe.name)}`}</p>`;
+          return;
         }
+        place ??= { ships: FLEET.map(() => null), sel: 0, bad: null };
+        const cls = (k) => (k === place.bad ? "bad" : k === place.sel ? "sel" : "");
+        const marks = Array.from({ length: 100 }, (_, i) => (place.ships.some((ship) => ship && ship.includes(i)) ? "s" : ""));
+        app.innerHTML = `
+          <h2>วางเรือ</h2>
+          ${sea(marks, "mine", place.ships.map((cells, k) => cells && { cells, cls: cls(k) }).filter(Boolean), -1, () => true)}
+          <div class="dock">${place.ships.map((cells, k) => cells ? "" : `
+            <button class="ship ${cls(k)}" style="--len: ${FLEET[k]}" data-k="${k}" aria-label="เรือ ${FLEET[k]} ช่อง" aria-pressed="${k === place.sel}">${shipSvg(FLEET[k], false)}</button>`).join("")}
+          </div>
+          <p class="hint center">แตะเรือ แล้วแตะช่องที่จะวาง แตะซ้ำเพื่อหมุน</p>
+          <div class="buttons">
+            <button id="shuffle" class="alt" data-sfx="roll">สุ่ม</button>
+            <button id="ready" data-sfx="confirm" ${place.ships.every(Boolean) ? "" : "disabled"}>พร้อม</button>
+          </div>
+          ${foe.ready ? `<p class="hint center">${esc(foe.name)} พร้อมแล้ว</p>` : ""}`;
+        app.querySelectorAll(".sea .cell").forEach((b) => (b.onclick = () => tapCell(Number(b.dataset.i))));
+        app.querySelectorAll(".dock .ship").forEach((b) => (b.onclick = () => {
+          const k = Number(b.dataset.k);
+          place.sel = place.sel === k ? -1 : k;
+          render();
+        }));
+        app.querySelector("#shuffle").onclick = () => { shuffle(); render(); };
+        app.querySelector("#ready").onclick = () => send({ t: "ready", ships: place.ships });
         return;
       }
 
@@ -337,11 +442,11 @@
           : v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
         <p class="hint center" style="margin: 0">${shot || "&nbsp;"}</p>
         <h2>${esc(v.foeName)}</h2>
-        ${sea(v.theirs, "theirs", l && l.mine ? l.i : -1, v.myTurn)}
+        ${sea(v.theirs, `theirs${v.myTurn ? " aim" : ""}`, v.theirFleet.map((ship) => ({ cells: ship.cells, cls: ship.sunk ? "sunk" : "ghost" })), l && l.mine ? l.i : -1, (i) => v.myTurn && !v.theirs[i])}
         <h2 class="center">คุณ</h2>
-        ${sea(v.mine, "mine small", l && !l.mine ? l.i : -1)}
+        ${sea(v.mine, "mine small", v.myFleet.map((ship) => ({ cells: ship.cells, cls: ship.sunk ? "sunk" : "" })), l && !l.mine ? l.i : -1)}
         ${v.screen === "over" ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint center">รอเกมใหม่</p>` : ""}`;
-      app.querySelectorAll(".theirs button").forEach((b) => (b.onclick = () => send({ t: "shoot", i: Number(b.dataset.i) })));
+      app.querySelectorAll(".theirs .cell").forEach((b) => (b.onclick = () => send({ t: "shoot", i: Number(b.dataset.i) })));
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
         winner.showModal();
