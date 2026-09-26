@@ -45,7 +45,7 @@ export function views(state, now = Date.now()) {
   const g = GAMES[state.game];
   return Object.entries(state.tokens).map(([token, id]) => ({
     token,
-    view: { ...g.view(state, id, now), code: state.code, me: id, isHost: id === state.owner, seq: state.seq },
+    view: { ...g.view(state, id, now), code: state.code, me: id, ids: state.players.map((p) => p.id), isHost: id === state.owner, seq: state.seq },
   }));
 }
 

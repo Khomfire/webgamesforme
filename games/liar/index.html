@@ -236,9 +236,10 @@
     let room;
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
-    function enter(name, code) {
-      room = openRoom("liar", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }));
-      if (code) room.join(code, name);
+    function enter(name, code, saved) {
+      room = openRoom("liar", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }), saved);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
       else room.create(name);
     }
 
@@ -430,10 +431,14 @@
     const winner = document.getElementById("winner");
     document.getElementById("winner-close").onclick = () => winner.close();
 
-    // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
-    window.addEventListener("pagehide", () => room && room.leave());
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
 
-    render();
+    const saved = savedRoom("liar");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
   </script>
 </body>
 </html>
