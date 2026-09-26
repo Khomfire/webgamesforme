@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIAR'S DICE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
+    /* ลูกเต๋า: จุด 3x3 ติดเฉพาะช่องของหน้านั้น */
+    .die {
+      --c: var(--text);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12%;
+      margin: 0;
+      padding: 8px;
+      aspect-ratio: 1;
+      border: 3px solid var(--c);
+      background: var(--screen);
+      color: var(--c);
+      box-shadow: none;
+    }
+    .die span { aspect-ratio: 1; }
+    .die span.on { background: currentColor; }
+    /* เต๋าในมือ: แถวละ 5 ลูก อยู่กลางแถว */
+    .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
+    .dice .die { flex: 0 0 min(64px, calc((100% - 48px) / 5)); padding: 10px; border-width: 4px; }
+    /* เต๋าเล็กตอนเปิดเต๋า: หน้าที่เสนอเป็นสีเหลือง */
+    .dice.small { justify-content: flex-end; gap: 4px; margin: 0; }
+    .dice.small .die { --c: var(--dim); flex: 0 0 26px; padding: 3px; border-width: 2px; }
+    .dice.small .die.hit { --c: var(--yellow); }
+    /* เลือกหน้าเต๋าที่จะเสนอ */
+    .faces { gap: 8px; }
+    .faces .die { --c: var(--dim); flex-basis: min(48px, calc((100% - 40px) / 6)); padding: 6px; border-width: 3px; }
+    .faces .die.picked { --c: var(--yellow); }
+    .bid { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 12px 0 4px; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
+    .bid .die { --c: var(--yellow); width: 56px; padding: 8px; border-width: 4px; }
+    .stepper { display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 20px; }
+    .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
+    .liar { --c: var(--red); }
+    .center { text-align: center; }
+    .rolling { pointer-events: none; }
+    .rolling .die { animation: shake 140ms steps(2) infinite; }
+    @keyframes shake {
+      from { transform: translate(-3px, 2px) rotate(-8deg); }
+      to { transform: translate(3px, -2px) rotate(8deg); }
+    }
+    /* สีบอกความหมาย: เหลือง = ตาคุณ/ผู้ชนะ, ฟ้า = รอด, แดง = เสียเต๋า/โกหก */
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 16px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .error { color: var(--red); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>LIAR'S DICE</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กฎ</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</li>
+        <li>ทุกคนทอยเต๋า เห็นแค่ของตัวเอง</li>
+        <li>ผลัดกันเสนอว่าเต๋าทั้งวงมีหน้านี้อย่างน้อยกี่ลูก</li>
+        <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
+        <li>ไม่เชื่อ กด "โกหก" เปิดเต๋าทุกคน</li>
+        <li>มีครบ คนกดโกหกเสีย 1 ลูก ไม่ครบ คนเสนอเสีย 1 ลูก</li>
+        <li>คนเสียเต๋าเริ่มรอบถัดไป เหลือเต๋าคนสุดท้ายชนะ</li>
+      </ol>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script>
+    const ID_PREFIX = "wgfm-liar-";
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
+    const higher = (a, b) => !b || a.n > b.n || (a.n === b.n && a.face > b.face);
+
+    let view = { screen: "home" };
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let peer, hostConn, leaving = false;
+    const send = (msg) => (hostConn ? hostConn.send(msg) : handle("host", msg));
+
+    // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
+    const players = new Map(); // id -> { name, count, hand, conn }
+    let game;                  // { code, start, phase, order, turn, bid, round, first, reveal, ready, winner }
+
+    function hostRoom(name) {
+      const code = newCode();
+      peer = new Peer(ID_PREFIX + code);
+      peer.on("open", () => {
+        players.set("host", { name, count: 0, hand: [] });
+        game = { code, start: 5, phase: "lobby" };
+        broadcast();
+      });
+      peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" })));
+      peer.on("connection", (conn) => {
+        conn.on("data", (msg) => handle(conn.peer, msg, conn));
+        conn.on("close", () => {
+          const id = conn.peer;
+          const p = players.get(id);
+          if (!p) return;
+          if (game.phase === "play" || game.phase === "reveal") {
+            const next = nextAlive(id);
+            players.delete(id);
+            game.order.splice(game.order.indexOf(id), 1);
+            if (alive().length < 2) toLobby();
+            else if (game.phase === "play" && p.count) startRound(game.turn === id ? next : game.turn); // ทอยใหม่ทั้งวง
+            else if (game.phase === "reveal") {
+              game.ready.delete(id);
+              if (game.first === id) game.first = next;
+              if (game.ready.size >= alive().length) startRound(game.first);
+            }
+          } else {
+            players.delete(id);
+            if (game.order) game.order.splice(game.order.indexOf(id), 1);
+          }
+          broadcast();
+        });
+      });
+    }
+
+    const alive = () => game.order.filter((id) => players.get(id).count > 0);
+    // คนถัดไปที่ยังมีเต๋า เรียงตามลำดับที่นั่ง
+    function nextAlive(id) {
+      const i = game.order.indexOf(id);
+      for (let k = 1; k <= game.order.length; k++) {
+        const next = game.order[(i + k) % game.order.length];
+        if (next !== id && players.get(next).count > 0) return next;
+      }
+      return id;
+    }
+
+    function toLobby() {
+      for (const p of players.values()) Object.assign(p, { count: 0, hand: [] });
+      game.phase = "lobby";
+    }
+
+    function handle(id, msg, conn) {
+      if (msg.t === "join") {
+        const name = String(msg.name).trim().slice(0, 20);
+        if (game.phase !== "lobby") return conn.send({ t: "rejected", reason: "เกมเริ่มแล้ว" });
+        if (!name || [...players.values()].some((p) => p.name === name)) return conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
+        players.set(id, { name, count: 0, hand: [], conn });
+      }
+      if (!players.has(id)) return;
+      if (game.phase === "play" && game.turn === id) {
+        const total = alive().reduce((s, x) => s + players.get(x).count, 0);
+        const bid = { n: Number(msg.n), face: Number(msg.face) };
+        if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total && bid.face >= 1 && bid.face <= 6 && higher(bid, game.bid)) {
+          game.bid = { ...bid, by: id };
+          game.turn = nextAlive(id);
+        }
+        if (msg.t === "liar" && game.bid) call(id);
+      }
+      if (msg.t === "ready" && game.phase === "reveal" && players.get(id).count > 0) {
+        game.ready.add(id);
+        if (game.ready.size >= alive().length) startRound(game.first);
+      }
+      if (id === "host") {
+        if (msg.t === "start-dice") game.start = Math.min(5, Math.max(1, Math.round(Number(msg.value)) || 5));
+        if (msg.t === "start" && game.phase === "lobby" && players.size >= 2) {
+          game.order = [...players.keys()];
+          for (const p of players.values()) p.count = game.start;
+          game.round = 0;
+          startRound(game.order[0]);
+        }
+        if (msg.t === "newgame" && game.phase === "over") toLobby();
+      }
+      broadcast();
+    }
+
+    function startRound(first) {
+      for (const id of alive()) {
+        const p = players.get(id);
+        p.hand = Array.from({ length: p.count }, () => 1 + Math.floor(Math.random() * 6)).sort((a, b) => a - b);
+      }
+      Object.assign(game, { phase: "play", turn: first, bid: null, reveal: null, ready: new Set() });
+      game.round++;
+    }
+
+    // จับโกหก: เปิดเต๋าทุกคน นับหน้าที่เสนอ คนผิดเสีย 1 ลูก
+    function call(caller) {
+      const { n, face, by } = game.bid;
+      const hands = alive().map((id) => ({ name: players.get(id).name, dice: players.get(id).hand }));
+      const count = hands.reduce((s, h) => s + h.dice.filter((d) => d === face).length, 0);
+      const loser = count >= n ? caller : by;
+      players.get(loser).count--;
+      game.reveal = { n, face, count, bidder: players.get(by).name, caller: players.get(caller).name, loser: players.get(loser).name, hands };
+      const left = alive();
+      if (left.length === 1) {
+        game.phase = "over";
+        game.winner = players.get(left[0]).name;
+      } else {
+        game.phase = "reveal";
+        game.first = players.get(loser).count ? loser : nextAlive(loser);
+      }
+    }
+
+    function viewFor(id) {
+      const v = {
+        screen: game.phase, code: game.code, start: game.start, isHost: id === "host",
+        players: [...players].map(([pid, p]) => ({ name: p.name, count: p.count, now: game.phase === "play" && game.turn === pid })),
+      };
+      if (game.phase !== "lobby") {
+        const me = players.get(id);
+        Object.assign(v, {
+          myTurn: game.phase === "play" && game.turn === id,
+          turnName: game.phase === "play" ? players.get(game.turn).name : "",
+          hand: game.phase === "play" ? me.hand : [], // เห็นแค่เต๋าตัวเอง
+          out: me.count === 0,
+          total: alive().reduce((s, x) => s + players.get(x).count, 0),
+          bid: game.bid && { n: game.bid.n, face: game.bid.face, name: players.get(game.bid.by).name },
+          round: game.round, reveal: game.reveal, winner: game.winner,
+          ready: game.ready.has(id), readyCount: game.ready.size, aliveCount: alive().length,
+        });
+      }
+      return v;
+    }
+
+    function broadcast() {
+      for (const [id, p] of players) {
+        if (id === "host") { view = viewFor("host"); render(); }
+        else p.conn.send({ t: "state", view: viewFor(id) });
+      }
+    }
+
+    // ---------- เพื่อนที่เข้าห้อง ----------
+    function joinRoom(name, code) {
+      peer = new Peer();
+      peer.on("open", () => {
+        const conn = peer.connect(ID_PREFIX + code, { reliable: true });
+        conn.on("open", () => conn.send({ t: "join", name }));
+        conn.on("data", (msg) => {
+          if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
+          if (msg.t === "rejected") { leaving = true; peer.destroy(); show({ screen: "home", error: msg.reason }); }
+        });
+        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
+      });
+      peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
+    }
+
+    // ---------- หน้าจอ ----------
+    const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+    const pips = (v) => Array.from({ length: 9 }, (_, i) => `<span${PIPS[v].includes(i) ? ' class="on"' : ""}></span>`).join("");
+    const die = (v, cls = "") => `<div class="die ${cls}" role="img" aria-label="${v}">${pips(v)}</div>`;
+
+    const scoreboard = (v) => `
+      <h2>ผู้เล่น</h2>
+      <ul>${v.players.map((p) => `
+        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span>${p.count} ลูก</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
+      </ul>`;
+
+    // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
+    const revealBox = (r) => `
+      <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
+      <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${r.n} &times; ${die(r.face)}</div>
+      <p class="center">มีจริง <span class="hl">${r.count}</span> ลูก</p>
+      <ul>${r.hands.map((h) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d) => die(d, d === r.face ? "hit" : "")).join("")}</div></li>`).join("")}</ul>
+      <p class="status bad">${esc(r.loser)} เสีย 1 ลูก</p>`;
+
+    // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
+    let rollTimer;
+    function animateRoll(box) {
+      clearInterval(rollTimer);
+      if (!box || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const dice = [...box.querySelectorAll(".die")];
+      const faces = dice.map((d) => d.innerHTML);
+      box.classList.add("rolling");
+      playSfx("roll");
+      let n = 0;
+      rollTimer = setInterval(() => {
+        if (++n < 9) return dice.forEach((d) => (d.innerHTML = pips(1 + Math.floor(Math.random() * 6))));
+        clearInterval(rollTimer);
+        dice.forEach((d, i) => (d.innerHTML = faces[i]));
+        box.classList.remove("rolling");
+      }, 70);
+    }
+
+    // ค่าที่กำลังเลือกจะเสนอ เก็บในเครื่องตัวเอง เริ่มใหม่เมื่อมีคนเสนอ
+    let pick, pickKey;
+    let lastScreen, lastMyTurn, lastRound;
+    function render() {
+      clearInterval(rollTimer);
+      const v = view;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (gameOver) playSfx("win");
+      else if (v.screen === "reveal" && lastScreen === "play") playSfx("vote");
+      if (v.screen !== "over" && winner.open) winner.close();
+      if (v.screen === "play" && v.myTurn && !lastMyTurn && v.round === lastRound) playSfx("next");
+      const newRound = v.screen === "play" && v.round !== lastRound;
+      lastScreen = v.screen;
+      lastMyTurn = v.myTurn;
+      lastRound = v.round;
+
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">ชื่อ</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          hostRoom(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          leaving = false;
+          joinRoom(name, code);
+        };
+        return;
+      }
+
+      if (v.screen === "lobby") {
+        const enough = v.players.length >= 2;
+        app.innerHTML = `
+          <h2>ห้อง</h2>
+          <div class="room-row">
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+          </div>
+          <h2>ตั้งค่า</h2>
+          ${v.isHost
+            ? `<label for="start-dice">เต๋าคนละ (1-5 ลูก)</label>
+               <input id="start-dice" type="number" min="1" max="5" value="${v.start}">`
+            : `<p>เต๋าคนละ <span class="hl">${v.start}</span> ลูก</p>`}
+          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
+          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `<p class="hint">ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</p>
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        if (v.isHost) {
+          app.querySelector("#start-dice").onchange = (e) => send({ t: "start-dice", value: e.target.value });
+          app.querySelector("#start").onclick = () => send({ t: "start" });
+        }
+        return;
+      }
+
+      if (v.screen === "play") {
+        const key = `${v.round}:${v.bid ? `${v.bid.n}-${v.bid.face}` : ""}`;
+        if (key !== pickKey) {
+          pickKey = key;
+          pick = v.bid ? { n: Math.min(v.bid.n + 1, v.total), face: v.bid.face } : { n: 1, face: 1 };
+        }
+        const canBid = higher(pick, v.bid);
+        app.innerHTML = `
+          ${scoreboard(v)}
+          <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
+          ${v.bid
+            ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${v.bid.n} &times; ${die(v.bid.face)}</div>
+               <p class="center">${esc(v.bid.name)} เสนอ</p>`
+            : ""}
+          <p class="hint center">ทั้งวง ${v.total} ลูก</p>
+          <h2 style="margin-top: 24px">เต๋าคุณ</h2>
+          ${v.out ? `<p class="bad">ออกแล้ว</p>` : `<div class="dice" id="hand">${v.hand.map((d) => die(d)).join("")}</div>`}
+          ${v.myTurn
+            ? `<div class="stepper">
+                 <button class="icon-btn" id="less" aria-label="ลดจำนวน" ${pick.n > 1 ? "" : "disabled"}>-</button>
+                 <span class="qty" aria-label="จำนวน">${pick.n}</span>
+                 <button class="icon-btn" id="more" aria-label="เพิ่มจำนวน" ${pick.n < v.total ? "" : "disabled"}>+</button>
+               </div>
+               <div class="dice faces">${[1, 2, 3, 4, 5, 6].map((f) => `<button class="die${f === pick.face ? " picked" : ""}" data-face="${f}" aria-label="หน้า ${f}" aria-pressed="${f === pick.face}">${pips(f)}</button>`).join("")}</div>
+               <div class="buttons">
+                 <button id="bid" data-sfx="confirm" ${canBid ? "" : "disabled"}>เสนอ</button>
+                 <button id="liar" class="liar" data-sfx="vote" ${v.bid ? "" : "disabled"}>โกหก</button>
+               </div>`
+            : ""}`;
+        if (v.myTurn) {
+          app.querySelector("#less").onclick = () => { pick.n--; render(); };
+          app.querySelector("#more").onclick = () => { pick.n++; render(); };
+          app.querySelectorAll("[data-face]").forEach((b) => (b.onclick = () => { pick.face = Number(b.dataset.face); render(); }));
+          app.querySelector("#bid").onclick = () => send({ t: "bid", n: pick.n, face: pick.face });
+          app.querySelector("#liar").onclick = () => send({ t: "liar" });
+        }
+        if (newRound) animateRoll(app.querySelector("#hand"));
+        return;
+      }
+
+      // reveal / over
+      app.innerHTML = `
+        ${revealBox(v.reveal)}
+        ${v.screen === "over"
+          ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint center">รอเกมใหม่</p>`
+          : v.out ? `<p class="hint center">รอคนอื่น</p>`
+          : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
+        ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
+        <div style="margin-top: 24px">${scoreboard(v)}</div>`;
+      if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+      if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+      if (gameOver) {
+        document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
+        winner.showModal();
+        fireworks();
+      }
+    }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
+    window.addEventListener("pagehide", () => peer && peer.destroy());
+
+    render();
+  </script>
+</body>
+</html>
