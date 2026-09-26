@@ -390,19 +390,22 @@
 
     // ---------- เพื่อนที่เข้าห้อง ----------
     function joinRoom(name, code) {
-      peer = new Peer();
+      const p = (peer = new Peer());
       hostConn = null;
+      const fail = (error) => { leaving = true; p.destroy(); show({ screen: "home", error }); };
       peer.on("open", () => {
         const conn = peer.connect(ID_PREFIX + code, { reliable: true });
         conn.on("open", () => conn.send({ t: "join", name }));
         conn.on("data", (msg) => {
           if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
-          if (msg.t === "rejected") { leaving = true; peer.destroy(); show({ screen: "home", error: msg.reason }); }
+          if (msg.t === "rejected") fail(msg.reason);
         });
         conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
       });
       // เข้าห้องแล้วคุยกับ host ตรงๆ เซิร์ฟเวอร์หลุดก็ไม่เป็นไร
-      peer.on("error", (e) => hostConn || show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
+      peer.on("error", (e) => hostConn || fail(e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ"));
+      // เจอห้องแต่ต่อตรงกับเครื่อง host ไม่ติด (มักเป็นเน็ตคนละเครือข่าย) บอกแทนการค้าง
+      setTimeout(() => hostConn || p.destroyed || fail("ต่อเครื่องเจ้าของห้องไม่ติด"), 15000);
     }
 
     // ---------- หน้าจอ ----------
