@@ -4,6 +4,10 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## Project Rules
+
+- **No emoji, anywhere.** Not in UI text, code, comments, docs, or commit messages. This includes symbols that phones render as emoji, such as triangle arrows, check marks, and stars; use plain text or CSS instead.
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
