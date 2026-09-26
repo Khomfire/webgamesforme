@@ -158,18 +158,20 @@
     .rule-row .pts { min-width: 3em; text-align: right; color: var(--yellow); font-weight: 700; }
     #last { text-align: center; }
     .center { text-align: center; }
-    /* ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางทับกันตรงกลาง */
-    .pair { display: flex; justify-content: center; align-items: flex-start; margin: 24px 0 8px; }
+    /* ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางแยกกันตรงกลาง */
+    .pair { display: flex; justify-content: center; gap: 32px; margin: 24px 0 8px; }
     .pair .die { --c: var(--text); width: 88px; padding: 12px; border-width: 4px; transform: rotate(-8deg); }
-    .pair .die + .die { margin: 36px 0 0 -14px; transform: rotate(12deg); }
+    .pair .die + .die { transform: rotate(12deg); }
     .roll-sum { display: flex; align-items: center; gap: 8px; }
     .roll-sum .dice { margin: 0; gap: 4px; }
     .roll-sum .dice .die { --c: var(--text); flex: 0 0 26px; padding: 3px; border-width: 2px; }
     .dim { opacity: 0.45; }
-    /* เต๋าที่เพิ่งทอยหาคนเริ่ม: หมุนเร็วแล้วช้าลงจนหยุด (1s ต้องตรงกับ SPIN)
+    /* เต๋าที่เพิ่งทอยหาคนเริ่ม: หมุนเร็วแล้วช้าลงจนหยุด ลูกที่สองหมุนสวนทาง (1.6s ต้องตรงกับ SPIN)
        --left = เวลาที่ยังหมุนเหลือ วาดใหม่กลางคันก็หมุนต่อจากเดิม ผลแต้มรอโชว์ตอนหยุด */
-    .spin .die { animation: spin 1s cubic-bezier(0.33, 1, 0.68, 1) calc(var(--left) - 1s) both; }
-    @keyframes spin { from { transform: rotate(-2turn) scale(0.7); } }
+    .spin .die { animation: spin 1.6s cubic-bezier(0.33, 1, 0.68, 1) calc(var(--left) - 1.6s) both; }
+    .spin .die + .die { animation-name: spin-back; }
+    @keyframes spin { from { transform: rotate(-3turn) scale(0.7); } }
+    @keyframes spin-back { from { transform: rotate(3turn) scale(0.7); } }
     .landing { animation: land 0s var(--left) both; }
     @keyframes land { from { visibility: hidden; } }
     .rolling { pointer-events: none; }
@@ -325,9 +327,9 @@
       }, true);
     }
 
-    // ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางทับกันตรงกลาง คนอื่นอยู่ในรายการ ตัดสินได้แล้วเจ้าของห้องเริ่มเกมให้
+    // ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางแยกกันตรงกลาง คนอื่นอยู่ในรายการ ตัดสินได้แล้วเจ้าของห้องเริ่มเกมให้
     // เต๋าที่เพิ่งทอยได้หมุน SPIN ms จำเวลาเริ่มหมุนของแต่ละคนไว้ มีสถานะใหม่มากลางคันก็หมุนต่อได้ไม่สะดุด
-    const SPIN = 1000;
+    const SPIN = 1600;
     let seenOpening = {}, spinAt = {}, spinFrame, seenStatus, statusAt, goTimer;
     function orderScreen(v) {
       const o = v.opening;
@@ -363,7 +365,7 @@
         </ul>`;
       if (o.mine) app.querySelector("#first-roll").onclick = () => send({ t: "first-roll" });
       spinFaces();
-      if (o.starter && v.isHost && !goTimer) goTimer = setTimeout(() => { goTimer = null; send({ t: "go" }); }, 2500);
+      if (o.starter && v.isHost && !goTimer) goTimer = setTimeout(() => { goTimer = null; send({ t: "go" }); }, 3100);
     }
 
     // สุ่มหน้าเต๋าที่กำลังหมุน เปลี่ยนหน้าถี่ตอนหมุนเร็วแล้วห่างขึ้นตามความเร็วหมุน (ease-out เดียวกับ CSS)
