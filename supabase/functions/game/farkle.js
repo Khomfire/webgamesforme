@@ -1,4 +1,6 @@
 // FARKLE: 2 คนขึ้นไป ผลัดกันทอยเต๋า 6 ลูก เก็บแต้มจนถึงเป้าหมาย แล้วคนอื่นได้อีกคนละตา
+import { leaveOpening, openingView, rollOpening, startOpening } from "./opening.js";
+
 const pl = (s, id) => s.players.find((p) => p.id === id);
 
 // แต้มของเต๋าชุดที่เลือก ถ้ามีลูกไหนไม่ได้แต้มคืน 0 (หน้าเกมมีสำเนาไว้โชว์แต้ม ต้องแก้ให้ตรงกัน)
@@ -70,6 +72,7 @@ export default {
   player: () => ({ score: 0 }),
 
   handle(s, id, msg) {
+    if (msg.t === "first-roll") rollOpening(s, id);
     if (s.phase === "play" && s.order[s.turn] === id && (msg.t === "roll" || msg.t === "bank")) {
       // เต๋าที่เลือกเก็บต้องได้แต้มทุกลูก ยกเว้นตอนเริ่มตาที่ยังไม่มีเต๋า
       const keep = [...new Set(msg.keep)].filter((i) => Number.isInteger(i) && i >= 0 && i < s.dice.length);
@@ -85,8 +88,11 @@ export default {
     }
     if (id === s.owner) {
       if (msg.t === "target") s.target = Math.min(20000, Math.max(500, Math.round(Number(msg.value) / 500) * 500 || 5000));
-      if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
-        Object.assign(s, { phase: "play", order: s.players.map((p) => p.id), turn: -1, rolls: 0, last: null, final: null });
+      if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) startOpening(s);
+      // ทอยหาคนเริ่มเสร็จแล้ว คนที่ได้เริ่มเล่นตาแรก
+      if (msg.t === "go" && s.phase === "order" && s.opening.starter) {
+        const order = s.players.map((p) => p.id);
+        Object.assign(s, { phase: "play", order, turn: order.indexOf(s.opening.starter) - 1, rolls: 0, last: null, final: null });
         nextTurn(s);
       }
       if (msg.t === "newgame" && s.phase === "over") {
@@ -97,6 +103,10 @@ export default {
   },
 
   leave(s, id) {
+    if (s.phase === "order") {
+      if (s.players.length < 2) s.phase = "lobby";
+      else leaveOpening(s, id);
+    }
     if (s.phase !== "play") return;
     const i = s.order.indexOf(id);
     s.order.splice(i, 1);
@@ -119,7 +129,8 @@ export default {
       screen: s.phase, target: s.target,
       players: s.players.map((p) => ({ name: p.name, score: p.score, now: s.phase === "play" && s.order[s.turn] === p.id })),
     };
-    if (s.phase !== "lobby") {
+    if (s.phase === "order") v.opening = openingView(s, id);
+    else if (s.phase !== "lobby") {
       Object.assign(v, {
         myTurn: s.phase === "play" && s.order[s.turn] === id,
         turnName: s.phase === "play" ? pl(s, s.order[s.turn]).name : "",

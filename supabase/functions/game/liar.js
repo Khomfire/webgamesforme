@@ -1,5 +1,7 @@
 // LIAR'S DICE: ทุกคนทอยเต๋าลับ ผลัดกันเสนอ จับโกหกแล้วคนผิดเสีย 1 ลูก เหลือเต๋าคนสุดท้ายชนะ
 // กฎเสริมที่เจ้าของห้องเปิดได้: wild (หน้า 1 แทนทุกหน้า) และ palifico
+import { leaveOpening, openingView, rollOpening, startOpening } from "./opening.js";
+
 const pl = (s, id) => s.players.find((p) => p.id === id);
 
 // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
@@ -71,6 +73,7 @@ export default {
   player: () => ({ count: 0, hand: [] }),
 
   handle(s, id, msg) {
+    if (msg.t === "first-roll") rollOpening(s, id);
     if (s.phase === "play" && s.turn === id) {
       const bid = { n: Number(msg.n), face: Number(msg.face) };
       if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total(s) && bid.face >= 1 && bid.face <= 6 && higher(bid, s.bid, mode(s))) {
@@ -90,8 +93,10 @@ export default {
         s.order = s.players.map((p) => p.id);
         for (const p of s.players) p.count = s.start;
         s.round = 0;
-        startRound(s, s.order[0]);
+        startOpening(s);
       }
+      // ทอยหาคนเริ่มเสร็จแล้ว คนที่ได้เริ่มเสนอก่อน
+      if (msg.t === "go" && s.phase === "order" && s.opening.starter) startRound(s, s.opening.starter);
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
   },
@@ -101,6 +106,10 @@ export default {
     if (!s.order || !s.order.includes(id)) return;
     const next = nextAlive(s, id);
     s.order.splice(s.order.indexOf(id), 1);
+    if (s.phase === "order") {
+      if (s.players.length < 2) toLobby(s);
+      else leaveOpening(s, id);
+    }
     if (s.phase !== "play" && s.phase !== "reveal") return;
     if (alive(s).length < 2) toLobby(s);
     else if (s.phase === "play" && gone.count) startRound(s, s.turn === id ? next : s.turn); // ทอยใหม่ทั้งวง
@@ -116,7 +125,8 @@ export default {
       screen: s.phase, start: s.start, rules: { wild: s.wild, palifico: s.palifico },
       players: s.players.map((p) => ({ name: p.name, count: p.count, now: s.phase === "play" && s.turn === p.id })),
     };
-    if (s.phase !== "lobby") {
+    if (s.phase === "order") v.opening = openingView(s, id);
+    else if (s.phase !== "lobby") {
       const me = pl(s, id);
       Object.assign(v, {
         myTurn: s.phase === "play" && s.turn === id,

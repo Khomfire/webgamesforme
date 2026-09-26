@@ -157,6 +157,15 @@
     .rule-row .note { margin-left: auto; color: var(--dim); font-size: 0.9rem; }
     .rule-row .pts { min-width: 3em; text-align: right; color: var(--yellow); font-weight: 700; }
     #last { text-align: center; }
+    .center { text-align: center; }
+    /* ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางทับกันตรงกลาง */
+    .pair { display: flex; justify-content: center; align-items: flex-start; margin: 24px 0 8px; }
+    .pair .die { --c: var(--text); width: 88px; padding: 12px; border-width: 4px; transform: rotate(-8deg); }
+    .pair .die + .die { margin: 36px 0 0 -14px; transform: rotate(12deg); }
+    .roll-sum { display: flex; align-items: center; gap: 8px; }
+    .roll-sum .dice { margin: 0; gap: 4px; }
+    .roll-sum .dice .die { --c: var(--text); flex: 0 0 26px; padding: 3px; border-width: 2px; }
+    .dim { opacity: 0.45; }
     .rolling { pointer-events: none; }
     .rolling .die { animation: shake 140ms steps(2) infinite; }
     @keyframes shake {
@@ -186,6 +195,7 @@
       </div>
       <ol>
         <li>2 คนขึ้นไป</li>
+        <li>ทอยเต๋า 2 ลูก แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่</li>
         <li>ผลัดกันทอยเต๋า 6 ลูก</li>
         <li>เลือกเต๋าที่มีแต้ม แล้วทอยต่อหรือเก็บแต้ม</li>
         <li>ทอยแล้วไม่มีแต้ม (ฟาร์เคิล) เสียแต้มตานั้นหมด</li>
@@ -309,6 +319,37 @@
       }, true);
     }
 
+    // ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางทับกันตรงกลาง คนอื่นอยู่ในรายการ ตัดสินได้แล้วเจ้าของห้องเริ่มเกมให้
+    let seenOpening = {}, goTimer;
+    function orderScreen(v) {
+      const o = v.opening;
+      const me = o.players.find((p) => p.me);
+      const others = o.players.filter((p) => !p.me);
+      const face = (d) => `<div class="die" role="img" aria-label="${d}">${pips(d)}</div>`;
+      const blank = `<div class="die" aria-hidden="true">${"<span></span>".repeat(9)}</div>`;
+      const sum = (d) => d[0] + d[1];
+      app.innerHTML = `
+        <h2>ทอยหาคนเริ่ม</h2>
+        <div class="pair${me.out ? " dim" : ""}" id="pair">${me.dice ? me.dice.map(face).join("") : blank + blank}</div>
+        <p class="status">${o.starter
+          ? `<span class="hl">${o.starter === me.name ? "คุณ" : esc(o.starter)} เริ่มก่อน</span>`
+          : o.tie ? `<span class="bad">เสมอ ${o.tie} ทอยใหม่</span>` : me.dice ? `ได้ ${sum(me.dice)}` : ""}</p>
+        ${o.mine ? `<button id="first-roll">ทอย</button>` : o.starter ? "" : `<p class="hint center">รอคนอื่นทอย</p>`}
+        <ul style="margin-top: 24px">${others.map((p, i) => `
+          <li class="row${p.out ? " dim" : ""}"><span${p.name === o.starter ? ' class="hl"' : ""}>${esc(p.name)}</span>${p.dice
+            ? `<span class="roll-sum"><span class="dice" data-i="${i}">${p.dice.map(face).join("")}</span>${sum(p.dice)}</span>`
+            : `<span class="hint">?</span>`}</li>`).join("")}
+        </ul>`;
+      if (o.mine) app.querySelector("#first-roll").onclick = () => send({ t: "first-roll" });
+      // เต๋าที่เพิ่งทอยได้ หมุนก่อนโชว์หน้าจริง (ทีละชุด ของเราก่อน)
+      const fresh = (p) => p.dice && JSON.stringify(p.dice) !== seenOpening[p.name];
+      const i = others.findIndex(fresh);
+      if (fresh(me)) animateRoll(app.querySelector("#pair"));
+      else if (i >= 0) animateRoll(app.querySelector(`.roll-sum [data-i="${i}"]`));
+      seenOpening = Object.fromEntries(o.players.map((p) => [p.name, JSON.stringify(p.dice)]));
+      if (o.starter && v.isHost && !goTimer) goTimer = setTimeout(() => { goTimer = null; send({ t: "go" }); }, 2500);
+    }
+
     let lastScreen, lastMyTurn, lastRolls;
     function render() {
       if (holding) return; // มีสถานะใหม่ระหว่างเต๋าหมุน รอวาดตอนหมุนจบ
@@ -328,6 +369,7 @@
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
       lastRolls = v.rolls;
+      if (v.screen !== "order") { clearTimeout(goTimer); goTimer = null; seenOpening = {}; }
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -399,6 +441,8 @@
         }
         return;
       }
+
+      if (v.screen === "order") return orderScreen(v);
 
       // play / over
       const pickedPts = score([...picked].map((i) => v.dice[i]));
