@@ -4,67 +4,90 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Web Games For Me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Mitr:wght@300;400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f6f6f8;
-      --card: #ffffff;
-      --text: #1b1b1f;
-      --muted: #6b6b76;
-      --accent: #5b5bd6;
-      --border: #e3e3e8;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #131316;
-        --card: #1e1e23;
-        --text: #ececf1;
-        --muted: #9a9aa6;
-        --accent: #8b8bff;
-        --border: #2c2c33;
-      }
+      color-scheme: dark;
+      --felt: #1f5a43;
+      --felt-edge: #143d2d;
+      --chalk: #f3efe2;
+      --chalk-dim: #b9c9bd;
+      --ink: #2a1f14;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 30%, var(--felt) 55%, var(--felt-edge));
+      background-attachment: fixed;
+      color: var(--chalk);
+      font: 300 1rem/1.6 "Mitr", system-ui, sans-serif;
     }
-    main { max-width: 960px; margin: 0 auto; padding: 32px 16px; }
-    h1 { margin: 0 0 4px; font-size: 1.8rem; }
-    .sub { margin: 0 0 24px; color: var(--muted); }
-    .grid {
+    main { max-width: 960px; margin: 0 auto; padding: 56px 20px 80px; }
+
+    h1 {
+      margin: 0;
+      font: 400 clamp(2rem, 8vw, 4.5rem)/1.05 "Chonburi", serif;
+      letter-spacing: -0.01em;
+      text-wrap: balance;
+    }
+    .sub { margin: 12px 0 48px; color: var(--chalk-dim); font-size: 1.125rem; }
+
+    .table {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 36px 28px;
     }
-    .card {
+
+    /* กล่องเกมวางบนโต๊ะ: สีและมุมเอียงวนตามลำดับ */
+    .box {
+      --lid: #e3a92f; --side: #a8791c; --text: var(--ink); --tilt: -2deg;
       display: block;
-      padding: 20px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: inherit;
+      padding: 22px 20px 24px;
+      background: var(--lid);
+      color: var(--text);
+      border-radius: 6px;
       text-decoration: none;
+      transform: rotate(var(--tilt));
+      box-shadow: 0 8px 0 var(--side), 0 18px 24px rgba(0, 0, 0, 0.35);
+      transition: transform 160ms ease, box-shadow 160ms ease;
     }
-    .card:hover { border-color: var(--accent); }
-    .card .icon { font-size: 2rem; }
-    .card h2 { margin: 8px 0 4px; font-size: 1.1rem; }
-    .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .box:nth-child(4n+2) { --lid: #c4452c; --side: #8a2d1b; --text: #fff; --tilt: 1.5deg; }
+    .box:nth-child(4n+3) { --lid: #2d6cad; --side: #1d4a78; --text: #fff; --tilt: -1deg; }
+    .box:nth-child(4n+4) { --lid: #f1ece0; --side: #c9bfa8; --tilt: 2deg; }
+    .box:hover, .box:focus-visible {
+      transform: rotate(0) translateY(-6px);
+      box-shadow: 0 14px 0 var(--side), 0 28px 30px rgba(0, 0, 0, 0.4);
+    }
+    .box:focus-visible { outline: 3px solid var(--chalk); outline-offset: 6px; }
+    .box .icon { font-size: 2.5rem; line-height: 1; }
+    .box h2 { margin: 14px 0 6px; font: 400 1.35rem/1.2 "Chonburi", serif; }
+    .box p { margin: 0; font-size: 0.95rem; opacity: 0.85; }
+
     .empty {
-      padding: 40px 16px;
+      display: grid;
+      place-items: center;
+      max-width: 260px;
+      min-height: 170px;
+      padding: 20px;
+      border: 2px dashed var(--chalk-dim);
+      border-radius: 6px;
+      color: var(--chalk-dim);
       text-align: center;
-      color: var(--muted);
-      border: 1px dashed var(--border);
-      border-radius: 12px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .box { transition: none; }
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>🎮 Web Games For Me</h1>
-    <p class="sub">เกมไว้เล่นกับเพื่อน</p>
-    <div id="games" class="grid"></div>
+    <h1>Web Games For Me</h1>
+    <p class="sub">เลือกเกม แล้วเล่นกับเพื่อน</p>
+    <div id="games" class="table"></div>
   </main>
 
   <script>
@@ -75,11 +98,11 @@
 
     const list = document.getElementById("games");
     if (games.length === 0) {
-      list.outerHTML = '<p class="empty">ยังไม่มีเกม</p>';
+      list.outerHTML = '<p class="empty">ยังไม่มีเกมบนโต๊ะ<br>เกมแรกกำลังมา</p>';
     } else {
       for (const g of games) {
         const a = document.createElement("a");
-        a.className = "card";
+        a.className = "box";
         a.href = `games/${g.id}/`;
         a.innerHTML = `<div class="icon"></div><h2></h2><p></p>`;
         a.querySelector(".icon").textContent = g.icon;
