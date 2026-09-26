@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; color: var(--yellow); }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 24px; }
+    .board button {
+      --c: var(--dim);
+      margin: 0;
+      padding: 0;
+      aspect-ratio: 1;
+      box-shadow: none;
+      font: 400 clamp(1.8rem, 11vw, 3rem) "Press Start 2P", monospace;
+    }
+    .board button:disabled { opacity: 1; cursor: default; }
+    .board .win { border-color: currentColor; background: #2c2950; }
+    .mark { font-family: "Press Start 2P", monospace; font-size: 0.9rem; margin-right: 8px; }
+    /* สีบอกความหมาย: X เหลือง, O ฟ้า, ชนะ ฟ้า, แพ้ แดง */
+    .x, .board .x { color: var(--yellow); }
+    .o, .board .o { color: var(--cyan); }
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .error { color: var(--red); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>XO</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กฎ</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>สร้างห้อง ส่งรหัสให้เพื่อน (2 คน)</li>
+        <li>ผลัดกันลง X กับ O</li>
+        <li>เรียงครบ 3 ช่องก่อนชนะ +1</li>
+        <li>สลับกันเริ่มทุกรอบ</li>
+      </ol>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script src="../../sfx.js"></script>
+  <script>
+    const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+    const ID_PREFIX = "wgfm-xo-";
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    let view = { screen: "home" };
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let peer, hostConn, leaving = false;
+    const send = (msg) => (hostConn ? hostConn.send(msg) : handle("host", msg));
+
+    // ---------- คนสร้างห้อง (host) เก็บสถานะเกมทั้งหมด ----------
+    const players = new Map(); // id -> { name, score, conn }  host เป็น X เพื่อนเป็น O
+    let game;                  // { code, phase, board, turn, first, winner, line, ready }
+
+    function hostRoom(name) {
+      const code = newCode();
+      peer = new Peer(ID_PREFIX + code);
+      peer.on("open", () => {
+        players.set("host", { name, score: 0 });
+        game = { code, phase: "lobby" };
+        broadcast();
+      });
+      peer.on("error", (e) => (e.type === "unavailable-id" ? hostRoom(name) : show({ screen: "home", error: "สร้างห้องไม่สำเร็จ" })));
+      peer.on("connection", (conn) => {
+        conn.on("data", (msg) => handle(conn.peer, msg, conn));
+        conn.on("close", () => {
+          if (!players.delete(conn.peer)) return;
+          // เพื่อนออก กลับไปรอคนใหม่ เริ่มนับคะแนนใหม่
+          players.get("host").score = 0;
+          game.phase = "lobby";
+          broadcast();
+        });
+      });
+    }
+
+    function handle(id, msg, conn) {
+      if (msg.t === "join") {
+        const name = String(msg.name).trim().slice(0, 20);
+        if (players.size >= 2) return conn.send({ t: "rejected", reason: "ห้องเต็ม" });
+        if (!name || players.get("host").name === name) return conn.send({ t: "rejected", reason: `ชื่อ "${name}" ซ้ำ` });
+        players.set(id, { name, score: 0, conn });
+        game.first = id; // สลับตอนเริ่มรอบ host จึงได้เริ่มก่อน
+        startRound();
+      }
+      if (!players.has(id)) return;
+      if (msg.t === "move" && game.phase === "play" && game.turn === id && game.board[msg.i] === null) {
+        game.board[msg.i] = mark(id);
+        const line = LINES.find((l) => l.every((i) => game.board[i] === mark(id)));
+        if (line) {
+          game.phase = "end";
+          game.winner = id;
+          game.line = line;
+          players.get(id).score++;
+        } else if (game.board.every(Boolean)) {
+          game.phase = "end";
+        } else {
+          game.turn = other(id);
+        }
+      }
+      if (msg.t === "ready" && game.phase === "end") {
+        game.ready.add(id);
+        if (game.ready.size === 2) startRound();
+      }
+      broadcast();
+    }
+
+    const mark = (id) => (id === "host" ? "X" : "O");
+    const other = (id) => [...players.keys()].find((x) => x !== id);
+
+    function startRound() {
+      game.first = other(game.first);
+      Object.assign(game, { phase: "play", board: Array(9).fill(null), turn: game.first, winner: null, line: [], ready: new Set() });
+    }
+
+    function viewFor(id) {
+      const v = {
+        screen: game.phase, code: game.code, isHost: id === "host",
+        players: [...players].map(([pid, p]) => ({ name: p.name, score: p.score, mark: mark(pid) })),
+      };
+      if (game.phase !== "lobby") {
+        Object.assign(v, {
+          board: game.board, line: game.line, myTurn: game.phase === "play" && game.turn === id,
+          turnName: players.get(game.turn).name, turnMark: mark(game.turn),
+          won: game.winner === id, lost: !!game.winner && game.winner !== id,
+          ready: game.ready.has(id), readyCount: game.ready.size,
+        });
+      }
+      return v;
+    }
+
+    function broadcast() {
+      for (const [id, p] of players) {
+        if (id === "host") { view = viewFor("host"); render(); }
+        else p.conn.send({ t: "state", view: viewFor(id) });
+      }
+    }
+
+    // ---------- เพื่อนที่เข้าห้อง ----------
+    function joinRoom(name, code) {
+      peer = new Peer();
+      peer.on("open", () => {
+        const conn = peer.connect(ID_PREFIX + code, { reliable: true });
+        conn.on("open", () => conn.send({ t: "join", name }));
+        conn.on("data", (msg) => {
+          if (msg.t === "state") { hostConn = conn; view = msg.view; render(); }
+          if (msg.t === "rejected") { leaving = true; peer.destroy(); show({ screen: "home", error: msg.reason }); }
+        });
+        conn.on("close", () => { if (!leaving) show({ screen: "home", error: "ห้องปิดแล้ว" }); });
+      });
+      peer.on("error", (e) => show({ screen: "home", error: e.type === "peer-unavailable" ? `ไม่พบห้อง ${code}` : "เชื่อมต่อไม่สำเร็จ" }));
+    }
+
+    // ---------- หน้าจอ ----------
+    let lastScreen, lastMyTurn;
+    function render() {
+      const v = view;
+      if (v.screen === "end" && lastScreen !== "end") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
+      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
+      lastScreen = v.screen;
+      lastMyTurn = v.myTurn;
+
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">ชื่อ</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
+          <input id="code" class="code-input" maxlength="4" autocomplete="off">
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          hostRoom(name);
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          leaving = false;
+          joinRoom(name, code);
+        };
+        return;
+      }
+
+      const header = `<h2>ห้อง</h2><p class="room">${esc(v.code)}</p>`;
+
+      if (v.screen === "lobby") {
+        app.innerHTML = `${header}<p class="hint">ส่งรหัสให้เพื่อน รอเพื่อนเข้า</p>`;
+        return;
+      }
+
+      // play / end
+      const status = v.screen === "play"
+        ? v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา <span class="${v.turnMark.toLowerCase()}">${esc(v.turnName)}</span>`
+        : v.won ? `<span class="good">ชนะ</span>` : v.lost ? `<span class="bad">แพ้</span>` : `<span class="hint">เสมอ</span>`;
+      app.innerHTML = `
+        ${header}
+        <ul>${v.players.map((p) => `
+          <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        </ul>
+        <div class="board" role="grid" aria-label="กระดาน">${v.board.map((c, i) => `
+          <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
+        </div>
+        <p class="status">${status}</p>
+        ${v.screen === "end"
+          ? `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
+             <p class="hint">พร้อม ${v.readyCount}/2</p>`
+          : ""}`;
+      app.querySelectorAll(".cell").forEach((b) => (b.onclick = () => send({ t: "move", i: Number(b.dataset.i) })));
+      if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+    }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+
+    // ปิดการเชื่อมต่อตอนออกจากหน้า ให้อีกฝั่งรู้ทันทีว่ามีคนออก
+    window.addEventListener("pagehide", () => peer && peer.destroy());
+
+    render();
+  </script>
+</body>
+</html>
