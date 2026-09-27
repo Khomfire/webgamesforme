@@ -2,7 +2,7 @@
 // ลงทีละ 1-4 ใบเลขเดียวกัน จำนวนใบเท่ากองกลาง (ตองทับเดี่ยวได้ โฟร์ทับคู่ได้) ผ่านแล้วลงกองนั้นไม่ได้อีก
 // ทุกคนผ่าน คนลงล่าสุดเริ่มกองใหม่ (เขาหมดมือไปแล้ว คนถัดไปเริ่ม)
 // จบรอบ: คนแรกที่หมดมือเป็นคิง คนที่ 2 ควีน คนรองสุดท้ายรองสลาฟ คนสุดท้ายสลาฟ ที่เหลือไพร่
-// แต้มตามลำดับ สลาฟได้ 0 สูงขึ้นทีละ 1 ครบจำนวนรอบ แต้มมากสุดชนะ
+// แต้มตามลำดับ สลาฟได้ 0 สูงขึ้นทีละ 1 จบรอบที่มีคนถึงแต้มเป้าหมาย แต้มมากสุดชนะ
 // รอบต่อไป: สลาฟให้ไพ่ใหญ่สุด 2 ใบกับคิง รองสลาฟให้ 1 ใบกับควีน แล้วคิงกับควีนเลือกไพ่คืนเท่ากัน สลาฟเริ่มก่อน
 // (รอบก่อนไม่มีควีน คิงกับสลาฟแลกกันใบเดียว) รอบแรกคนที่มี 3 ดอกจิกเริ่ม
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
@@ -49,7 +49,7 @@ function startRound(s) {
   const ps = s.order.map((x) => pl(s, x));
   for (const p of ps) p.hand = [];
   newDeck().forEach((c, i) => ps[i % ps.length].hand.push(c));
-  Object.assign(s, { done: [], passed: [], pile: null, lastBy: null, turn: null, ready: [], result: null });
+  Object.assign(s, { done: [], passed: [], pile: null, stack: [], lastBy: null, turn: null, ready: [], result: null });
   s.log = { t: "deal", n: s.round };
   const who = (t) => ps.find((p) => p.title === t);
   s.trades = [[who("king"), who("slave"), s.swap], [who("queen"), who("vice"), 1]].filter(([hi, lo]) => hi && lo).map(([hi, lo, k]) => {
@@ -83,8 +83,9 @@ function startPlay(s) {
   newTrick(s, slave || s.order.find((x) => pl(s, x).hand.some((c) => c.r === 3 && c.s === 3)));
 }
 
+// กองใหม่: ไพ่ที่ลงทับกันในกองก่อน (stack) เก็บทิ้ง
 function newTrick(s, id) {
-  Object.assign(s, { pile: null, lastBy: null, passed: [], turn: id });
+  Object.assign(s, { pile: null, stack: [], lastBy: null, passed: [], turn: id });
 }
 
 // คนถัดไปที่ยังมีไพ่ (from ไม่อยู่ในวงแล้วก็เริ่มนับจากคนแรก)
@@ -112,6 +113,7 @@ function advance(s, from) {
 function play(s, p, cards) {
   p.hand = p.hand.filter((c) => !cards.includes(c));
   s.pile = cards;
+  s.stack.push({ by: p.id, cards });
   s.lastBy = p.id;
   s.log = { t: "play", by: p.id, cards };
   if (!p.hand.length) s.done.push(p.id);
@@ -125,7 +127,7 @@ function pass(s, id) {
   advance(s, id);
 }
 
-// คนสุดท้ายที่ยังมีไพ่เป็นสลาฟ ให้ตำแหน่งและแต้ม ครบจำนวนรอบจบเกม
+// คนสุดท้ายที่ยังมีไพ่เป็นสลาฟ ให้ตำแหน่งและแต้ม มีคนถึงแต้มเป้าหมายจบเกม
 function endRound(s) {
   const last = s.order.find((x) => has(s, x));
   if (last) s.done.push(last);
@@ -136,9 +138,9 @@ function endRound(s) {
     return { name: p.name, title: p.title, pts: n - 1 - i };
   });
   s.swap = n >= 4 ? 2 : 1; // มีควีน คิงกับสลาฟแลก 2 ใบ ไม่มีแลกใบเดียว
-  Object.assign(s, { pile: null, lastBy: null, turn: null, ready: [] });
+  Object.assign(s, { pile: null, stack: [], lastBy: null, turn: null, ready: [] });
   s.round++;
-  if (s.round >= s.rounds || s.order.length < 2) finish(s);
+  if (s.players.some((p) => p.score >= s.target) || s.order.length < 2) finish(s);
   else s.phase = "end";
 }
 
@@ -171,7 +173,7 @@ function toLobby(s) {
 
 export default {
   max: 8,
-  init: () => ({ rounds: 5, phase: "lobby" }),
+  init: () => ({ target: 10, phase: "lobby" }),
   player: () => ({ hand: [], score: 0, title: null }),
 
   handle(s, id, msg, now) {
@@ -196,7 +198,7 @@ export default {
       if (s.ready.length >= s.order.length) startRound(s);
     }
     if (id === s.owner) {
-      if (msg.t === "rounds" && s.phase === "lobby") s.rounds = Math.min(10, Math.max(1, Math.round(Number(msg.value)) || 5));
+      if (msg.t === "target" && s.phase === "lobby") s.target = Math.min(50, Math.max(1, Math.round(Number(msg.value)) || 10));
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 3) {
         toLobby(s);
         s.order = s.players.map((x) => x.id);
@@ -243,7 +245,7 @@ export default {
 
   view(s, id, now) {
     const v = {
-      screen: s.phase, rounds: s.rounds,
+      screen: s.phase, target: s.target,
       players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score, title: p.title })),
     };
     if (s.phase === "lobby") return v;
@@ -256,7 +258,7 @@ export default {
         return { id: x, name: p.name, title: p.title, count: p.hand.length, passed: s.passed.includes(x), place: s.done.indexOf(x) };
       }),
       hand: s.order.includes(id) ? pl(s, id).hand : [],
-      pile: s.pile, lastBy: s.lastBy,
+      pile: s.pile, stack: s.stack, lastBy: s.lastBy,
       // แลกไพ่ของเรา: ไพ่ที่คนให้ส่งมา (got) และไพ่ที่คืน (back) เห็นแค่สองคนนั้น
       trade: t && (s.phase === "trade" || (s.phase === "play" && s.moves === 0))
         ? { k: t.k, hi: name(t.hi), lo: name(t.lo), got: t.got, back: t.back, mine: t.hi === id && !t.back, give: t.hi === id }
