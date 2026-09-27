@@ -69,7 +69,7 @@ function startRound(s) {
   // ใบแรก: w4 ใส่กลับแล้วสับใหม่
   while (s.deck[s.deck.length - 1].v === "w4") shuffle(s.deck);
   s.pile = [s.deck.pop()];
-  Object.assign(s, { phase: "play", dir: 1, drawn: null, pending: null, unoOpen: null, result: null, ready: [], color: top(s).c === "w" ? null : top(s).c });
+  Object.assign(s, { phase: "play", dir: 1, drawn: null, pending: null, unoOpen: null, result: null, ready: [], color: top(s).c === "w" ? null : top(s).c, turnEnds: Date.now() + TURN });
   s.turn = step(s, s.dealer);
   s.log = { t: "deal", n: s.round++ };
   // ใบแรกเป็นการ์ดพิเศษ ใช้ผลกับคนแรก (wild: คนแรกลงสีไหนก็ได้)
