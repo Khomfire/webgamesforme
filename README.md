@@ -18,6 +18,7 @@ Hub รวมเกมเว็บไว้เล่นกับเพื่อ�
    - เขียนกติกาเป็น `supabase/functions/game/<id>.js` ที่ export `init`, `player`, `handle`, `leave`, `view` (ดูเกมที่มีอยู่เป็นตัวอย่าง) แล้วเพิ่มใน `GAMES` ของ `core.js`
    - หน้าเกมใส่ supabase-js กับ `<script src="../../net.js"></script>` แล้วใช้ `openRoom("<id>", onView, onError)` สร้างหรือเข้าห้อง และ `send(msg)` ส่งคำสั่ง
    - deploy ฟังก์ชันใหม่ทุกครั้งที่แก้ไฟล์ใน `supabase/functions/game/` ตาราง `rooms` อยู่ใน `supabase/migrations/`
+   - ปุ่มหยุดเกม: ใส่ `<script src="../../pause.js"></script>` หลัง `fireworks.js` แล้วเรียก `pauseUi(view, send)` ทุกครั้งที่วาดใหม่ ถ้าเกมมีเวลาต่อตา เก็บเวลาหมดไว้ที่ `turnEnds` ของสถานะ ตอนเล่นต่อจะเลื่อนให้เอง และระหว่างหยุด (`view.paused`) ให้หลอดเวลาค้างไว้ ไม่ส่ง `timeout`
 
 ## รันในเครื่อง
 

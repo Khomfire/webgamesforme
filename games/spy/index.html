@@ -193,6 +193,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -241,6 +242,7 @@
     // หมดเวลาแล้วขอสถานะใหม่จาก server ครั้งเดียว (server เปิดโหวตตามเวลาของมันเอง)
     let asked = 0;
     setInterval(() => {
+      if (view.paused) return; // หยุดเกมอยู่ นาฬิกาค้างไว้
       const t = document.getElementById("timer");
       if (t) t.textContent = clock();
       if (t && Date.now() >= deadline && asked !== deadline) { asked = deadline; send({ t: "sync" }); }
@@ -249,6 +251,7 @@
     let lastScreen;
     function render() {
       const v = view;
+      pauseUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (gameOver) playSfx("win");
       if (v.screen !== "over" && winner.open) winner.close();

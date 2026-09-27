@@ -190,6 +190,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -246,12 +247,14 @@
           { transform: "scaleX(0)", background: red },
         ]
         : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
-      bar.animate(frames, { duration: left, fill: "forwards" });
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (v.paused) return anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้ ไม่แจ้งหมดเวลา
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
     }
 
     function render() {
       const v = view;
+      pauseUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";

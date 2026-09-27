@@ -239,6 +239,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -403,9 +404,6 @@
       spinFrame = requestAnimationFrame(spinFaces);
     }
 
-    let lastScreen, lastMyTurn, lastRolls;
-    function render() {
-      if (holding) return; // มีสถานะใหม่ระหว่างเต๋าหมุน รอวาดตอนหมุนจบ
     // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
     let timeoutTimer;
@@ -422,12 +420,17 @@
           { transform: "scaleX(0)", background: red },
         ]
         : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
-      bar.animate(frames, { duration: left, fill: "forwards" });
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (v.paused) return anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้ ไม่แจ้งหมดเวลา
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
     }
 
+    let lastScreen, lastMyTurn, lastRolls;
+    function render() {
+      if (holding) return; // มีสถานะใหม่ระหว่างเต๋าหมุน รอวาดตอนหมุนจบ
       clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const v = view;
+      pauseUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       if (v.rolls !== lastRolls && v.last && v.last.farkle && v.last.n === v.rolls && (v.screen === "play" || v.screen === "over")) {

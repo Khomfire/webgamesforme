@@ -352,6 +352,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -592,7 +593,8 @@
           { transform: "scaleX(0)", background: red },
         ]
         : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
-      bar.animate(frames, { duration: left, fill: "forwards" });
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (view.paused) anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้
     }
     function shout(text) {
       const t = app.querySelector(".table");
@@ -632,6 +634,7 @@
     let lastScreen, lastMyTurn, lastLog = "", lastHand = [], lastCounts = {}, timeoutTimer, lastShuffles;
     function render() {
       const v = view;
+      pauseUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen !== "play" || !v.myTurn) { picking = null; if (pick.open) pick.close(); }
@@ -865,7 +868,7 @@
       clearTimeout(timeoutTimer);
       if (v.screen === "play") {
         drainTimer(app.querySelector(v.myTurn ? ".timer.mine i" : ".seat.now .timer i"), v.turnLeft, v.time);
-        timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (v.myTurn ? 200 : 1500));
+        if (!v.paused) timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (v.myTurn ? 200 : 1500));
       }
       lastHand = v.hand.map((c) => c.id);
       lastCounts = Object.fromEntries(v.seats.map((s) => [s.id, s.count]));
