@@ -431,6 +431,39 @@
       if (flying) flying.el.remove();
       flying = null;
     }
+    // กดจั่ว: หลังไพ่ลอยจากกองจั่วมาทางมือทันที ไม่ต้องรอ server ตอบ
+    let drawing = null;
+    function drawCard() {
+      const deck = app.querySelector("#deck"), hand = app.querySelector(".hand");
+      if (still.matches || !deck || !hand) return;
+      const a = deck.getBoundingClientRect(), h = hand.getBoundingClientRect();
+      const box = document.createElement("div");
+      box.innerHTML = back("fly");
+      const el = box.firstChild;
+      Object.assign(el.style, { left: a.left + "px", top: a.top + "px" });
+      el.style.setProperty("--w", a.width + "px");
+      document.body.append(el);
+      const dx = h.left + h.width / 2 - (a.left + a.width / 2), dy = h.top + h.height / 2 - (a.top + a.height / 2);
+      el.animate([
+        { transform: "none" },
+        { transform: "translateY(-16px) rotate(-8deg)", offset: 0.3 },
+        { transform: `translate(${dx}px, ${dy}px) scale(0.8)` },
+      ], { duration: 400, easing: "ease-in-out", fill: "forwards" });
+      drawing = el;
+    }
+    // ไพ่ที่จั่วได้: หลังไพ่พลิกหาย แล้วไพ่จริงพลิกออกมาตรงนั้น เลื่อนเข้าที่ในมือ
+    function flipFrom(el, backEl) {
+      const from = backEl.getBoundingClientRect(), to = el.getBoundingClientRect();
+      const dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
+      const s = from.width / to.width;
+      backEl.animate([{ transform: getComputedStyle(backEl).transform }, { transform: `${getComputedStyle(backEl).transform} scaleX(0)` }], { duration: 120, fill: "forwards" })
+        .onfinish = () => backEl.remove();
+      el.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${s}) scaleX(0)` },
+        { transform: `translate(${dx}px, ${dy}px) scale(${s * 1.1})`, offset: 0.35 },
+        { transform: "none" },
+      ], { duration: 450, delay: 120, easing: "ease-out", fill: "backwards" });
+    }
     // ไพ่ลงกอง: บินมาถึงแล้วกระแทก เด้ง และมีคลื่นวงกว้างออกไป (big = +2/+4 ทับกัน)
     function slam(el, delay, big) {
       if (still.matches || !el) return;
@@ -665,8 +698,14 @@
       const had = new Set(lastHand);
       let k = 0;
       app.querySelectorAll(".hand .card").forEach((el) => {
-        if (dealt || (wasScreen === "play" && !had.has(Number(el.dataset.id)))) flyFrom(el, deckRect, (k++) * (dealt ? 70 : 120));
+        if (!dealt && drawing && wasScreen === "play" && !had.has(Number(el.dataset.id))) {
+          flipFrom(el, drawing); // ใบแรกที่จั่ว พลิกจากหลังไพ่ที่ลอยมารอ
+          drawing = null;
+        } else if (dealt || (wasScreen === "play" && !had.has(Number(el.dataset.id)))) flyFrom(el, deckRect, (k++) * (dealt ? 70 : 120));
       });
+      // กดจั่วแล้ว server ไม่ได้ให้ไพ่ (หรือมีสถานะอื่นมาก่อน) เอาหลังไพ่ที่ลอยอยู่ออก
+      if (drawing) drawing.remove();
+      drawing = null;
       // คนอื่นได้ไพ่เพิ่ม: หลังไพ่บินไปหา
       for (const s of v.seats) {
         const before = lastCounts[s.id];
@@ -727,7 +766,10 @@
       lastHand = v.hand.map((c) => c.id);
       lastCounts = Object.fromEntries(v.seats.map((s) => [s.id, s.count]));
 
-      if (canDraw) app.querySelector("#deck").onclick = () => send({ t: "draw" });
+      if (canDraw) app.querySelector("#deck").onclick = () => {
+        drawCard();
+        send({ t: "draw" });
+      };
       app.querySelectorAll(".hand .card").forEach((b) => (b.onclick = () => {
         const id = Number(b.dataset.id);
         if (v.hand.find((c) => c.id === id).c === "w") {
