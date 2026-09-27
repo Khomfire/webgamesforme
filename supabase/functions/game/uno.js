@@ -2,6 +2,7 @@
 // ไพ่ 108 ใบ: 4 สี (r y g b) มี 0 หนึ่งใบ 1-9 skip rev d2 อย่างละสองใบ, wild กับ w4 อย่างละสี่ใบ
 const pl = (s, id) => s.players.find((p) => p.id === id);
 const COLORS = ["r", "y", "g", "b"];
+const TURN = 15000; // เวลาต่อตา
 
 function newDeck() {
   const deck = [];
@@ -116,6 +117,32 @@ function takePending(s, id) {
   s.pending = null;
 }
 
+// จั่ว: มียอด +2/+4 จั่วตามยอดแล้วเสียตา ไม่มีก็จั่ว 1 ใบ ใบนั้นลงได้จะลงหรือผ่านก็ได้
+function drawTurn(s, id) {
+  const p = pl(s, id);
+  s.log = { t: "draw", by: id, missed: endUnoWindow(s, id) };
+  if (s.pending) {
+    takePending(s, id);
+    s.turn = step(s, id);
+    return;
+  }
+  draw(s, p, 1);
+  const card = p.hand[p.hand.length - 1];
+  if (card && playable(card, p.hand, s.color, top(s))) s.drawn = card.id;
+  else s.turn = step(s, id);
+}
+
+// หมดเวลา: จั่วเหมือนกดจั่ว (ถ้ายังไม่ได้จั่ว) แล้วเสียตา
+function timeUp(s, id) {
+  if (s.drawn === null) drawTurn(s, id);
+  else s.log = { t: "pass", by: id };
+  if (s.turn === id) {
+    s.drawn = null;
+    s.turn = step(s, id);
+  }
+  s.log.late = id;
+}
+
 function endRound(s, id) {
   const p = pl(s, id);
   const gained = s.players.reduce((n, x) => n + x.hand.reduce((m, c) => m + points(c), 0), 0);
@@ -136,9 +163,14 @@ export default {
   init: () => ({ target: 500, phase: "lobby" }),
   player: () => ({ hand: [], score: 0, uno: false }),
 
-  handle(s, id, msg) {
+  handle(s, id, msg, now) {
     const p = pl(s, id);
+    // ตาเปลี่ยนหรือคนเดิมเล่นต่อ เริ่มนับเวลาใหม่
+    const turnKey = () => [s.phase, s.turn, s.drawn, s.pile && s.pile.length].join();
+    const before = turnKey();
     if (s.phase === "play") {
+      // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
+      if (msg.t === "timeout" && now >= s.turnEnds) timeUp(s, s.turn);
       // กด UNO: ได้เฉพาะตอนเหลือ 1 ใบและยังไม่มีใครเล่นต่อ
       if (msg.t === "uno" && s.unoOpen === id) {
         p.uno = true;
@@ -157,19 +189,7 @@ export default {
             if (missed) s.log.missed = missed;
           }
         }
-        if (msg.t === "draw" && s.drawn === null && s.pending) {
-          const missed = endUnoWindow(s, id);
-          s.log = { t: "draw", by: id, missed };
-          takePending(s, id);
-          s.turn = step(s, id);
-        } else if (msg.t === "draw" && s.drawn === null) {
-          const missed = endUnoWindow(s, id);
-          draw(s, p, 1);
-          const card = p.hand[p.hand.length - 1];
-          s.log = { t: "draw", by: id, missed };
-          if (card && playable(card, p.hand, s.color, top(s))) s.drawn = card.id;
-          else s.turn = step(s, id);
-        }
+        if (msg.t === "draw" && s.drawn === null) drawTurn(s, id);
         if (msg.t === "pass" && s.drawn !== null) {
           s.drawn = null;
           s.turn = step(s, id);
@@ -190,6 +210,7 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
+    if (s.phase === "play" && turnKey() !== before) s.turnEnds = now + TURN;
   },
 
   // คนออก: ไพ่ในมือกลับเข้ากองจั่ว ถ้าเป็นตาเขา ไปคนถัดไป
@@ -209,6 +230,7 @@ export default {
     if (s.turn === id) {
       s.turn = next;
       s.drawn = null;
+      s.turnEnds = Date.now() + TURN;
     }
     if (s.phase === "end") {
       s.ready = s.ready.filter((x) => x !== id);
@@ -216,7 +238,7 @@ export default {
     }
   },
 
-  view(s, id) {
+  view(s, id, now) {
     const v = {
       screen: s.phase, target: s.target,
       players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score })),
@@ -226,9 +248,11 @@ export default {
     const seats = s.order.map((x) => pl(s, x));
     Object.assign(v, {
       seats: seats.map((p) => ({ id: p.id, name: p.name, count: p.hand.length, uno: p.uno, now: s.phase === "play" && s.turn === p.id })),
-      hand: me.hand, top: top(s), color: s.color, pending: s.pending, dir: s.dir, deck: s.deck.length,
+      hand: me.hand, top: top(s), under: s.pile.slice(-3, -1), color: s.color, pending: s.pending, dir: s.dir, deck: s.deck.length,
       myTurn: s.phase === "play" && s.turn === id, drawn: s.turn === id ? s.drawn : null,
       turnName: pl(s, s.turn).name,
+      // เวลาที่เหลือของตานี้ (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
+      turnLeft: s.phase === "play" ? Math.max(0, s.turnEnds - now) : null,
       // ปุ่ม UNO: เราเพิ่งเหลือ 1 ใบและยังไม่กด
       canUno: s.phase === "play" && s.unoOpen === id,
       log: s.log, result: s.result, winner: s.winner,
