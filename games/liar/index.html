@@ -370,7 +370,7 @@
     const revealEnd = (r) => FLIP_AT + r.hands.length * FLIP_GAP + 300;
     const revealBox = (r) => `
       <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
-      <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${r.n} &times; ${die(r.face)}</div>
+      <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${die(r.face)} &times; ${r.n}</div>
       <ul>${r.hands.map((h, row) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d, i) => die(d, counts(d, r.face, r.wild) ? "hit" : "", `--t: ${FLIP_AT + row * FLIP_GAP + i * 60}ms`)).join("")}</div></li>`).join("")}</ul>
       <p class="center later">มีจริง <span class="hl">${r.count}</span> ลูก</p>
       <p class="status bad later">${esc(r.loser)} เสีย 1 ลูก</p>`;
@@ -603,7 +603,7 @@
           <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
           ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
           ${v.bid
-            ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${v.bid.n} &times; ${die(v.bid.face)}</div>
+            ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${die(v.bid.face)} &times; ${v.bid.n}</div>
                <p class="center">${esc(v.bid.name)} เสนอ</p>`
             : ""}
           <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">PALIFICO</span>` : ""}</p>
