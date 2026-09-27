@@ -1,9 +1,10 @@
 // POK DENG (ป๊อกเด้ง): ทุกคนเทียบไพ่กับเจ้ามือ แต้ม = หลักหน่วยของผลรวม (A = 1, 10 J Q K = 0)
 // 2 ใบแรกได้ 8 หรือ 9 = ป๊อก เปิดทันที ไม่งั้นเลือกจั่วใบที่ 3 หรืออยู่ แล้วเจ้ามือเลือก จากนั้นเปิดเทียบ
-// คนชนะได้เงินที่ลงคูณเด้งของไพ่คนชนะ เจ้ามือเวียนไปทีละคนจนครบตามที่ตั้ง เงินมากสุดชนะ
+// คนชนะได้เงินที่ลงคูณเด้งของไพ่คนชนะ (เงินไม่พอจ่ายเท่าที่มี) เงินหมดตกรอบ
+// เจ้ามือเวียนไปทีละคน เหลือคนสุดท้ายหรือครบรอบตามที่ตั้ง เงินมากสุดชนะ
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
 const pl = (s, id) => s.players.find((p) => p.id === id);
-export const BETS = [10, 20, 50, 100];
+export const MONEY = [100, 500, 1000]; // เงินเริ่มต้นที่เลือกได้ ลงเงินทีละ 1/20 ของเงินเริ่มต้น
 
 function newDeck() {
   const deck = [];
@@ -36,11 +37,10 @@ export function rate(cards) {
 }
 
 const players = (s) => s.order.filter((x) => x !== s.dealer).map((x) => pl(s, x));
-const step = (s, from) => s.order[(s.order.indexOf(from) + 1) % s.order.length];
 
-// ลงเงิน: เจ้ามือเวียนไปคนถัดไป ไพ่รอบก่อนยังเปิดโชว์อยู่จนกว่าจะแจกใหม่
-function startBet(s) {
-  s.dealer = s.dealer ? step(s, s.dealer) : s.order[0];
+// ลงเงิน: ไพ่รอบก่อนยังเปิดโชว์อยู่จนกว่าจะแจกใหม่
+function startBet(s, dealer) {
+  s.dealer = dealer;
   s.phase = "bet";
   for (const p of s.order.map((x) => pl(s, x))) p.bet = null;
 }
@@ -49,10 +49,11 @@ function startBet(s) {
 function deal(s) {
   s.deck = newDeck();
   const seats = [...s.order.slice(s.order.indexOf(s.dealer) + 1), ...s.order.slice(0, s.order.indexOf(s.dealer) + 1)].map((x) => pl(s, x));
-  for (const p of seats) Object.assign(p, { cards: [], won: null, shown: false, done: false });
+  for (const p of seats) Object.assign(p, { cards: [], won: null, res: null, shown: false, done: false });
   for (let i = 0; i < 2; i++) for (const p of seats) p.cards.push(s.deck.pop());
   s.phase = "draw";
   s.dealt = s.dealer; // เจ้ามือของไพ่ที่อยู่บนโต๊ะ (ตอนลงเงินรอบต่อไป เจ้ามือเปลี่ยนแล้วแต่ไพ่รอบก่อนยังโชว์อยู่)
+  s.inHand = [...s.order]; // คนที่ได้ไพ่รอบนี้ คนหมดตัวยังโชว์ไพ่ไว้จนแจกรอบใหม่
   s.log = { t: "deal", n: s.round };
   const d = pl(s, s.dealer);
   // เจ้ามือป๊อก: เปิดเทียบทุกคนทันที ไม่มีใครจั่ว
@@ -62,15 +63,17 @@ function deal(s) {
   afterPlayers(s);
 }
 
-// เทียบกับเจ้ามือ จ่ายเงินที่ลงคูณเด้งของคนชนะ
+// เทียบกับเจ้ามือ จ่ายเงินที่ลงคูณเด้งของคนชนะ คนจ่ายเงินไม่พอจ่ายเท่าที่มี
+// res: 1 ชนะ, -1 แพ้, 0 เสมอ (ชนะแต่เจ้ามือหมดตัวแล้วได้ 0 ก็ยังเป็น 1)
 function settle(s, p) {
   const d = pl(s, s.dealer);
   const a = rate(p.cards), b = rate(d.cards);
-  const won = a.rank > b.rank ? p.bet * a.deng : a.rank < b.rank ? -p.bet * b.deng : 0;
-  Object.assign(p, { won, shown: true, done: true });
-  p.score += won;
+  const res = Math.sign(a.rank - b.rank);
+  const won = res > 0 ? Math.min(p.bet * a.deng, d.money) : res < 0 ? -Math.min(p.bet * b.deng, p.money) : 0;
+  Object.assign(p, { won, res, shown: true, done: true });
+  p.money += won;
   d.won = (d.won || 0) - won;
-  d.score -= won;
+  d.money -= won;
 }
 
 // ผู้เล่นเลือกครบแล้ว ถึงตาเจ้ามือ (ถ้าทุกคนป๊อกไปแล้วก็จบรอบเลย)
@@ -81,43 +84,54 @@ function afterPlayers(s) {
   s.phase = "dealer";
 }
 
+// เปิดเทียบ: เจ้ามือเก็บเงินคนแพ้ก่อน แล้วค่อยจ่ายคนชนะ
 function showdown(s) {
-  for (const p of players(s)) if (p.won === null) settle(s, p);
+  const d = rate(pl(s, s.dealer).cards).rank;
+  const left = players(s).filter((p) => p.won === null);
+  for (const p of left) if (rate(p.cards).rank < d) settle(s, p);
+  for (const p of left) if (p.won === null) settle(s, p);
   endRound(s);
 }
 
-// เปิดไพ่ทุกคน ครบจำนวนรอบจบเกม ไม่งั้นลงเงินรอบต่อไป
+// เปิดไพ่ทุกคน คนเงินหมดตกรอบ เหลือคนเดียวหรือครบจำนวนรอบจบเกม ไม่งั้นลงเงินรอบต่อไป เจ้ามือเป็นคนถัดไปที่ยังไม่ตกรอบ
 function endRound(s) {
   for (const x of s.order) pl(s, x).shown = true;
   const d = pl(s, s.dealer);
-  if (d.won === null) d.won = 0;
+  d.won = d.won || 0;
+  d.res = Math.sign(d.won);
   s.log.show = true;
   s.round++;
-  if (s.round >= s.laps * s.order.length) finish(s);
-  else startBet(s);
+  const i = s.order.indexOf(s.dealer);
+  const next = [...s.order.slice(i + 1), ...s.order.slice(0, i + 1)].find((x) => pl(s, x).money > 0);
+  for (const x of s.order) if (!pl(s, x).money) pl(s, x).out = true;
+  s.order = s.order.filter((x) => !pl(s, x).out);
+  if (s.order.length < 2 || s.round >= s.rounds) finish(s);
+  else startBet(s, next);
 }
 
 function finish(s) {
-  const top = Math.max(...s.players.map((p) => p.score));
+  const top = Math.max(...s.players.map((p) => p.money));
   s.phase = "over";
-  s.winners = s.players.filter((p) => p.score === top).map((p) => p.name);
+  s.winners = s.players.filter((p) => p.money === top).map((p) => p.name);
 }
 
 function toLobby(s) {
-  for (const p of s.players) Object.assign(p, { cards: [], bet: null, won: null, shown: false, done: false, score: 0 });
+  for (const p of s.players) Object.assign(p, { cards: [], bet: null, won: null, res: null, shown: false, done: false, money: 0, out: false });
   s.order = [];
   s.phase = "lobby";
 }
 
 export default {
   max: 10,
-  init: () => ({ laps: 2, phase: "lobby" }),
-  player: () => ({ cards: [], bet: null, won: null, shown: false, done: false, score: 0 }),
+  init: () => ({ laps: 2, money: 500, phase: "lobby" }),
+  player: () => ({ cards: [], bet: null, won: null, res: null, shown: false, done: false, money: 0, out: false }),
 
   handle(s, id, msg) {
     const p = pl(s, id);
     const inRound = s.order && s.order.includes(id);
-    if (s.phase === "bet" && msg.t === "bet" && inRound && id !== s.dealer && p.bet === null && BETS.includes(msg.n)) {
+    // ลงเงินทีละ step ไม่เกินเงินที่มี
+    const n = msg.n;
+    if (s.phase === "bet" && msg.t === "bet" && inRound && id !== s.dealer && p.bet === null && Number.isInteger(n) && n >= s.step && n <= p.money && n % s.step === 0) {
       p.bet = msg.n;
       s.log = { t: "bet", by: id, n: s.round };
       if (players(s).every((x) => x.bet !== null)) deal(s);
@@ -133,14 +147,18 @@ export default {
     }
     if (id === s.owner) {
       if (msg.t === "laps" && s.phase === "lobby") s.laps = Math.min(5, Math.max(1, Math.round(Number(msg.value)) || 2));
+      if (msg.t === "money" && s.phase === "lobby" && MONEY.includes(Number(msg.value))) s.money = Number(msg.value);
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
         toLobby(s);
+        for (const x of s.players) x.money = s.money;
         s.order = s.players.map((x) => x.id);
-        s.dealer = null;
+        s.step = s.money / 20;
+        s.rounds = s.laps * s.order.length;
         s.round = 0;
         s.log = null;
         s.winners = null;
-        startBet(s);
+        s.inHand = null;
+        startBet(s, s.order[0]);
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
@@ -154,11 +172,12 @@ export default {
     const i = s.order.indexOf(id);
     s.order.splice(i, 1);
     if (s.phase === "lobby" || s.phase === "over") return;
+    if (s.order.length < 2) return finish(s);
     if (s.dealer === id) {
-      s.dealer = s.order[(i - 1 + s.order.length) % s.order.length];
-      for (const x of s.order) Object.assign(pl(s, x), { cards: [], won: null, shown: false, done: false });
+      for (const x of s.order) Object.assign(pl(s, x), { cards: [], won: null, res: null, shown: false, done: false });
       s.log = null;
-      return startBet(s);
+      s.inHand = null;
+      return startBet(s, s.order[i % s.order.length]);
     }
     if (s.phase === "bet" && players(s).every((x) => x.bet !== null)) deal(s);
     else if (s.phase === "draw") afterPlayers(s);
@@ -166,17 +185,17 @@ export default {
 
   view(s, id) {
     const v = {
-      screen: s.phase, laps: s.laps,
-      players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score })),
+      screen: s.phase, laps: s.laps, money: s.money,
+      players: s.players.map((p) => ({ id: p.id, name: p.name, money: p.money, out: p.out })),
     };
     if (s.phase === "lobby") return v;
     Object.assign(v, {
-      dealer: s.dealer, dealt: s.dealt, round: s.round, rounds: s.laps * s.order.length,
+      dealer: s.dealer, dealt: s.dealt, round: s.round, rounds: s.rounds, step: s.step,
       // ไพ่คนอื่นเห็นแค่ด้านหลังจนกว่าจะเปิด
-      seats: s.order.map((x) => {
+      seats: (s.inHand || s.order).filter((x) => pl(s, x)).map((x) => {
         const p = pl(s, x);
         const see = p.shown || x === id;
-        return { id: x, name: p.name, bet: p.bet, n: p.cards.length, cards: see ? p.cards : null, rate: see && p.cards.length ? rate(p.cards) : null, done: p.done, won: p.won };
+        return { id: x, name: p.name, money: p.money, bet: p.bet, n: p.cards.length, cards: see ? p.cards : null, rate: see && p.cards.length ? rate(p.cards) : null, done: p.done, won: p.won, res: p.res, out: p.out };
       }),
       log: s.log, winners: s.winners,
     });
