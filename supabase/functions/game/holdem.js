@@ -80,6 +80,8 @@ function startHand(s) {
   s.street = 0;
   s.left = []; // ชิปที่คนออกจากห้องกลางมือลงไว้ อยู่ในกองกลางแต่ไม่มีใครมีสิทธิ์
   s.result = null;
+  s.shown = []; // คนที่หงายไพ่ให้ทุกคนเห็นแล้ว
+  s.aggr = null; // คนที่ลงหรือเพิ่มล่าสุดในรอบเดิมพันนี้
   for (let i = 0; i < 2; i++) for (let k = 1; k <= s.order.length; k++) pl(s, after(s, s.button, k)).cards.push(s.deck.pop());
   const two = s.order.length === 2;
   const sb = two ? s.button : after(s, s.button), bb = after(s, sb);
@@ -112,11 +114,40 @@ function nextStreet(s) {
   s.bet = 0;
   s.minRaise = s.bb;
   s.turn = null;
-  if (s.street === 3) return showdown(s);
+  if (s.street === 3) return startShow(s);
   s.street++;
+  s.aggr = null;
   s.deck.pop();
   for (let i = s.street === 1 ? 3 : 1; i > 0; i--) s.board.push(s.deck.pop());
   proceed(s, s.button);
+}
+
+// ครบ 4 รอบ: มีคนออลอิน ทุกคนต้องหงาย ไม่งั้นผลัดกันหงายหรือหมอบ
+// เริ่มจากคนที่ลงหรือเพิ่มล่าสุดในรอบสุดท้าย ไม่มีใครลงเริ่มจากคนถัดจาก D
+function startShow(s) {
+  const live = inHand(s);
+  if (live.some((x) => !pl(s, x).chips)) {
+    s.shown = live;
+    return showdown(s);
+  }
+  s.phase = "show";
+  nextShow(s, s.aggr && live.includes(s.aggr) ? before(s, s.aggr) : s.button);
+}
+
+// ตาหงายต่อไป: คนถัดจาก from ที่ยังไม่ได้เลือก ทุกคนเลือกแล้วเทียบไพ่
+// คนอื่นหมอบหมด คนสุดท้ายได้กองกลางโดยไม่ต้องหงาย
+function nextShow(s, from) {
+  const live = inHand(s);
+  if (live.length === 1 && !s.shown.includes(live[0])) return win(s);
+  for (let k = 1; k <= s.order.length; k++) {
+    const x = after(s, from, k);
+    if (live.includes(x) && !s.shown.includes(x)) {
+      s.turn = x;
+      return;
+    }
+  }
+  s.turn = null;
+  showdown(s);
 }
 
 // ทุกคนหมอบ เหลือคนเดียว ได้กองกลางทั้งหมด ไม่ต้องเปิดไพ่
@@ -216,6 +247,7 @@ function act(s, p, msg) {
     }
     put(p, msg.to - p.bet);
     s.bet = msg.to;
+    s.aggr = p.id;
   } else return;
   p.acted = true;
   const a = msg.t === "raise" && !opened ? "bet" : msg.t;
@@ -232,6 +264,18 @@ export default {
   handle(s, id, msg) {
     const p = pl(s, id);
     if (s.phase === "play" && s.turn === id) act(s, p, msg);
+    // เปิดไพ่: หงายให้ทุกคนเห็น หรือหมอบ (ไม่เอากองกลาง ไม่ต้องเปิด)
+    if (s.phase === "show" && s.turn === id && (msg.t === "show" || msg.t === "muck")) {
+      if (msg.t === "show") s.shown.push(id);
+      else p.folded = true;
+      s.log = { t: msg.t, by: id, n: s.hands };
+      nextShow(s, id);
+    }
+    // ได้กองกลางเพราะคนอื่นหมอบหมด จะหงายให้ดูก็ได้
+    if (msg.t === "show" && s.phase === "end" && !s.result.hands && inHand(s)[0] === id && !s.shown.includes(id)) {
+      s.shown.push(id);
+      s.log = { t: "show", by: id, n: s.hands };
+    }
     if (msg.t === "ready" && s.phase === "end" && s.order.includes(id) && p.chips > 0 && !s.ready.includes(id)) {
       s.ready.push(id);
       if (s.order.every((x) => !pl(s, x).chips || s.ready.includes(x))) nextHand(s);
@@ -260,6 +304,9 @@ export default {
     if (s.phase === "play") {
       if (gone.total) s.left.push(gone.total);
       proceed(s, s.turn === id ? prev : before(s, s.turn));
+    } else if (s.phase === "show") {
+      if (gone.total) s.left.push(gone.total);
+      nextShow(s, s.turn === id ? prev : before(s, s.turn));
     } else if (s.phase === "end") {
       s.ready = s.ready.filter((x) => x !== id);
       if (s.order.filter((x) => pl(s, x).chips > 0).length < 2) finish(s);
@@ -271,15 +318,20 @@ export default {
     const v = { screen: s.phase, players: s.players.map((p) => ({ id: p.id, name: p.name, chips: p.chips, out: p.out })) };
     if (s.phase === "lobby") return v;
     const me = pl(s, id);
-    const shown = s.phase !== "play" && s.result && s.result.hands;
     Object.assign(v, {
       handNo: s.hands + 1, sb: s.sb, bb: s.bb, button: s.button, turn: s.turn, board: s.board, pot: potSize(s),
-      // ไพ่คนอื่นเห็นแค่ด้านหลัง จนเปิดไพ่ตอนจบ (คนหมอบไม่ต้องเปิด)
+      // ไพ่คนอื่นเห็นแค่ด้านหลัง จนกว่าเขาจะหงาย
       seats: s.order.map((x) => {
         const p = pl(s, x);
-        return { id: x, name: p.name, chips: p.chips, bet: p.bet, folded: p.folded, last: p.last, n: p.cards.length, cards: x === id || (shown && !p.folded) ? p.cards : null };
+        const open = s.shown.includes(x);
+        return {
+          id: x, name: p.name, chips: p.chips, bet: p.bet, folded: p.folded, last: p.last, n: p.cards.length,
+          cards: x === id || open ? p.cards : null, kind: open && s.board.length === 5 ? best([...p.cards, ...s.board]).score[0] : undefined,
+        };
       }),
-      result: s.phase === "play" ? null : s.result,
+      result: s.phase === "end" || s.phase === "over" ? s.result : null,
+      // หงายได้: ถึงตาตอนเปิดไพ่ หรือได้กองกลางเพราะคนอื่นหมอบหมด
+      canShow: (s.phase === "show" && s.turn === id) || (s.phase === "end" && !s.result.hands && inHand(s)[0] === id && !s.shown.includes(id)),
       ready: s.ready, winner: s.winner, log: s.log,
     });
     // ชนิดมือที่ดีที่สุดของเราตอนนี้

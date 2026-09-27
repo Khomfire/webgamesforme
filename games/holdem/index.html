@@ -260,8 +260,11 @@
         <li>คนถัดจาก <span class="dealer">D</span> ลง blind เล็ก คนถัดไปลง blind ใหญ่ เหลือ 2 คน <span class="dealer">D</span> ลง blind เล็ก</li>
         <li>เดิมพัน 4 รอบ: ก่อนเปิดไพ่กลาง, เปิด 3 ใบ, ใบที่ 4, ใบที่ 5</li>
         <li>รอบแรกเริ่มจากคนถัดจาก blind ใหญ่ รอบต่อไปเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
-        <li>เหลือคนเดียวที่ไม่หมอบ ได้กองกลาง ไม่ต้องเปิดไพ่</li>
-        <li>ครบ 4 รอบ เปิดไพ่ มือสูงสุดได้กองกลาง เท่ากันแบ่ง</li>
+        <li>เหลือคนเดียวที่ไม่หมอบ ได้กองกลาง ไม่ต้องเปิดไพ่ จะหงายให้ดูก็ได้</li>
+        <li>ครบ 4 รอบ ผลัดกันหงายหรือหมอบ เริ่มจากคนที่ลงหรือเพิ่มล่าสุด ไม่มีเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
+        <li>หมอบ: ไม่เอากองกลาง ไม่ต้องให้ใครเห็นไพ่</li>
+        <li>มีคนออลอิน ทุกคนต้องหงาย</li>
+        <li>มือสูงสุดในคนที่หงายได้กองกลาง เท่ากันแบ่ง</li>
         <li><span class="dealer">D</span> เวียนไปคนถัดไปทุกมือ</li>
       </ol>
       <h2>เดิมพัน</h2>
@@ -500,9 +503,10 @@
       const r = v.result;
       const need = v.seats.filter((s) => s.chips > 0);
       const canReady = !!me && v.screen === "end" && me.chips > 0 && !v.ready.includes(v.me);
+      const myShow = v.screen === "show" && v.canShow; // ถึงตาเราหงายหรือหมอบ
       const status = v.screen === "over" ? `<span class="hl">จบเกม</span>`
         : !me || (v.screen === "end" && !me.chips) ? `<span class="bad">หมดตัว</span>`
-        : o ? `<span class="hl">ถึงตา</span>`
+        : o || myShow ? `<span class="hl">ถึงตา</span>`
         : v.screen === "end" ? (canReady ? "" : `รอคนอื่น ${v.ready.length}/${need.length}`)
         : `รอ ${esc(v.seats.find((s) => s.id === v.turn).name)}`;
       const shownBest = (id) => r && r.hands && r.hands[id] && r.pots.some((p) => p.ids.includes(id));
@@ -510,6 +514,7 @@
       // ข้อความใต้ไพ่: ชนิดมือตอนเปิดไพ่ หรือสิ่งที่ทำล่าสุด
       const note = (s) =>
         r && r.hands && r.hands[s.id] ? `<span class="${shownBest(s.id) ? "hl" : ""}">${KIND[r.hands[s.id].kind]}</span>`
+        : s.kind !== undefined ? `<span>${KIND[s.kind]}</span>`
         : s.folded ? `<span class="hint">หมอบ</span>`
         : v.screen === "play" && !s.chips ? `<span class="bad">ออลอิน</span>`
         : s.id === v.me && v.mine !== undefined ? `<span>${KIND[v.mine]}</span>`
@@ -551,7 +556,16 @@
               <button class="icon-btn" id="plus" aria-label="เพิ่มยอด">+</button>
             </div>
             <button id="raise" class="alt" data-sfx="confirm"></button>` : ""}` : ""}
-        ${canReady ? `<button id="ready" data-sfx="next">ต่อ</button>` : ""}
+        ${myShow ? `
+          <div class="actions">
+            <button id="muck" class="fold" data-sfx="vote">หมอบ</button>
+            <button id="show">หงาย</button>
+          </div>` : ""}
+        ${canReady || v.canShow ? `
+          <div class="actions">
+            ${v.canShow && !myShow ? `<button id="show" class="alt">หงาย</button>` : ""}
+            ${canReady ? `<button id="ready" data-sfx="next">ต่อ</button>` : ""}
+          </div>` : ""}
         ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
         ${scoreboard(v)}`;
 
@@ -627,7 +641,8 @@
           sounds.push([0, "start"]);
         } else if (v.log.by !== v.me) sounds.push([0, v.log.t === "fold" ? "vote" : v.log.t === "check" ? "click" : "confirm"]);
       }
-      if (o && lastTurn !== v.me) sounds.push([at, "next"]);
+      if (fresh && v.log.t === "muck" && v.log.by !== v.me) sounds.push([0, "vote"]);
+      if ((o || myShow) && lastTurn !== v.me) sounds.push([at, "next"]);
       lastTurn = v.turn;
       for (const [t, name] of sounds) setTimeout(() => playSfx(name), t);
       if (items.length) plans.push({ start: performance.now(), items, end: payAt + 1000 });
@@ -664,6 +679,8 @@
         btn.onclick = () => send({ t: "raise", to: raiseTo });
       }
       if (canReady) app.querySelector("#ready").onclick = () => send({ t: "ready" });
+      if (myShow) app.querySelector("#muck").onclick = () => send({ t: "muck" });
+      if (v.canShow) app.querySelector("#show").onclick = () => send({ t: "show" });
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       // จบเกม: รอเปิดไพ่มือสุดท้ายให้เห็นก่อนค่อยโชว์ผู้ชนะ
       if (gameOver) {
