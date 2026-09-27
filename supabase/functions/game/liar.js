@@ -94,8 +94,12 @@ export default {
         s.round = 0;
         startOpening(s);
       }
-      // ทอยหาคนเริ่มเสร็จแล้ว คนที่ได้เริ่มเสนอก่อน
-      if (msg.t === "go" && s.phase === "order" && s.opening.starter) startRound(s, s.opening.starter);
+      // ทอยหาคนเริ่มเสร็จแล้ว หมุนลำดับให้คนที่ได้เริ่มอยู่บนสุด แล้วเสนอก่อน
+      if (msg.t === "go" && s.phase === "order" && s.opening.starter) {
+        const i = s.order.indexOf(s.opening.starter);
+        s.order = [...s.order.slice(i), ...s.order.slice(0, i)];
+        startRound(s, s.opening.starter);
+      }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
   },
@@ -122,7 +126,8 @@ export default {
   view(s, id) {
     const v = {
       screen: s.phase, start: s.start, rules: { palifico: s.palifico },
-      players: s.players.map((p) => ({ name: p.name, count: p.count, now: s.phase === "play" && s.turn === p.id })),
+      // ระหว่างเกมเรียงรายชื่อตามลำดับเล่น
+      players: (s.phase === "lobby" ? s.players : s.order.map((x) => pl(s, x))).map((p) => ({ name: p.name, count: p.count, now: s.phase === "play" && s.turn === p.id })),
     };
     if (s.phase === "order") v.opening = openingView(s, id);
     else if (s.phase !== "lobby") {
