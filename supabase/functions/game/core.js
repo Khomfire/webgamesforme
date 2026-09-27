@@ -8,8 +8,9 @@ import uno from "./uno.js";
 import pokdeng from "./pokdeng.js";
 import holdem from "./holdem.js";
 import president from "./president.js";
+import connect4 from "./connect4.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno, pokdeng, holdem, president };
+export const GAMES = { spy, xo, farkle, liar, uno, pokdeng, holdem, president, connect4 };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
