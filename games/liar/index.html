@@ -243,7 +243,7 @@
         <li>ทุกคนเริ่มด้วยเต๋าเท่ากัน ตามที่ตั้งในห้อง</li>
         <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่เฉพาะคนที่เสมอ</li>
         <li>ต้นรอบ ทุกคนทอยเต๋าที่เหลือ เห็นแค่ของตัวเอง</li>
-        <li>เล่นวนตามลำดับรายชื่อ ข้ามคนที่ออกแล้ว</li>
+        <li>คนเริ่มขึ้นบนสุดของรายชื่อ เล่นไล่ลงแล้ววนกลับ ข้ามคนที่ออกแล้ว</li>
       </ol>
       <h2>เสนอ</h2>
       <ol>
@@ -331,7 +331,7 @@
     const scoreboard = (v) => `
       <h2>ผู้เล่น</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span>${p.count} ลูก</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
+        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
       </ul>`;
 
     // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
