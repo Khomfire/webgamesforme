@@ -88,7 +88,7 @@ function startRound(s) {
   }
 }
 
-// ลงไพ่: ใช้ผลการ์ด ถ้าหมดมือจบรอบ ได้แต้มจากไพ่ในมือทุกคน
+// ลงไพ่: ใช้ผลการ์ด ถ้าหมดมือจบรอบ
 // +2/+4 ยังไม่จั่วทันที สะสมไว้ให้คนถัดไปลงทับหรือจั่วทั้งหมด
 function play(s, id, card, pick) {
   const p = pl(s, id);
@@ -242,7 +242,7 @@ export default {
     const dealerNext = step(s, s.dealer);
     s.order.splice(s.order.indexOf(id), 1);
     if (s.dealer === id) s.dealer = s.order.includes(dealerNext) ? dealerNext : s.order[0];
-    if (s.phase === "lobby") return;
+    if (s.phase === "lobby" || s.phase === "over") return;
     // เหลือคนเดียวที่ยังไม่ตกรอบ ชนะ
     if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
     s.deck.unshift(...gone.hand);
