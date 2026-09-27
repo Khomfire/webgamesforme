@@ -4,6 +4,7 @@
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
 const pl = (s, id) => s.players.find((p) => p.id === id);
 const CHIPS = 1000, BLIND = 10, LEVEL = 10;
+const TURN = 15000; // เวลาต่อตา
 
 function newDeck() {
   const deck = [];
@@ -256,14 +257,31 @@ function act(s, p, msg) {
   proceed(s, p.id);
 }
 
+// หมดเวลา: ผ่านถ้าผ่านได้ ไม่งั้นหมอบ ตอนเปิดไพ่หงาย (หมอบจะเสียสิทธิ์กองกลาง)
+function timeUp(s) {
+  const p = pl(s, s.turn);
+  if (s.phase === "show") {
+    s.shown.push(p.id);
+    s.log = { t: "show", by: p.id, n: s.hands };
+    nextShow(s, p.id);
+  } else act(s, p, { t: p.bet === s.bet ? "check" : "fold" });
+  s.log.late = p.id;
+}
+
+// ตาเปลี่ยน (หรือคนเดิมเล่นต่อในรอบใหม่) เริ่มนับเวลาใหม่
+const turnKey = (s) => [s.phase, s.turn, s.street, s.hands].join();
+
 export default {
   max: 10,
   init: () => ({ phase: "lobby" }),
   player: () => ({ chips: 0, cards: [], bet: 0, total: 0, folded: false, acted: false, last: null, out: false }),
 
-  handle(s, id, msg) {
+  handle(s, id, msg, now) {
     const p = pl(s, id);
-    if (s.phase === "play" && s.turn === id) act(s, p, msg);
+    const key = turnKey(s);
+    // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
+    if (msg.t === "timeout" && (s.phase === "play" || s.phase === "show") && now >= s.turnEnds) timeUp(s);
+    else if (s.phase === "play" && s.turn === id) act(s, p, msg);
     // เปิดไพ่: หงายให้ทุกคนเห็น หรือหมอบ (ไม่เอากองกลาง ไม่ต้องเปิด)
     if (s.phase === "show" && s.turn === id && (msg.t === "show" || msg.t === "muck")) {
       if (msg.t === "show") s.shown.push(id);
@@ -292,12 +310,14 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
+    if (turnKey(s) !== key) s.turnEnds = now + TURN;
   },
 
   // คนออกกลางมือ: นับเป็นหมอบ ชิปที่ลงไว้อยู่ในกองกลาง ถ้าเป็นตาเขาก็ไปคนถัดไป
   leave(s, id, gone) {
     if (!s.order || !s.order.includes(id)) return;
     if (s.players.length < 2) return toLobby(s);
+    const key = turnKey(s);
     const prev = before(s, id);
     s.order.splice(s.order.indexOf(id), 1);
     if (s.button === id) s.button = prev; // D มือต่อไปไปที่คนถัดจากคนที่ออก
@@ -312,9 +332,10 @@ export default {
       if (s.order.filter((x) => pl(s, x).chips > 0).length < 2) finish(s);
       else if (s.order.every((x) => !pl(s, x).chips || s.ready.includes(x))) nextHand(s);
     }
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + TURN;
   },
 
-  view(s, id) {
+  view(s, id, now) {
     const v = { screen: s.phase, players: s.players.map((p) => ({ id: p.id, name: p.name, chips: p.chips, out: p.out })) };
     if (s.phase === "lobby") return v;
     const me = pl(s, id);
@@ -333,6 +354,8 @@ export default {
       // หงายได้: ถึงตาตอนเปิดไพ่ หรือได้กองกลางเพราะคนอื่นหมอบหมด
       canShow: (s.phase === "show" && s.turn === id) || (s.phase === "end" && !s.result.hands && inHand(s)[0] === id && !s.shown.includes(id)),
       ready: s.ready, winner: s.winner, log: s.log,
+      // เวลาที่เหลือของตานี้ (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
+      turnLeft: s.turn ? Math.max(0, s.turnEnds - now) : null,
     });
     // ชนิดมือที่ดีที่สุดของเราตอนนี้
     if (s.order.includes(id) && me.cards.length && s.board.length) v.mine = best([...me.cards, ...s.board]).score[0];

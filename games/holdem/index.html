@@ -189,6 +189,10 @@
     .seats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .seat { position: relative; padding: 6px 8px; border: 3px solid #2c2950; min-width: 0; }
     .seat.now { border-color: var(--yellow); }
+    /* หลอดเวลาในกรอบของคนที่ถึงตา */
+    .timer { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
+    .seat.mine .timer { height: 8px; }
     .seat.folded .cards, .seat.folded .name { opacity: 0.4; }
     .seat .who { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 28px; }
     .seat .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -266,6 +270,7 @@
         <li>มีคนออลอิน ทุกคนต้องหงาย</li>
         <li>มือสูงสุดในคนที่หงายได้กองกลาง เท่ากันแบ่ง</li>
         <li><span class="dealer">D</span> เวียนไปคนถัดไปทุกมือ</li>
+        <li>ตาละ 15 วิ หมดเวลา: ผ่านถ้าผ่านได้ ไม่งั้นหมอบ ตอนเปิดไพ่หงายให้</li>
       </ol>
       <h2>เดิมพัน</h2>
       <ol>
@@ -340,6 +345,7 @@
     // ชนิดมือ ตรงกับ server (holdem.js)
     const KIND = ["ไพ่สูง", "คู่", "สองคู่", "ตอง", "สเตรท", "ฟลัช", "ฟูลเฮาส์", "โฟร์การ์ด", "สเตรทฟลัช"];
     const ACT = { fold: "หมอบ", check: "ผ่าน", call: "ตาม", bet: "ลง", raise: "เพิ่ม" };
+    const TURN = 15000; // เวลาต่อตา ตรงกับ server (holdem.js)
     let raiseTo = null; // ยอดที่จะเพิ่ม (ลงรวมในรอบนี้) จำไว้ระหว่างวาดใหม่ตอนยังเป็นตาเรา
 
     // ---------- แอนิเมชัน ----------
@@ -386,6 +392,20 @@
         ], { duration: 500, delay: i * 70, easing: "ease-in-out", fill: "both" }).onfinish = () => el.remove();
       }
     }
+    // หลอดเวลา: ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
+    function drainTimer(bar, left) {
+      if (!bar) return;
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > 5000
+        ? [
+          { transform: `scaleX(${left / TURN})`, background: yellow },
+          { transform: `scaleX(${5000 / TURN})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / TURN})`, background: red, offset: 1 - 5000 / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / TURN})`, background: red }, { transform: "scaleX(0)", background: red }];
+      bar.animate(frames, { duration: left, fill: "forwards" });
+    }
     function shout(text, good) {
       const t = app.querySelector(".table");
       if (!t) return;
@@ -426,7 +446,7 @@
         <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">หมดตัว</span>` : ""}</span><span>${p.chips}</span></li>`).join("")}
       </ul>`;
 
-    let lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, lastTurn, overTimer;
+    let timeoutTimer, lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, lastTurn, overTimer;
     function render() {
       const v = view;
       const gameOver = v.screen === "over" && lastScreen !== "over";
@@ -527,6 +547,7 @@
           <div class="who"><span class="name">${esc(s.name)}</span><span>${s.id === v.button ? `<span class="dealer" aria-label="ดีลเลอร์">D</span>` : ""}<span class="money">${s.chips}</span></span></div>
           <div class="cards">${s.cards ? s.cards.map((c) => cardHtml(c, bestIds.has(c.id) ? "best" : "")).join("") : back().repeat(s.n)}</div>
           <div class="info">${note(s)}${right(s)}</div>
+          ${s.id === v.turn ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         </div>`;
       const pots = r ? r.pots.map((p, i) => `
         <li><span>${r.pots.length > 1 ? (i ? `กองรอง ${i}` : "กองกลาง") : "กองกลาง"} ${p.n}</span><span class="hl">${p.names.map(esc).join(", ")}</span></li>`).join("") : "";
@@ -677,6 +698,13 @@
         minus.onclick = () => set(Number(slider.value) - 1);
         plus.onclick = () => set(Number(slider.value) + 1);
         btn.onclick = () => send({ t: "raise", to: raiseTo });
+      }
+      // หลอดเวลา และแจ้ง server เมื่อหมดเวลา (คนที่ถึงตาแจ้งก่อน คนอื่นแจ้งแทนถ้าเขาหลุด)
+      clearTimeout(timeoutTimer);
+      if (v.turn) {
+        const mine = v.turn === v.me;
+        drainTimer(app.querySelector(".seat.now .timer i"), v.turnLeft);
+        timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (mine ? 200 : 1500));
       }
       if (canReady) app.querySelector("#ready").onclick = () => send({ t: "ready" });
       if (myShow) app.querySelector("#muck").onclick = () => send({ t: "muck" });
