@@ -4,8 +4,9 @@ import spy from "./spy.js";
 import xo from "./xo.js";
 import farkle from "./farkle.js";
 import liar from "./liar.js";
+import uno from "./uno.js";
 
-export const GAMES = { spy, xo, farkle, liar };
+export const GAMES = { spy, xo, farkle, liar, uno };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
