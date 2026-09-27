@@ -274,9 +274,10 @@
       <ol>
         <li>โดน <span data-card="b:d2"></span> ลง <span data-card="r:d2"></span> ทับได้ (สีไหนก็ได้) คนถัดไปโดน +4</li>
         <li>โดน <span data-card="w:w4"></span> ลง <span data-card="w:w4"></span> ทับได้ คนถัดไปโดน +8</li>
+        <li>โดน <span data-card="b:d2"></span> ลง <span data-card="w:w4"></span> ทับได้ คนถัดไปโดน +6</li>
+        <li>โดน <span data-card="w:w4"></span> ลง <span data-card="b:d2"></span> ทับไม่ได้</li>
         <li>ทับต่อได้ ยอดสะสมไปเรื่อยๆ</li>
         <li>ไม่มีใบทับหรือไม่อยากทับ จั่วตามยอดแล้วเสียตา</li>
-        <li><span data-card="b:d2"></span> กับ <span data-card="w:w4"></span> ทับกันไม่ได้</li>
       </ol>
       <h2>แต้ม</h2>
       <ol>
@@ -344,7 +345,7 @@
     const back = (cls = "") => `<div class="card back ${cls}" aria-hidden="true"><span>UNO</span></div>`;
     // สำเนาจาก server (uno.js playable) ต้องแก้ให้ตรงกัน
     function playable(card, hand, color, top, pending) {
-      if (pending) return card.v === pending.v;
+      if (pending) return card.v === pending.v || card.v === "w4";
       if (card.v === "wild") return true;
       if (card.v === "w4") return !color || !hand.some((x) => x.c === color);
       return !color || card.c === color || card.v === top.v;

@@ -23,9 +23,10 @@ export const points = (card) => (card.c === "w" ? 50 : /^\d$/.test(card.v) ? Num
 const top = (s) => s.pile[s.pile.length - 1];
 // ลงได้เมื่อสีตรงกับสีที่ใช้อยู่ หรือเลข/สัญลักษณ์ตรงกับใบบนสุด หรือเป็น wild
 // w4 ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่ในมือ
-// มี +2/+4 ค้างอยู่ (pending): ลงทับได้แค่ใบชนิดเดียวกัน (หน้าเกมมีสำเนาไว้เปิดปิดไพ่ ต้องแก้ให้ตรงกัน)
+// มี +2/+4 ค้างอยู่ (pending): ลงทับด้วยใบชนิดเดียวกัน หรือ +4 ทับ +2 ได้ (+2 ทับ +4 ไม่ได้)
+// (หน้าเกมมีสำเนาไว้เปิดปิดไพ่ ต้องแก้ให้ตรงกัน)
 export function playable(card, hand, color, topCard, pending) {
-  if (pending) return card.v === pending.v;
+  if (pending) return card.v === pending.v || card.v === "w4";
   if (card.v === "wild") return true;
   if (card.v === "w4") return !color || !hand.some((x) => x.c === color);
   return !color || card.c === color || card.v === topCard.v;
