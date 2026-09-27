@@ -176,12 +176,13 @@
       border: 3px solid #2c2950;
     }
     .seat.now { border-color: var(--yellow); }
-    .seat.me .name { color: var(--cyan); }
     .seat .count { font: 400 0.8rem "Press Start 2P", monospace; }
     .seat .uno-tag { color: var(--red); font: 400 0.6rem "Press Start 2P", monospace; }
     /* หลอดเวลาใต้คนที่ถึงตา */
     .timer { position: absolute; left: 3px; right: 3px; bottom: -11px; height: 5px; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
+    /* หลอดเวลาของเราเอง อยู่เหนือไพ่ในมือ */
+    .timer.mine { position: static; height: 8px; margin: 8px 0 0; }
     .seats { row-gap: 16px; }
     .table { position: relative; display: flex; justify-content: center; align-items: center; gap: 32px; margin: 24px 0 16px; }
     .table .card { --w: 72px; }
@@ -589,8 +590,8 @@
         ? v.myTurn ? `<span class="hl">${v.drawn !== null ? "ลงใบที่จั่วหรือผ่าน" : v.pending ? `ลงทับหรือจั่ว +${v.pending.n}` : "ตาคุณ"}</span>` : `ตา ${esc(v.turnName)}`
         : `<span class="${v.result.name === v.seats.find((s) => s.id === v.me).name ? "good" : "hint"}">${esc(v.result.name)} +${v.result.gained}</span>`;
       app.innerHTML = `
-        <div class="seats">${v.seats.map((s) => `
-          <div class="seat${s.now ? " now" : ""}${s.id === v.me ? " me" : ""}" data-seat="${s.id}">
+        <div class="seats">${v.seats.filter((s) => s.id !== v.me).map((s) => `
+          <div class="seat${s.now ? " now" : ""}" data-seat="${s.id}">
             <span class="name">${esc(s.name)}</span>${back("small")}<span class="count">${s.count}</span>${s.uno && s.count === 1 ? `<span class="uno-tag">UNO</span>` : ""}
             ${s.now ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
           </div>`).join("")}
@@ -606,6 +607,7 @@
         </div>
         <p class="status">${status}</p>
         ${v.screen === "play" ? `
+          ${v.myTurn ? `<div class="timer mine" aria-hidden="true"><i></i></div>` : ""}
           <div class="hand" aria-label="ไพ่ในมือ">${hand.map((c) => {
             const ok = v.myTurn && (v.drawn === null || v.drawn === c.id) && playable(c, v.hand, v.color, top, v.pending);
             return cardHtml(c, { tag: "button", cls: ok ? "ok" : "", attrs: `data-sfx="confirm" ${ok ? "" : "disabled"}` });
@@ -622,7 +624,8 @@
             : `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
                <p class="hint">พร้อม ${v.readyCount}/${v.players.length}</p>`}`}`;
 
-      const seat = (id) => app.querySelector(`[data-seat="${id}"]`);
+      // ที่นั่งของคนอื่นอยู่แถวบน ของเราคือไพ่ในมือ
+      const seat = (id) => app.querySelector(id === v.me ? ".hand" : `[data-seat="${id}"]`);
       const deckRect = app.querySelector("#deck").getBoundingClientRect();
       const log = JSON.stringify(v.log);
       const fresh = log !== lastLog;
@@ -675,7 +678,7 @@
       // หลอดเวลา และแจ้ง server เมื่อหมดเวลา (คนที่ถึงตาแจ้งก่อน คนอื่นแจ้งแทนถ้าเขาหลุด)
       clearTimeout(timeoutTimer);
       if (v.screen === "play") {
-        drainTimer(app.querySelector(".seat.now .timer i"), v.turnLeft);
+        drainTimer(app.querySelector(v.myTurn ? ".timer.mine i" : ".seat.now .timer i"), v.turnLeft);
         timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (v.myTurn ? 200 : 1500));
       }
       lastHand = v.hand.map((c) => c.id);
