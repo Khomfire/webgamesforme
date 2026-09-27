@@ -122,6 +122,28 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* หลอดเวลาของตานี้ */
+    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
+    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
+    /* คะแนนระหว่างเล่น: การ์ดละคน หลอดคือระยะถึงเป้า */
+    .board-goal { margin: 0 0 6px; text-align: right; font-size: 0.8rem; color: var(--dim); }
+    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .board li { min-width: 0; padding: 6px 8px 8px; background: #15122c; border: 2px solid #2c2950; }
+    .board li.now { border-color: var(--yellow); box-shadow: 3px 3px 0 #6b5510; }
+    .board li.now::before { content: none; }
+    .board li.out { opacity: 0.45; }
+    .board .name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; color: var(--dim); }
+    .board .now .name { color: var(--text); }
+    .board .name.hl { color: var(--yellow); }
+    .board .out .name { text-decoration: line-through; }
+    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", monospace; color: var(--yellow); white-space: nowrap; }
+    .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
+    .board .meter { display: block; height: 4px; margin-top: 6px; background: #2c2950; }
+    .board .meter i { display: block; width: var(--p); max-width: 100%; height: 100%; background: var(--m, var(--yellow)); }
+    .board .pips { display: flex; gap: 3px; margin-top: 6px; }
+    .board .pips i { width: 10px; height: 10px; border: 2px solid #2c2950; }
+    .board .pips i.on { border-color: var(--yellow); background: var(--yellow); }
     .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
@@ -254,6 +276,7 @@
         <li>เปลี่ยนเป็น <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว ปัดขึ้น เช่น <span class="die inline" data-face="4"></span> x5 เป็น <span class="die inline" data-face="1"></span> x3</li>
         <li>เปลี่ยนจาก <span class="die inline" data-face="1"></span> ใช้สองเท่า + 1 เช่น <span class="die inline" data-face="1"></span> x3 เป็น <span class="die inline" data-face="4"></span> x7</li>
         <li>เสนอเกินจำนวนเต๋าทั้งวงไม่ได้</li>
+        <li>ตาละ <span id="rule-time">20</span> วิ หมดเวลา: เสนอเพิ่ม 1 ลูกหน้าเดิม (เปิดรอบ <span class="die inline" data-face="2"></span> x1) เกินทั้งวงจับโกหก</li>
       </ol>
       <h2>โกหก</h2>
       <ol>
@@ -289,6 +312,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -310,14 +334,14 @@
     const counts = (d, face, wild) => d === face || (wild && d === 1);
     const RULES = { palifico: "PALIFICO" };
 
-    let view = { screen: "home" };
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับเวลาที่เหลือของตา
     function show(next) { view = { ...view, ...next }; render(); }
 
     let room;
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
     function enter(name, code, saved) {
-      room = openRoom("liar", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }), saved);
+      room = openRoom("liar", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
       if (saved) room.resume();
       else if (code) room.join(code, name);
       else room.create(name);
@@ -334,13 +358,19 @@
         <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
       </ul>`;
 
+    // จุดละเต๋าหนึ่งลูก ทึบคือที่ยังเหลือ
+    const scorebar = (v) => `
+      <ul class="board" aria-label="ผู้เล่น">${v.players.map((p) => `
+        <li class="${p.now ? "now" : ""}${p.count ? "" : " out"}"><span class="name${v.screen === "over" && p.name === v.winner ? " hl" : ""}">${esc(p.name)}</span><span class="pips" role="img" aria-label="${p.count ? p.count + " ลูก" : "ออก"}">${Array.from({ length: Math.max(v.start, p.count) }, (_, i) => `<i${i < p.count ? ' class="on"' : ""}></i>`).join("")}</span></li>`).join("")}
+      </ul>`;
+
     // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
     // ตอนเปิด: ป้ายโกหกขึ้นก่อน FLIP_AT แล้วเปิดเต๋าทีละคนห่างกัน FLIP_GAP
     const FLIP_AT = 900, FLIP_GAP = 350;
     const revealEnd = (r) => FLIP_AT + r.hands.length * FLIP_GAP + 300;
     const revealBox = (r) => `
       <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
-      <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${r.n} &times; ${die(r.face)}</div>
+      <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${die(r.face)} &times; ${r.n}</div>
       <ul>${r.hands.map((h, row) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d, i) => die(d, counts(d, r.face, r.wild) ? "hit" : "", `--t: ${FLIP_AT + row * FLIP_GAP + i * 60}ms`)).join("")}</div></li>`).join("")}</ul>
       <p class="center later">มีจริง <span class="hl">${r.count}</span> ลูก</p>
       <p class="status bad later">${esc(r.loser)} เสีย 1 ลูก</p>`;
@@ -435,9 +465,33 @@
     // ค่าที่กำลังเลือกจะเสนอ เก็บในเครื่องตัวเอง เริ่มใหม่เมื่อมีคนเสนอ
     let pick, pickKey;
     let lastScreen, lastMyTurn, lastRound;
+    // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
+    // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
+    let timeoutTimer;
+    function runTimer(v) {
+      const bar = app.querySelector(".timer i");
+      if (!bar) return;
+      const left = Math.max(0, v.turnLeft - (performance.now() - viewAt)), total = v.time;
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > 5000
+        ? [
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${5000 / total})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / total})`, background: red, offset: 1 - 5000 / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (v.paused) return anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้ ไม่แจ้งหมดเวลา
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
+    }
+
     function render() {
       clearInterval(rollTimer);
       const v = view;
+      pauseUi(v, send);
+      clearTimeout(timeoutTimer);
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       // เพิ่งจับโกหก: ป้ายโกหก เสียงพลิกเต๋าทีละคน
       if ((v.screen === "reveal" || v.screen === "over") && lastScreen === "play") {
@@ -505,8 +559,11 @@
           <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="start-dice">เต๋าคนละ (1-5 ลูก)</label>
-               <input id="start-dice" type="number" min="1" max="5" value="${v.start}">`
-            : `<p>เต๋าคนละ <span class="hl">${v.start}</span> ลูก</p>`}
+               <input id="start-dice" type="number" min="1" max="5" value="${v.start}">
+               <label for="time">วิต่อตา (5-60)</label>
+               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
+            : `<p>เต๋าคนละ <span class="hl">${v.start}</span> ลูก</p>
+               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
           <label id="rules-label">กฎเสริม</label>
           ${v.isHost
             ? `<div role="group" aria-labelledby="rules-label">${Object.entries(RULES).map(([k, name]) => `<button class="rule" data-rule="${k}" aria-pressed="${v.rules[k]}">${v.rules[k] ? "" : "+ "}${name}</button>`).join("")}</div>`
@@ -523,6 +580,7 @@
           setTimeout(() => (done.hidden = true), 1500);
         });
         if (v.isHost) {
+          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#start-dice").onchange = (e) => send({ t: "start-dice", value: e.target.value });
           app.querySelectorAll("[data-rule]").forEach((b) => (b.onclick = () => send({ t: "rule", key: b.dataset.rule, on: !v.rules[b.dataset.rule] })));
           app.querySelector("#start").onclick = () => send({ t: "start" });
@@ -541,10 +599,11 @@
         const canBid = higher(pick, v.bid, v);
         const locked = v.pal && v.bid; // รอบ palifico เปลี่ยนหน้าไม่ได้
         app.innerHTML = `
-          ${scoreboard(v)}
+          ${scorebar(v)}
           <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
+          ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
           ${v.bid
-            ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${v.bid.n} &times; ${die(v.bid.face)}</div>
+            ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${die(v.bid.face)} &times; ${v.bid.n}</div>
                <p class="center">${esc(v.bid.name)} เสนอ</p>`
             : ""}
           <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">PALIFICO</span>` : ""}</p>
@@ -570,6 +629,7 @@
           app.querySelector("#liar").onclick = () => send({ t: "liar" });
         }
         if (newRound) animateRoll(app.querySelector("#hand"));
+        runTimer(v);
         return;
       }
 
@@ -586,7 +646,7 @@
               : v.out ? `<p class="hint center">รอคนอื่น</p>`
               : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
             ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
-            <div style="margin-top: 24px">${scoreboard(v)}</div>
+            <div style="margin-top: 24px">${scorebar(v)}</div>
           </div>
         </div>`;
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });

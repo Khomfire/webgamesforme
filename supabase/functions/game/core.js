@@ -8,8 +8,9 @@ import uno from "./uno.js";
 import pokdeng from "./pokdeng.js";
 import holdem from "./holdem.js";
 import president from "./president.js";
+import connect4 from "./connect4.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno, pokdeng, holdem, president };
+export const GAMES = { spy, xo, farkle, liar, uno, pokdeng, holdem, president, connect4 };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
@@ -41,15 +42,36 @@ export function act(state, token, msg, now = Date.now()) {
   if (msg.t === "leave") return remove(state, id);
   // คนอื่นในห้องแจ้งว่าคนนี้หลุดไปนานแล้ว
   if (msg.t === "gone") return msg.id !== id && state.players.some((p) => p.id === msg.id) ? remove(state, msg.id) : { changed: false };
+  // หยุดเกม (ใครก็กดหยุดหรือเล่นต่อได้) ระหว่างหยุดเกมไม่รับคำสั่งอื่น เวลาของตาหยุดนับ
+  if (msg.t === "pause") {
+    if (state.paused || state.phase === "lobby" || state.phase === "over") return { changed: false };
+    state.paused = { by: state.players.find((p) => p.id === id).name, at: now };
+    return bump(state);
+  }
+  if (msg.t === "resume") {
+    if (!state.paused) return { changed: false };
+    resume(state, now);
+    return bump(state);
+  }
+  if (state.paused) return { changed: false };
   g.handle(state, id, msg, now);
   return bump(state);
 }
 
+// เล่นต่อ: เลื่อนเวลาที่นับอยู่ (หมดเวลาตา, หมดเวลารอบของ SPYFALL) ออกไปเท่ากับที่หยุดไว้
+function resume(state, now) {
+  const d = now - state.paused.at;
+  if (typeof state.turnEnds === "number") state.turnEnds += d;
+  if (state.round && typeof state.round.endsAt === "number") state.round.endsAt += d;
+  state.paused = null;
+}
+
 export function views(state, now = Date.now()) {
   const g = GAMES[state.game];
+  if (state.paused) now = state.paused.at; // หยุดเกมอยู่ เวลาที่เหลือค้างไว้ที่ตอนกดหยุด
   return Object.entries(state.tokens).map(([token, id]) => ({
     token,
-    view: { ...g.view(state, id, now), code: state.code, me: id, ids: state.players.map((p) => p.id), isHost: id === state.owner, seq: state.seq },
+    view: { ...g.view(state, id, now), code: state.code, me: id, ids: state.players.map((p) => p.id), isHost: id === state.owner, seq: state.seq, paused: state.paused ? state.paused.by : null },
   }));
 }
 
@@ -69,7 +91,15 @@ function remove(state, id) {
   for (const [t, x] of Object.entries(state.tokens)) if (x === id) delete state.tokens[t];
   if (!state.players.length) return { changed: true, empty: true };
   if (state.owner === id) state.owner = state.players[0].id;
+  const ends = [state.turnEnds, state.round && state.round.endsAt];
   GAMES[state.game].leave(state, id, gone);
+  if (state.paused) {
+    // เวลาที่เพิ่งเริ่มนับใหม่ระหว่างหยุด (ตาเปลี่ยนเพราะคนออก) ให้นับจากตอนกดหยุด เล่นต่อแล้วจะได้เต็มเวลา
+    const early = Date.now() - state.paused.at;
+    if (state.turnEnds !== ends[0]) state.turnEnds -= early;
+    if (state.round && state.round.endsAt !== ends[1]) state.round.endsAt -= early;
+    if (state.phase === "lobby" || state.phase === "over") state.paused = null; // คนออกจนเกมจบหรือกลับไปรอ
+  }
   return bump(state);
 }
 

@@ -4,7 +4,7 @@
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
 const pl = (s, id) => s.players.find((p) => p.id === id);
 const CHIPS = 1000, BLIND = 10, LEVEL = 10;
-const TURN = 15000; // เวลาต่อตา
+const TURN = 15000; // เวลาต่อตา (ค่าเริ่มต้น เจ้าของห้องตั้งได้ 5-60 วิ)
 
 function newDeck() {
   const deck = [];
@@ -273,7 +273,7 @@ const turnKey = (s) => [s.phase, s.turn, s.street, s.hands].join();
 
 export default {
   max: 10,
-  init: () => ({ phase: "lobby" }),
+  init: () => ({ time: TURN, phase: "lobby" }),
   player: () => ({ chips: 0, cards: [], bet: 0, total: 0, folded: false, acted: false, last: null, out: false }),
 
   handle(s, id, msg, now) {
@@ -299,6 +299,7 @@ export default {
       if (s.order.every((x) => !pl(s, x).chips || s.ready.includes(x))) nextHand(s);
     }
     if (id === s.owner) {
+      if (msg.t === "time" && s.phase === "lobby") s.time = Math.min(60, Math.max(5, Math.round(Number(msg.value)) || 15)) * 1000;
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
         toLobby(s);
         for (const x of s.players) x.chips = CHIPS;
@@ -310,7 +311,7 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
-    if (turnKey(s) !== key) s.turnEnds = now + TURN;
+    if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
   // คนออกกลางมือ: นับเป็นหมอบ ชิปที่ลงไว้อยู่ในกองกลาง ถ้าเป็นตาเขาก็ไปคนถัดไป
@@ -332,11 +333,11 @@ export default {
       if (s.order.filter((x) => pl(s, x).chips > 0).length < 2) finish(s);
       else if (s.order.every((x) => !pl(s, x).chips || s.ready.includes(x))) nextHand(s);
     }
-    if (turnKey(s) !== key) s.turnEnds = Date.now() + TURN;
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 
   view(s, id, now) {
-    const v = { screen: s.phase, players: s.players.map((p) => ({ id: p.id, name: p.name, chips: p.chips, out: p.out })) };
+    const v = { screen: s.phase, time: s.time || TURN, players: s.players.map((p) => ({ id: p.id, name: p.name, chips: p.chips, out: p.out })) };
     if (s.phase === "lobby") return v;
     const me = pl(s, id);
     Object.assign(v, {

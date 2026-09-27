@@ -165,6 +165,7 @@
     .seat .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .seat .tag { margin: 0; flex: none; }
     .seat .info { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 1.6em; font-size: 0.9rem; }
+    .pts { font: 400 0.65rem "Press Start 2P", monospace; color: var(--yellow); }
     .count { display: flex; align-items: center; gap: 6px; font: 400 0.7rem "Press Start 2P", monospace; }
     .seat.mine { margin-top: 8px; padding-bottom: 12px; }
     .table { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; margin: 20px 0 12px; }
@@ -245,7 +246,7 @@
         <li>ตองทับเดี่ยวได้ โฟร์ทับคู่ได้</li>
         <li>ผ่านแล้วลงกองนั้นไม่ได้อีก</li>
         <li>ทุกคนผ่าน คนลงล่าสุดเริ่มกองใหม่ ลงอะไรก็ได้</li>
-        <li>ตาละ 20 วิ หมดเวลา: ผ่าน (เริ่มกองลงใบเล็กสุด)</li>
+        <li>ตาละ <span id="rule-time">20</span> วิ หมดเวลา: ผ่าน (เริ่มกองลงใบเล็กสุด)</li>
       </ol>
       <h2>ไพ่</h2>
       <ol>
@@ -284,6 +285,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -321,7 +323,6 @@
     }
     const TITLE = { king: "คิง", queen: "ควีน", people: "ไพร่", vice: "รองสลาฟ", slave: "สลาฟ" };
     const titleTag = (t) => (t ? `<span class="tag ${t === "slave" || t === "vice" ? "bad" : t === "people" ? "hint" : "hl"}">${TITLE[t]}</span>` : "");
-    const TURN = 20000; // เวลาต่อตา ตรงกับ server (president.js)
     let sel = new Set(); // ไพ่ที่เลือกไว้ในมือ
 
     // ---------- แอนิเมชัน ----------
@@ -352,17 +353,18 @@
       el.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(0.85)" }], { duration: 400, easing: "ease-in" }).onfinish = () => el.remove();
     }
     // หลอดเวลา: ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
-    function drainTimer(bar, left) {
+    function drainTimer(bar, left, total) {
       const red = "var(--red)", yellow = "var(--yellow)";
       const frames = left > 5000
         ? [
-          { transform: `scaleX(${left / TURN})`, background: yellow },
-          { transform: `scaleX(${5000 / TURN})`, background: yellow, offset: 1 - 5000 / left },
-          { transform: `scaleX(${5000 / TURN})`, background: red, offset: 1 - 5000 / left },
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${5000 / total})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / total})`, background: red, offset: 1 - 5000 / left },
           { transform: "scaleX(0)", background: red },
         ]
-        : [{ transform: `scaleX(${left / TURN})`, background: red }, { transform: "scaleX(0)", background: red }];
-      bar.animate(frames, { duration: left, fill: "forwards" });
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (view.paused) anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้
     }
     function shout(text, good) {
       const t = app.querySelector(".table");
@@ -384,8 +386,10 @@
     let timeoutTimer, lastScreen, lastLog = "", lastTurn, lastTitle, overTimer;
     function render() {
       const v = view;
+      pauseUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       lastScreen = v.screen;
 
       if (v.screen === "home") {
@@ -440,8 +444,11 @@
           <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="target">แต้มเป้าหมาย (1-50)</label>
-               <input id="target" type="number" min="1" max="50" value="${v.target}">`
-            : `<p>แต้มเป้าหมาย : <span class="hl">${v.target}</span></p>`}
+               <input id="target" type="number" min="1" max="50" value="${v.target}">
+               <label for="time">วิต่อตา (5-60)</label>
+               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
+            : `<p>แต้มเป้าหมาย : <span class="hl">${v.target}</span></p>
+               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/8</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -454,6 +461,7 @@
           setTimeout(() => (done.hidden = true), 1500);
         });
         if (v.isHost) {
+          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
@@ -476,10 +484,11 @@
         : myTurn ? `<span class="hl">${v.pile ? "ตาคุณ" : "เริ่มกองใหม่"}</span>`
         : me && me.place >= 0 ? `<span class="good">ที่ ${me.place + 1}</span>`
         : `รอ ${esc(nameOf(v.turn))}`;
+      const pts = (id) => `<span class="pts" aria-label="แต้ม">${v.players.find((p) => p.id === id).score}</span>`;
       const seatInfo = (s) => (v.screen === "play" && s.place >= 0 ? `<span class="good">ที่ ${s.place + 1}</span>` : v.screen === "play" && s.passed ? `<span class="hint">ผ่าน</span>` : "");
       const seatHtml = (s) => `
         <div class="seat${waiting.has(s.id) ? " now" : ""}${v.screen === "play" && (s.passed || s.place >= 0) ? " out" : ""}" data-seat="${s.id}">
-          <div class="who"><span class="name">${esc(s.name)}</span>${titleTag(s.title)}</div>
+          <div class="who"><span class="name">${esc(s.name)}</span><span>${titleTag(s.title)} ${pts(s.id)}</span></div>
           <div class="info"><span class="count"><span class="card back mini" aria-hidden="true"></span>${s.count}</span>${seatInfo(s)}</div>
           ${waiting.has(s.id) ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         </div>`;
@@ -504,7 +513,7 @@
         <p class="status">${status}</p>
         ${me ? `
           <div class="seat mine${waiting.has(v.me) ? " now" : ""}" data-seat="${v.me}">
-            <div class="who"><span class="name">${esc(me.name)}</span>${titleTag(me.title)}</div>
+            <div class="who"><span class="name">${esc(me.name)}</span><span>${titleTag(me.title)} ${pts(v.me)}</span></div>
             <div class="hand" aria-label="ไพ่ในมือ">${v.hand.map((c) => `
               <button type="button" class="card${red(c)}${fresh.has(c.id) ? " new" : ""}" data-id="${c.id}" aria-pressed="${sel.has(c.id)}" aria-label="${RANK[c.r]} ${SUIT[c.s]}">${face(c)}</button>`).join("")}
             </div>
@@ -517,8 +526,7 @@
           <h2 style="margin-top: 24px">รอบนี้</h2>
           <ul>${v.result.map((r) => `<li class="row"><span>${esc(r.name)}${titleTag(r.title)}</span><span>+${r.pts}</span></li>`).join("")}</ul>` : ""}
         ${v.screen === "end" ? `<button id="ready" data-sfx="next" ${v.ready ? "disabled" : ""}>ต่อ ${v.readyCount}/${v.seats.length}</button>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
-        ${scoreboard(v)}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // ปุ่มลงเปิดเมื่อไพ่ที่เลือกลงทับกองได้ ปุ่มให้เปิดเมื่อเลือกครบ
       const playBtn = app.querySelector("#play"), passBtn = app.querySelector("#pass"), giveBtn = app.querySelector("#give");
@@ -586,8 +594,8 @@
       // หลอดเวลา และแจ้ง server เมื่อหมดเวลา (คนที่ต้องกดแจ้งก่อน คนอื่นแจ้งแทนถ้าเขาหลุด)
       clearTimeout(timeoutTimer);
       if (v.turnLeft !== null) {
-        app.querySelectorAll(".seat.now .timer i").forEach((bar) => drainTimer(bar, v.turnLeft));
-        timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (myTurn || giving ? 200 : 1500));
+        app.querySelectorAll(".seat.now .timer i").forEach((bar) => drainTimer(bar, v.turnLeft, v.time));
+        if (!v.paused) timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (myTurn || giving ? 200 : 1500));
       }
       if (gameOver) {
         clearTimeout(overTimer);

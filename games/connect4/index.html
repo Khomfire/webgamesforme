@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>XO</title>
+  <title>CONNECT FOUR</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
@@ -133,21 +133,47 @@
     .vs > div { text-align: center; line-height: 1.3; }
     .vs b { font: 400 1rem "Press Start 2P", monospace; }
     .vs small { display: block; color: var(--dim); font-size: 0.8rem; }
-    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 24px; }
-    .board button {
-      --c: var(--dim);
+    /* กระดาน: 7 คอลัมน์ กดคอลัมน์ไหนก็หยอดลงคอลัมน์นั้น */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin: 16px 0 24px;
+      padding: 6px;
+      border: 3px solid #0a1a66;
+      border-radius: 8px;
+      background: #1f3fbf;
+    }
+    .board .col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: auto;
       margin: 0;
       padding: 0;
-      aspect-ratio: 1;
+      border: 0;
+      border-radius: 6px;
+      background: none;
       box-shadow: none;
-      font: 400 clamp(1.8rem, 11vw, 3rem) "Press Start 2P", monospace;
     }
-    .board button:disabled { opacity: 1; cursor: default; }
-    .board .win { border-color: currentColor; background: #2c2950; }
-    .mark { font-family: "Press Start 2P", monospace; font-size: 0.9rem; margin-right: 8px; }
-    /* สีบอกความหมาย: X เหลือง, O ฟ้า, ชนะ ฟ้า, แพ้ แดง */
-    .x, .board .x { color: var(--yellow); }
-    .o, .board .o { color: var(--cyan); }
+    .board .col:disabled { opacity: 1; cursor: default; }
+    .board .col:active:not(:disabled) { transform: none; }
+    .board .col:not(:disabled):hover { background: rgba(255, 255, 255, 0.15); }
+    .board .col:focus-visible { outline-offset: 2px; }
+    .hole { position: relative; aspect-ratio: 1; border-radius: 50%; background: var(--screen); box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.6); }
+    .disc { position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.3); }
+    .disc.win { outline: 3px solid var(--text); outline-offset: -3px; animation: pulse 0.6s ease-in-out infinite alternate; }
+    @keyframes pulse { to { transform: scale(0.85); } }
+    /* เหรียญในรายชื่อ */
+    .dot { display: inline-block; width: 16px; height: 16px; margin-right: 8px; border-radius: 50%; vertical-align: -2px; }
+    /* สีผู้เล่น: แดง กับ เหลือง */
+    .r { background: var(--red); }
+    .y { background: var(--yellow); }
+    .tr { color: var(--red); }
+    .ty { color: var(--yellow); }
+    @media (prefers-reduced-motion: reduce) {
+      .disc.win { animation: none; }
+    }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
@@ -161,17 +187,18 @@
       <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
       <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
     </div>
-    <h1>XO</h1>
+    <h1>CONNECT FOUR</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
         <h2 id="rules-title">กฎ</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
-        <li>ผลัดกันลง X กับ O</li>
-        <li>เรียงครบ 3 ช่องก่อนชนะ +1</li>
+        <li>ผลัดกันหยอดเหรียญ ตกลงช่องล่างสุดที่ว่าง</li>
+        <li>เรียง 4 เหรียญก่อน (นอน ตั้ง หรือทแยง) ชนะ +1</li>
+        <li>เต็มกระดาน เสมอ</li>
         <li>สลับกันเริ่มทุกรอบ</li>
-        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: สุ่มลงให้</li>
+        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: สุ่มหยอดให้</li>
       </ol>
       <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
@@ -205,7 +232,7 @@
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
     function enter(name, code, saved) {
-      room = openRoom("xo", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
+      room = openRoom("connect4", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
       if (saved) room.resume();
       else if (code) room.join(code, name);
       else room.create(name);
@@ -215,22 +242,39 @@
     const scoreboard = (v) => `
       <h2>คะแนน (เป้าหมาย ${v.target})</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span><span class="dot ${p.color.toLowerCase()}" aria-label="${COLOR[p.color]}"></span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
     const scorebar = (v) => {
       const [a, b] = v.players;
       const name = (p) => `<span${v.screen === "over" && p.name === v.winner ? ' class="hl"' : ""}>${esc(p.name)}</span>`;
-      const mark = (p) => `<span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>`;
+      const dot = (p) => `<span class="dot ${p.color.toLowerCase()}" aria-label="${COLOR[p.color]}"></span>`;
       return `
         <div class="vs" aria-label="คะแนน">
-          <span>${mark(a)}${name(a)}</span>
+          <span>${dot(a)}${name(a)}</span>
           <div><b>${a.score} - ${b.score}</b><small>เป้า ${v.target}</small></div>
-          <span>${name(b)}${mark(b)}</span>
+          <span>${name(b)}${dot(b)}</span>
         </div>`;
     };
 
-    let lastScreen, lastMyTurn;
+    const COLS = 7, ROWS = 6;
+    const COLOR = { R: "แดง", Y: "เหลือง" };
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    // เหรียญที่เพิ่งหยอด ตกจากเหนือกระดานลงช่องของมัน แล้วเด้งนิดหนึ่ง
+    function drop(i) {
+      const disc = app.querySelector(`[data-i="${i}"] .disc`);
+      if (!disc || still.matches) return;
+      const row = Math.floor(i / COLS);
+      const step = disc.getBoundingClientRect().height + 4;
+      disc.animate([
+        { transform: `translateY(${-(row + 1) * step}px)` },
+        { transform: "none", offset: 0.75 },
+        { transform: `translateY(${-step * 0.2}px)`, offset: 0.87 },
+        { transform: "none" },
+      ], { duration: 260 + row * 50, easing: "ease-in" });
+    }
+
+    let lastScreen, lastMyTurn, lastDrop = null;
     // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
     let timeoutTimer;
@@ -321,7 +365,7 @@
             : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>
                <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/2</h2>
-          <ul>${v.players.map((p) => `<li><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${esc(p.name)}</li>`).join("")}</ul>
+          <ul>${v.players.map((p) => `<li><span class="dot ${p.color.toLowerCase()}" aria-label="${COLOR[p.color]}"></span>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${full ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
                <button id="start" data-sfx="start" ${full ? "" : "disabled"}>เริ่ม</button>`
@@ -341,13 +385,16 @@
 
       // play / end / over
       const status = v.screen === "play"
-        ? v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา <span class="${v.turnMark.toLowerCase()}">${esc(v.turnName)}</span>`
+        ? v.myTurn ? `<span class="t${v.mine.toLowerCase()}">ตาคุณ</span>` : `ตา <span class="t${v.turnColor.toLowerCase()}">${esc(v.turnName)}</span>`
         : v.won ? `<span class="good">ชนะ</span>` : v.lost ? `<span class="bad">แพ้</span>` : `<span class="hint">เสมอ</span>`;
       const over = v.screen === "over";
       app.innerHTML = `
         ${scorebar(v)}
-        <div class="board" role="grid" aria-label="กระดาน">${v.board.map((c, i) => `
-          <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
+        <div class="board" aria-label="กระดาน">${Array.from({ length: COLS }, (_, c) => `
+          <button class="col" data-col="${c}" aria-label="คอลัมน์ ${c + 1}" ${v.myTurn && !v.board[c] ? "" : "disabled"}>${Array.from({ length: ROWS }, (_, r) => {
+            const i = r * COLS + c, d = v.board[i];
+            return `<span class="hole" data-i="${i}">${d ? `<i class="disc ${d.toLowerCase()}${v.line.includes(i) ? " win" : ""}" aria-label="${COLOR[d]}"></i>` : ""}</span>`;
+          }).join("")}</button>`).join("")}
         </div>
         <p class="status">${status}</p>
         ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
@@ -357,13 +404,23 @@
           ? `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
              <p class="hint">พร้อม ${v.readyCount}/2</p>`
           : ""}`;
-      app.querySelectorAll(".cell").forEach((b) => (b.onclick = () => send({ t: "move", i: Number(b.dataset.i) })));
+      app.querySelectorAll(".col").forEach((b) => (b.onclick = () => send({ t: "drop", col: Number(b.dataset.col) })));
       runTimer(v);
+      // เหรียญใหม่: วาดใหม่ด้วยสถานะเดิม (เช่นกดพร้อม) ไม่เล่นซ้ำ
+      const key = v.last === null ? null : `${v.last}:${v.board.filter(Boolean).length}`;
+      if (key && key !== lastDrop) {
+        drop(v.last);
+        playSfx("click");
+      }
+      lastDrop = key;
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
       if (gameOver) {
-        document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
-        winner.showModal();
-        fireworks();
+        setTimeout(() => {
+          if (view.screen !== "over") return;
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(view.winner)}</p>${scoreboard(view)}`;
+          winner.showModal();
+          fireworks();
+        }, still.matches ? 0 : 900);
       }
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
     }
@@ -377,7 +434,7 @@
     // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
     document.querySelector(".back").addEventListener("click", () => room && room.leave());
 
-    const saved = savedRoom("xo");
+    const saved = savedRoom("connect4");
     if (saved) {
       app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
       enter(null, null, saved);

@@ -140,6 +140,25 @@
     .bad { color: var(--red); }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
+    /* คะแนนระหว่างเล่น: การ์ดละคน หลอดคือระยะถึงเป้า */
+    .board-goal { margin: 0 0 6px; text-align: right; font-size: 0.8rem; color: var(--dim); }
+    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .board li { min-width: 0; padding: 6px 8px 8px; background: #15122c; border: 2px solid #2c2950; }
+    .board li.now { border-color: var(--yellow); box-shadow: 3px 3px 0 #6b5510; }
+    .board li.now::before { content: none; }
+    .board li.out { opacity: 0.45; }
+    .board .name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; color: var(--dim); }
+    .board .now .name { color: var(--text); }
+    .board .name.hl { color: var(--yellow); }
+    .board .out .name { text-decoration: line-through; }
+    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", monospace; color: var(--yellow); white-space: nowrap; }
+    .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
+    .board .meter { display: block; height: 4px; margin-top: 6px; background: #2c2950; }
+    .board .meter i { display: block; width: var(--p); max-width: 100%; height: 100%; background: var(--m, var(--yellow)); }
+    .board .pips { display: flex; gap: 3px; margin-top: 6px; }
+    .board .pips i { width: 10px; height: 10px; border: 2px solid #2c2950; }
+    .board .pips i.on { border-color: var(--yellow); background: var(--yellow); }
     .gain { margin-right: 12px; color: var(--cyan); }
     .vote { --c: var(--cyan); margin-top: 12px; }
     .error { color: var(--red); }
@@ -187,6 +206,7 @@
   <script src="../../net.js"></script>
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -215,6 +235,13 @@
         <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
+    const meter = (n, max) => `<span class="meter" aria-hidden="true"><i style="--p: ${Math.round((100 * n) / max)}%"></i></span>`;
+    const scorebar = (v) => `
+      <p class="board-goal">เป้า ${v.target}</p>
+      <ul class="board" aria-label="คะแนน">${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li><span class="name${(v.winners || []).includes(p.name) ? " hl" : ""}">${esc(p.name)}</span><b>${p.score}${p.gain ? `<small>+${p.gain}</small>` : ""}</b>${meter(p.score, v.target)}</li>`).join("")}
+      </ul>`;
+
     // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
     const crossed = new Set();
     const placeButtons = (cls, sfx = "") => view.places.map((name) =>
@@ -229,6 +256,7 @@
     // หมดเวลาแล้วขอสถานะใหม่จาก server ครั้งเดียว (server เปิดโหวตตามเวลาของมันเอง)
     let asked = 0;
     setInterval(() => {
+      if (view.paused) return; // หยุดเกมอยู่ นาฬิกาค้างไว้
       const t = document.getElementById("timer");
       if (t) t.textContent = clock();
       if (t && Date.now() >= deadline && asked !== deadline) { asked = deadline; send({ t: "sync" }); }
@@ -237,6 +265,7 @@
     let lastScreen;
     function render() {
       const v = view;
+      pauseUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (gameOver) playSfx("win");
       if (v.screen !== "over" && winner.open) winner.close();
@@ -377,7 +406,7 @@
           <li>สถานที่: <span class="hl">${esc(v.location)}</span></li>
           <li>${v.guess === null ? "สายลับออกก่อนทาย" : `สายลับทาย "${esc(v.guess)}" ${v.correct ? '<span class="bad">ถูก</span>' : '<span class="good">ผิด</span>'}`}</li>
         </ul>
-        <div style="margin-top: 24px">${scoreboard(v)}</div>
+        <div style="margin-top: 24px">${scorebar(v)}</div>
         ${v.screen === "over"
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
           : `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}

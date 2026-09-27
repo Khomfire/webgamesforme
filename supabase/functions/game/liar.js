@@ -3,6 +3,7 @@
 import { leaveOpening, openingView, rollOpening, startOpening } from "./opening.js";
 
 const pl = (s, id) => s.players.find((p) => p.id === id);
+const TURN = 20000; // เวลาต่อตา (ค่าเริ่มต้น เจ้าของห้องตั้งได้ 5-60 วิ)
 
 // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
 // หน้า 1 แทนทุกหน้า: เปิดรอบด้วยหน้า 1 ไม่ได้ เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
@@ -67,18 +68,33 @@ function call(s, caller) {
   }
 }
 
+function placeBid(s, id, bid) {
+  s.bid = { ...bid, by: id };
+  s.turn = nextAlive(s, id);
+}
+
+// หมดเวลา: เสนอจำนวนเพิ่ม 1 ลูกหน้าเดิม (เปิดรอบเสนอ 1 ลูกหน้า 2) เพิ่มไม่ได้แล้วจับโกหก
+function timeUp(s) {
+  const bid = s.bid ? { n: s.bid.n + 1, face: s.bid.face } : { n: 1, face: 2 };
+  if (bid.n <= total(s) && higher(bid, s.bid, mode(s))) placeBid(s, s.turn, bid);
+  else call(s, s.turn);
+}
+
+// ตาเปลี่ยน (หรือรอบใหม่) เริ่มนับเวลาใหม่
+const turnKey = (s) => [s.phase, s.turn, s.round, s.bid && `${s.bid.n}-${s.bid.face}`].join();
+
 export default {
-  init: () => ({ start: 5, palifico: false, pal: false, phase: "lobby" }),
+  init: () => ({ start: 5, palifico: false, pal: false, time: TURN, phase: "lobby" }),
   player: () => ({ count: 0, hand: [] }),
 
-  handle(s, id, msg) {
+  handle(s, id, msg, now) {
+    const key = turnKey(s);
+    // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
+    if (msg.t === "timeout" && s.phase === "play" && now >= s.turnEnds) timeUp(s);
     if (msg.t === "first-roll") rollOpening(s, id);
     if (s.phase === "play" && s.turn === id) {
       const bid = { n: Number(msg.n), face: Number(msg.face) };
-      if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total(s) && bid.face >= 1 && bid.face <= 6 && higher(bid, s.bid, mode(s))) {
-        s.bid = { ...bid, by: id };
-        s.turn = nextAlive(s, id);
-      }
+      if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total(s) && bid.face >= 1 && bid.face <= 6 && higher(bid, s.bid, mode(s))) placeBid(s, id, bid);
       if (msg.t === "liar" && s.bid) call(s, id);
     }
     if (msg.t === "ready" && s.phase === "reveal" && pl(s, id).count > 0) {
@@ -86,6 +102,7 @@ export default {
       if (s.ready.length >= alive(s).length) startRound(s, s.first);
     }
     if (id === s.owner) {
+      if (msg.t === "time" && s.phase === "lobby") s.time = Math.min(60, Math.max(5, Math.round(Number(msg.value)) || 20)) * 1000;
       if (msg.t === "start-dice") s.start = Math.min(5, Math.max(1, Math.round(Number(msg.value)) || 5));
       if (msg.t === "rule" && s.phase === "lobby" && msg.key === "palifico") s.palifico = !!msg.on;
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
@@ -102,11 +119,13 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
+    if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
   // ผู้เล่นถูกเอาออกจาก s.players แล้ว แต่ยังอยู่ใน s.order จนกว่าจะเอาออกตรงนี้
   leave(s, id, gone) {
     if (!s.order || !s.order.includes(id)) return;
+    const key = turnKey(s);
     const next = nextAlive(s, id);
     s.order.splice(s.order.indexOf(id), 1);
     if (s.phase === "order") {
@@ -121,11 +140,12 @@ export default {
       if (s.first === id) s.first = next;
       if (s.ready.length >= alive(s).length) startRound(s, s.first);
     }
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 
-  view(s, id) {
+  view(s, id, now) {
     const v = {
-      screen: s.phase, start: s.start, rules: { palifico: s.palifico },
+      screen: s.phase, start: s.start, rules: { palifico: s.palifico }, time: s.time || TURN,
       // ระหว่างเกมเรียงรายชื่อตามลำดับเล่น
       players: (s.phase === "lobby" ? s.players : s.order.map((x) => pl(s, x))).map((p) => ({ name: p.name, count: p.count, now: s.phase === "play" && s.turn === p.id })),
     };
@@ -141,6 +161,8 @@ export default {
         bid: s.bid && { n: s.bid.n, face: s.bid.face, name: (pl(s, s.bid.by) || {}).name },
         round: s.round, reveal: s.reveal, winner: s.winner, ...mode(s),
         ready: s.ready.includes(id), readyCount: s.ready.length, aliveCount: alive(s).length,
+        // เวลาที่เหลือ (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
+        turnLeft: s.phase === "play" ? Math.max(0, s.turnEnds - now) : null,
       });
     }
     return v;
