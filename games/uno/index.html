@@ -164,6 +164,7 @@
     .card.back { background: #1b1830; color: var(--yellow); font-size: calc(var(--w) * 0.18); }
     .card.back::before { background: var(--red); }
     .card.small { --w: 28px; border-width: 2px; border-radius: 4px; }
+    .card.inline { --w: 36px; display: inline-grid; vertical-align: middle; margin: 2px 0; font-size: 0.8rem; }
     /* โต๊ะ: ผู้เล่นด้านบน กองจั่วกับกองทิ้งตรงกลาง */
     .seats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
     .seat {
@@ -182,6 +183,19 @@
     #deck:disabled { opacity: 1; cursor: default; }
     #deck.can { box-shadow: 0 0 0 4px var(--yellow); }
     .pile { position: relative; display: grid; place-items: center; width: 120px; height: 150px; }
+    /* ยอด +2/+4 ที่สะสมอยู่ รอคนถัดไปลงทับหรือจั่ว */
+    .pending {
+      position: absolute;
+      right: -12px;
+      top: -8px;
+      z-index: 1;
+      padding: 4px 6px;
+      background: var(--red);
+      color: var(--text);
+      font: 400 0.8rem "Press Start 2P", monospace;
+      animation: pulse 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes pulse { to { transform: scale(1.15); } }
     /* วงรอบกองทิ้ง: สีที่ต้องลง หมุนตามทิศทางการเล่น */
     .ring {
       position: absolute;
@@ -224,7 +238,7 @@
     .hands .who { margin-right: 8px; }
     .fly { position: fixed; z-index: 5; margin: 0; pointer-events: none; }
     @media (prefers-reduced-motion: reduce) {
-      .ring, .shout, .shake { animation: none; }
+      .ring, .shout, .shake, .pending { animation: none; }
       .shout { display: none; }
     }
   </style>
@@ -244,22 +258,32 @@
       <h2>เล่น</h2>
       <ol>
         <li>แจกคนละ 7 ใบ เปิดกองทิ้ง 1 ใบ</li>
-        <li>ลงไพ่สีเดียวกัน หรือเลข/สัญลักษณ์เดียวกับใบบนสุด</li>
+        <li>ลงสีเดียวกัน เช่น <span data-card="r:7"></span> บน <span data-card="r:3"></span> หรือเลข/สัญลักษณ์เดียวกัน เช่น <span data-card="b:7"></span> บน <span data-card="r:7"></span></li>
         <li>ไม่มีไพ่ลง หรือไม่อยากลง จั่ว 1 ใบ ลงใบนั้นได้ถ้าเข้า ไม่งั้นผ่าน</li>
         <li>เหลือ 1 ใบต้องกด UNO ก่อนคนถัดไปเล่น ถ้าโดนคนอื่นกดจับได้ จั่ว 2</li>
       </ol>
       <h2>ไพ่พิเศษ</h2>
       <ol>
-        <li>&#8856; ข้ามคนถัดไป</li>
-        <li>&#8644; กลับทิศ (เหลือ 2 คน = ข้าม)</li>
-        <li>+2 คนถัดไปจั่ว 2 และข้าม</li>
-        <li>W เลือกสี ลงได้ทุกเมื่อ</li>
-        <li>+4 เลือกสี คนถัดไปจั่ว 4 และข้าม ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่</li>
+        <li><span data-card="g:skip"></span> ข้ามคนถัดไป</li>
+        <li><span data-card="y:rev"></span> กลับทิศ (เหลือ 2 คน = ข้าม)</li>
+        <li><span data-card="b:d2"></span> คนถัดไปจั่ว 2 และเสียตา</li>
+        <li><span data-card="w:wild"></span> เลือกสี ลงได้ทุกเมื่อ</li>
+        <li><span data-card="w:w4"></span> เลือกสี คนถัดไปจั่ว 4 และเสียตา ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่</li>
+      </ol>
+      <h2>ลงทับ</h2>
+      <ol>
+        <li>โดน <span data-card="b:d2"></span> ลง <span data-card="r:d2"></span> ทับได้ (สีไหนก็ได้) คนถัดไปโดน +4</li>
+        <li>โดน <span data-card="w:w4"></span> ลง <span data-card="w:w4"></span> ทับได้ คนถัดไปโดน +8</li>
+        <li>ทับต่อได้ ยอดสะสมไปเรื่อยๆ</li>
+        <li>ไม่มีใบทับหรือไม่อยากทับ จั่วตามยอดแล้วเสียตา</li>
+        <li><span data-card="b:d2"></span> กับ <span data-card="w:w4"></span> ทับกันไม่ได้</li>
       </ol>
       <h2>แต้ม</h2>
       <ol>
         <li>หมดมือก่อน ได้แต้มจากไพ่ในมือทุกคน</li>
-        <li>เลข = ตามเลข, &#8856; &#8644; +2 = 20, W +4 = 50</li>
+        <li>เลข = ตามเลข</li>
+        <li><span data-card="g:skip"></span> <span data-card="y:rev"></span> <span data-card="b:d2"></span> = 20</li>
+        <li><span data-card="w:wild"></span> <span data-card="w:w4"></span> = 50</li>
       </ol>
       <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
@@ -319,7 +343,8 @@
       `<${tag} class="card ${c.c} ${cls}" data-id="${c.id}" aria-label="${cardName(c)}" ${attrs}><span>${LABEL[c.v] || c.v}</span></${tag}>`;
     const back = (cls = "") => `<div class="card back ${cls}" aria-hidden="true"><span>UNO</span></div>`;
     // สำเนาจาก server (uno.js playable) ต้องแก้ให้ตรงกัน
-    function playable(card, hand, color, top) {
+    function playable(card, hand, color, top, pending) {
+      if (pending) return card.v === pending.v;
       if (card.v === "wild") return true;
       if (card.v === "w4") return !color || !hand.some((x) => x.c === color);
       return !color || card.c === color || card.v === top.v;
@@ -477,7 +502,7 @@
       const top = v.top;
       const canDraw = v.myTurn && v.drawn === null;
       const status = v.screen === "play"
-        ? v.myTurn ? `<span class="hl">${v.drawn !== null ? "ลงใบที่จั่วหรือผ่าน" : "ตาคุณ"}</span>` : `ตา ${esc(v.turnName)}`
+        ? v.myTurn ? `<span class="hl">${v.drawn !== null ? "ลงใบที่จั่วหรือผ่าน" : v.pending ? `ลงทับหรือจั่ว +${v.pending.n}` : "ตาคุณ"}</span>` : `ตา ${esc(v.turnName)}`
         : `<span class="${v.result.name === v.seats.find((s) => s.id === v.me).name ? "good" : "hint"}">${esc(v.result.name)} +${v.result.gained}</span>`;
       app.innerHTML = `
         <div class="seats">${v.seats.map((s) => `
@@ -486,16 +511,17 @@
           </div>`).join("")}
         </div>
         <div class="table">
-          <button class="card back${canDraw ? " can" : ""}" id="deck" aria-label="จั่ว (เหลือ ${v.deck})" data-sfx="roll" ${canDraw ? "" : "disabled"}><span>UNO</span></button>
+          <button class="card back${canDraw ? " can" : ""}" id="deck" aria-label="${v.pending && v.myTurn ? `จั่ว ${v.pending.n} ใบ` : "จั่ว"} (เหลือ ${v.deck})" data-sfx="roll" ${canDraw ? "" : "disabled"}><span>UNO</span></button>
           <div class="pile ${v.color || ""}" aria-label="สีที่ต้องลง ${NAME[v.color] || "อะไรก็ได้"}">
             <div class="ring${v.dir < 0 ? " ccw" : ""}"></div>
+            ${v.pending && v.screen === "play" ? `<span class="pending" aria-label="ยอดสะสม +${v.pending.n}">+${v.pending.n}</span>` : ""}
             ${cardHtml(top, { attrs: `id="top"` })}
           </div>
         </div>
         <p class="status">${status}</p>
         ${v.screen === "play" ? `
           <div class="hand" aria-label="ไพ่ในมือ">${hand.map((c) => {
-            const ok = v.myTurn && (v.drawn === null || v.drawn === c.id) && playable(c, v.hand, v.color, top);
+            const ok = v.myTurn && (v.drawn === null || v.drawn === c.id) && playable(c, v.hand, v.color, top, v.pending);
             return cardHtml(c, { tag: "button", cls: ok ? "ok" : "", attrs: `data-sfx="confirm" ${ok ? "" : "disabled"}` });
           }).join("")}</div>
           <div class="actions">
@@ -532,7 +558,12 @@
         const from = v.log.by === v.me ? oldRects[v.log.card.id] : seat(v.log.by) && seat(v.log.by).getBoundingClientRect();
         flyFrom(topEl, from);
         if (v.log.by !== v.me) playSfx("confirm");
-        if (v.log.hit) setTimeout(() => { const el = seat(v.log.hit.id); if (el) el.classList.add("shake"); }, 450);
+      }
+      // มีคนจั่วตามยอด +2/+4
+      if (fresh && v.log.hit) {
+        shout("+" + v.log.hit.n);
+        playSfx("vote");
+        setTimeout(() => { const el = seat(v.log.hit.id); if (el) el.classList.add("shake"); }, 450);
       }
       if (fresh && v.log.t === "draw" && v.log.by !== v.me) playSfx("roll");
       if (fresh && v.log.t === "uno") { shout("UNO!"); playSfx("create"); }
@@ -565,6 +596,11 @@
     }
 
     const rules = document.getElementById("rules");
+    // ไพ่ในกฎ: data-card="สี:ค่า"
+    rules.querySelectorAll("[data-card]").forEach((el) => {
+      const [c, v] = el.dataset.card.split(":");
+      el.outerHTML = cardHtml({ c, v }, { cls: "small inline" });
+    });
     document.getElementById("rules-open").onclick = () => rules.showModal();
     document.getElementById("rules-close").onclick = () => rules.close();
     const winner = document.getElementById("winner");

@@ -22,8 +22,10 @@ function shuffle(a) {
 export const points = (card) => (card.c === "w" ? 50 : /^\d$/.test(card.v) ? Number(card.v) : 20);
 const top = (s) => s.pile[s.pile.length - 1];
 // ลงได้เมื่อสีตรงกับสีที่ใช้อยู่ หรือเลข/สัญลักษณ์ตรงกับใบบนสุด หรือเป็น wild
-// w4 ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่ในมือ (หน้าเกมมีสำเนาไว้เปิดปิดไพ่ ต้องแก้ให้ตรงกัน)
-export function playable(card, hand, color, topCard) {
+// w4 ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่ในมือ
+// มี +2/+4 ค้างอยู่ (pending): ลงทับได้แค่ใบชนิดเดียวกัน (หน้าเกมมีสำเนาไว้เปิดปิดไพ่ ต้องแก้ให้ตรงกัน)
+export function playable(card, hand, color, topCard, pending) {
+  if (pending) return card.v === pending.v;
   if (card.v === "wild") return true;
   if (card.v === "w4") return !color || !hand.some((x) => x.c === color);
   return !color || card.c === color || card.v === topCard.v;
@@ -60,7 +62,7 @@ function startRound(s) {
   // ใบแรก: w4 ใส่กลับแล้วสับใหม่
   while (s.deck[s.deck.length - 1].v === "w4") shuffle(s.deck);
   s.pile = [s.deck.pop()];
-  Object.assign(s, { phase: "play", dir: 1, drawn: null, unoOpen: null, result: null, ready: [], color: top(s).c === "w" ? null : top(s).c });
+  Object.assign(s, { phase: "play", dir: 1, drawn: null, pending: null, unoOpen: null, result: null, ready: [], color: top(s).c === "w" ? null : top(s).c });
   s.turn = step(s, s.dealer);
   s.log = { t: "deal", n: s.round++ };
   // ใบแรกเป็นการ์ดพิเศษ ใช้ผลกับคนแรก (wild: คนแรกลงสีไหนก็ได้)
@@ -77,6 +79,7 @@ function startRound(s) {
 }
 
 // ลงไพ่: ใช้ผลการ์ด ถ้าหมดมือจบรอบ ได้แต้มจากไพ่ในมือทุกคน
+// +2/+4 ยังไม่จั่วทันที สะสมไว้ให้คนถัดไปลงทับหรือจั่วทั้งหมด
 function play(s, id, card, pick) {
   const p = pl(s, id);
   p.hand = p.hand.filter((x) => x.id !== card.id);
@@ -90,14 +93,21 @@ function play(s, id, card, pick) {
     s.dir *= -1;
     next = s.order.length === 2 ? id : step(s, id);
   }
-  if (card.v === "d2" || card.v === "w4") {
-    draw(s, pl(s, next), card.v === "d2" ? 2 : 4);
-    s.log.hit = { id: next, n: card.v === "d2" ? 2 : 4 };
-    next = step(s, id, 2);
+  if (card.v === "d2" || card.v === "w4") s.pending = { v: card.v, n: ((s.pending && s.pending.n) || 0) + (card.v === "d2" ? 2 : 4) };
+  if (!p.hand.length) {
+    // ใบสุดท้ายเป็น +2/+4: คนถัดไปยังต้องจั่ว แล้วนับแต้มรวมด้วย
+    if (s.pending) takePending(s, next);
+    return endRound(s, id);
   }
-  if (!p.hand.length) return endRound(s, id);
   s.unoOpen = p.hand.length === 1 && !p.uno ? id : null;
   s.turn = next;
+}
+
+// จั่วไพ่ที่สะสมไว้ทั้งหมด แล้วเสียตา
+function takePending(s, id) {
+  draw(s, pl(s, id), s.pending.n);
+  s.log.hit = { id, n: s.pending.n };
+  s.pending = null;
 }
 
 function endRound(s, id) {
@@ -141,13 +151,18 @@ export default {
           const card = p.hand.find((x) => x.id === msg.id);
           const pick = COLORS.includes(msg.color) ? msg.color : null;
           // หลังจั่ว ลงได้แค่ใบที่เพิ่งจั่ว
-          if (card && (s.drawn === null || s.drawn === card.id) && (card.c !== "w" || pick) && playable(card, p.hand, s.color, top(s))) {
+          if (card && (s.drawn === null || s.drawn === card.id) && (card.c !== "w" || pick) && playable(card, p.hand, s.color, top(s), s.pending)) {
             endUnoWindow(s);
             if (p.hand.length > 2) p.uno = false;
             play(s, id, card, pick);
           }
         }
-        if (msg.t === "draw" && s.drawn === null) {
+        if (msg.t === "draw" && s.drawn === null && s.pending) {
+          endUnoWindow(s);
+          s.log = { t: "draw", by: id };
+          takePending(s, id);
+          s.turn = step(s, id);
+        } else if (msg.t === "draw" && s.drawn === null) {
           endUnoWindow(s);
           draw(s, p, 1);
           const card = p.hand[p.hand.length - 1];
@@ -211,7 +226,7 @@ export default {
     const seats = s.order.map((x) => pl(s, x));
     Object.assign(v, {
       seats: seats.map((p) => ({ id: p.id, name: p.name, count: p.hand.length, uno: p.uno, now: s.phase === "play" && s.turn === p.id })),
-      hand: me.hand, top: top(s), color: s.color, dir: s.dir, deck: s.deck.length,
+      hand: me.hand, top: top(s), color: s.color, pending: s.pending, dir: s.dir, deck: s.deck.length,
       myTurn: s.phase === "play" && s.turn === id, drawn: s.turn === id ? s.drawn : null,
       turnName: pl(s, s.turn).name,
       // ปุ่ม UNO: มีคนลืมประกาศให้จับ หรือเราเหลือ 1-2 ใบยังไม่ประกาศ
