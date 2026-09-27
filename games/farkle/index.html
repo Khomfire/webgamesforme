@@ -122,6 +122,9 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* หลอดเวลาของตานี้ */
+    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
     .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 16px; }
     .bar li { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border: 2px solid #2c2950; border-radius: 999px; }
@@ -215,6 +218,7 @@
         <li>เลือกเต๋าที่มีแต้ม แล้วทอยต่อหรือเก็บแต้ม</li>
         <li>ทอยแล้วไม่มีแต้ม (ฟาร์เคิล) เสียแต้มตานั้นหมด</li>
         <li>มีแต้มครบ <span class="die inline" data-face=""></span> x6 ทอยใหม่ได้ <span class="die inline" data-face=""></span> x6</li>
+        <li>ทอยละ <span id="rule-time">20</span> วิ หมดเวลา: เก็บเต๋าที่ได้แต้มมากสุดแล้วเก็บแต้ม</li>
       </ol>
       <h2>แต้ม</h2>
       <ul id="score-rules"></ul>
@@ -266,14 +270,14 @@
       return Math.max(combo, pts);
     }
 
-    let view = { screen: "home" };
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับเวลาที่เหลือของตา
     function show(next) { view = { ...view, ...next }; render(); }
 
     let room;
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
     function enter(name, code, saved) {
-      room = openRoom("farkle", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }), saved);
+      room = openRoom("farkle", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
       if (saved) room.resume();
       else if (code) room.join(code, name);
       else room.create(name);
@@ -402,8 +406,30 @@
     let lastScreen, lastMyTurn, lastRolls;
     function render() {
       if (holding) return; // มีสถานะใหม่ระหว่างเต๋าหมุน รอวาดตอนหมุนจบ
+    // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
+    // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
+    let timeoutTimer;
+    function runTimer(v) {
+      const bar = app.querySelector(".timer i");
+      if (!bar) return;
+      const left = Math.max(0, v.turnLeft - (performance.now() - viewAt)), total = v.time;
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > 5000
+        ? [
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${5000 / total})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / total})`, background: red, offset: 1 - 5000 / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
+      bar.animate(frames, { duration: left, fill: "forwards" });
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
+    }
+
       clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const v = view;
+      clearTimeout(timeoutTimer);
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       if (v.rolls !== lastRolls && v.last && v.last.farkle && v.last.n === v.rolls && (v.screen === "play" || v.screen === "over")) {
         lastRolls = v.rolls;
         picked.clear();
@@ -471,8 +497,11 @@
           <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="target">เป้าหมาย (500-20000 คะแนน)</label>
-               <input id="target" type="number" min="500" max="20000" step="500" value="${v.target}">`
-            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>`}
+               <input id="target" type="number" min="500" max="20000" step="500" value="${v.target}">
+               <label for="time">วิต่อทอย (5-60)</label>
+               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
+            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>
+               <p>ทอยละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -485,6 +514,7 @@
           setTimeout(() => (done.hidden = true), 1500);
         });
         if (v.isHost) {
+          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
@@ -504,6 +534,7 @@
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
           : `${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}
              <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
+             ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
              <p class="turn" aria-label="แต้มตานี้">${v.turnPts}${picked.size ? ` <span class="${pickedPts ? "good" : "bad"}">+${pickedPts}</span>` : ""}</p>
              ${v.kept.length ? smallDice(v.kept) : ""}
              <div class="dice">${v.dice.map((d, i) => `<button class="die${picked.has(i) ? " picked" : ""}" data-i="${i}" aria-label="เต๋า ${d}" aria-pressed="${picked.has(i)}" ${v.myTurn ? "" : "disabled"}>${pips(d)}</button>`).join("")}</div>
@@ -524,6 +555,7 @@
       }));
       if (app.querySelector("#roll")) app.querySelector("#roll").onclick = () => send({ t: "roll", keep: [...picked] });
       if (app.querySelector("#bank")) app.querySelector("#bank").onclick = () => send({ t: "bank", keep: [...picked] });
+      runTimer(v);
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
       if (newRoll && v.screen === "play" && v.dice.length) {
         animateRoll(app.querySelector(".dice:not(.small)"));

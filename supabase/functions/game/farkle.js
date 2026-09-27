@@ -2,6 +2,7 @@
 import { leaveOpening, openingView, rollOpening, startOpening } from "./opening.js";
 
 const pl = (s, id) => s.players.find((p) => p.id === id);
+const TURN = 20000; // เวลาต่อการทอยหนึ่งครั้ง (ค่าเริ่มต้น เจ้าของห้องตั้งได้ 5-60 วิ)
 
 // แต้มของเต๋าชุดที่เลือก ถ้ามีลูกไหนไม่ได้แต้มคืน 0 (หน้าเกมมีสำเนาไว้โชว์แต้ม ต้องแก้ให้ตรงกัน)
 export function score(dice) {
@@ -61,6 +62,21 @@ function endTurn(s) {
   else nextTurn(s);
 }
 
+// หมดเวลา: เก็บเต๋าชุดที่ได้แต้มมากสุดจากที่ทอยไว้ แล้วเก็บแต้มจบตา (ยังไม่ได้ทอยก็จบตาเลย)
+function timeUp(s) {
+  let best = [];
+  for (let m = 1; m < 1 << s.dice.length; m++) {
+    const kept = s.dice.filter((_, i) => m & (1 << i));
+    if (score(kept) > score(best)) best = kept;
+  }
+  s.turnPts += score(best);
+  s.kept.push(...best);
+  bank(s);
+}
+
+// ตาเปลี่ยนหรือทอยใหม่ เริ่มนับเวลาใหม่
+const turnKey = (s) => [s.phase, s.order && s.order[s.turn], s.rolls].join();
+
 function finish(s) {
   const top = Math.max(...s.players.map((p) => p.score));
   s.phase = "over";
@@ -68,10 +84,13 @@ function finish(s) {
 }
 
 export default {
-  init: () => ({ target: 5000, phase: "lobby" }),
+  init: () => ({ target: 5000, time: TURN, phase: "lobby" }),
   player: () => ({ score: 0 }),
 
-  handle(s, id, msg) {
+  handle(s, id, msg, now) {
+    const key = turnKey(s);
+    // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
+    if (msg.t === "timeout" && s.phase === "play" && now >= s.turnEnds) timeUp(s);
     if (msg.t === "first-roll") rollOpening(s, id);
     if (s.phase === "play" && s.order[s.turn] === id && (msg.t === "roll" || msg.t === "bank")) {
       // เต๋าที่เลือกเก็บต้องได้แต้มทุกลูก ยกเว้นตอนเริ่มตาที่ยังไม่มีเต๋า
@@ -87,6 +106,7 @@ export default {
       }
     }
     if (id === s.owner) {
+      if (msg.t === "time" && s.phase === "lobby") s.time = Math.min(60, Math.max(5, Math.round(Number(msg.value)) || 20)) * 1000;
       if (msg.t === "target") s.target = Math.min(20000, Math.max(500, Math.round(Number(msg.value) / 500) * 500 || 5000));
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) startOpening(s);
       // ทอยหาคนเริ่มเสร็จแล้ว คนที่ได้เริ่มเล่นตาแรก
@@ -100,9 +120,11 @@ export default {
         s.phase = "lobby";
       }
     }
+    if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
   leave(s, id) {
+    const key = turnKey(s);
     if (s.phase === "order") {
       if (s.players.length < 2) s.phase = "lobby";
       else leaveOpening(s, id);
@@ -122,11 +144,12 @@ export default {
       s.turn--;
       nextTurn(s);
     }
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 
-  view(s, id) {
+  view(s, id, now) {
     const v = {
-      screen: s.phase, target: s.target,
+      screen: s.phase, target: s.target, time: s.time || TURN,
       players: s.players.map((p) => ({ name: p.name, score: p.score, now: s.phase === "play" && s.order[s.turn] === p.id })),
     };
     if (s.phase === "order") v.opening = openingView(s, id);
@@ -135,6 +158,8 @@ export default {
         myTurn: s.phase === "play" && s.order[s.turn] === id,
         turnName: s.phase === "play" ? pl(s, s.order[s.turn]).name : "",
         dice: s.dice, kept: s.kept, turnPts: s.turnPts, rolls: s.rolls, last: s.last, final: !!s.final, winners: s.winners,
+        // เวลาที่เหลือ (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
+        turnLeft: s.phase === "play" ? Math.max(0, s.turnEnds - now) : null,
       });
     }
     return v;

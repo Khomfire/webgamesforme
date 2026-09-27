@@ -122,6 +122,9 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* หลอดเวลาของตานี้ */
+    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     /* คะแนนแถวเดียว: คนแรกซ้าย คะแนนกลาง คนที่สองขวา */
     .vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-bottom: 16px; }
     .vs > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -168,6 +171,7 @@
         <li>ผลัดกันลง X กับ O</li>
         <li>เรียงครบ 3 ช่องก่อนชนะ +1</li>
         <li>สลับกันเริ่มทุกรอบ</li>
+        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: สุ่มลงให้</li>
       </ol>
       <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
@@ -193,14 +197,14 @@
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
-    let view = { screen: "home" };
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับเวลาที่เหลือของตา
     function show(next) { view = { ...view, ...next }; render(); }
 
     let room;
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
     function enter(name, code, saved) {
-      room = openRoom("xo", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }), saved);
+      room = openRoom("xo", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
       if (saved) room.resume();
       else if (code) room.join(code, name);
       else room.create(name);
@@ -226,8 +230,30 @@
     };
 
     let lastScreen, lastMyTurn;
+    // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
+    // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
+    let timeoutTimer;
+    function runTimer(v) {
+      const bar = app.querySelector(".timer i");
+      if (!bar) return;
+      const left = Math.max(0, v.turnLeft - (performance.now() - viewAt)), total = v.time;
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > 5000
+        ? [
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${5000 / total})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / total})`, background: red, offset: 1 - 5000 / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
+      bar.animate(frames, { duration: left, fill: "forwards" });
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
+    }
+
     function render() {
       const v = view;
+      clearTimeout(timeoutTimer);
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
@@ -286,8 +312,11 @@
           <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
-               <input id="target" type="number" min="1" max="20" value="${v.target}">`
-            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>`}
+               <input id="target" type="number" min="1" max="20" value="${v.target}">
+               <label for="time">วิต่อตา (5-60)</label>
+               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
+            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>
+               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/2</h2>
           <ul>${v.players.map((p) => `<li><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -300,6 +329,7 @@
           setTimeout(() => (done.hidden = true), 1500);
         });
         if (v.isHost) {
+          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
@@ -317,6 +347,7 @@
           <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
         </div>
         <p class="status">${status}</p>
+        ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         ${over
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
           : v.screen === "end"
@@ -324,6 +355,7 @@
              <p class="hint">พร้อม ${v.readyCount}/2</p>`
           : ""}`;
       app.querySelectorAll(".cell").forEach((b) => (b.onclick = () => send({ t: "move", i: Number(b.dataset.i) })));
+      runTimer(v);
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
