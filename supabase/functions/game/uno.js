@@ -47,9 +47,14 @@ function draw(s, p, n) {
 
 const step = (s, from, k = 1) => s.order[(((s.order.indexOf(from) + s.dir * k) % s.order.length) + s.order.length) % s.order.length];
 
-// คนก่อนหน้าหมดสิทธิ์โดนจับ UNO เมื่อคนถัดไปเริ่มเล่น
-function endUnoWindow(s) {
+// เหลือ 1 ใบแล้วไม่กด UNO ก่อนคนอื่นเล่น (ลงหรือจั่ว) จั่ว 2
+// คืน id ของคนที่โดนไว้ใส่ใน log
+function endUnoWindow(s, actor) {
+  const missed = s.unoOpen;
   s.unoOpen = null;
+  if (!missed || missed === actor) return null;
+  draw(s, pl(s, missed), 2);
+  return missed;
 }
 
 function startRound(s) {
@@ -134,18 +139,11 @@ export default {
   handle(s, id, msg) {
     const p = pl(s, id);
     if (s.phase === "play") {
-      // กด UNO: ตัวเองเหลือ 1-2 ใบ = ประกาศ, คนอื่นยังไม่ประกาศ = จับได้ จั่ว 2
-      if (msg.t === "uno") {
-        if (s.unoOpen && s.unoOpen !== id) {
-          const caught = pl(s, s.unoOpen);
-          draw(s, caught, 2);
-          s.log = { t: "caught", by: id, id: caught.id };
-          s.unoOpen = null;
-        } else if (p.hand.length <= 2 && !p.uno) {
-          p.uno = true;
-          if (s.unoOpen === id) s.unoOpen = null;
-          s.log = { t: "uno", by: id };
-        }
+      // กด UNO: ได้เฉพาะตอนเหลือ 1 ใบและยังไม่มีใครเล่นต่อ
+      if (msg.t === "uno" && s.unoOpen === id) {
+        p.uno = true;
+        s.unoOpen = null;
+        s.log = { t: "uno", by: id };
       }
       if (s.turn === id) {
         if (msg.t === "play") {
@@ -153,21 +151,22 @@ export default {
           const pick = COLORS.includes(msg.color) ? msg.color : null;
           // หลังจั่ว ลงได้แค่ใบที่เพิ่งจั่ว
           if (card && (s.drawn === null || s.drawn === card.id) && (card.c !== "w" || pick) && playable(card, p.hand, s.color, top(s), s.pending)) {
-            endUnoWindow(s);
+            const missed = endUnoWindow(s, id);
             if (p.hand.length > 2) p.uno = false;
             play(s, id, card, pick);
+            if (missed) s.log.missed = missed;
           }
         }
         if (msg.t === "draw" && s.drawn === null && s.pending) {
-          endUnoWindow(s);
-          s.log = { t: "draw", by: id };
+          const missed = endUnoWindow(s, id);
+          s.log = { t: "draw", by: id, missed };
           takePending(s, id);
           s.turn = step(s, id);
         } else if (msg.t === "draw" && s.drawn === null) {
-          endUnoWindow(s);
+          const missed = endUnoWindow(s, id);
           draw(s, p, 1);
           const card = p.hand[p.hand.length - 1];
-          s.log = { t: "draw", by: id };
+          s.log = { t: "draw", by: id, missed };
           if (card && playable(card, p.hand, s.color, top(s))) s.drawn = card.id;
           else s.turn = step(s, id);
         }
@@ -230,8 +229,8 @@ export default {
       hand: me.hand, top: top(s), color: s.color, pending: s.pending, dir: s.dir, deck: s.deck.length,
       myTurn: s.phase === "play" && s.turn === id, drawn: s.turn === id ? s.drawn : null,
       turnName: pl(s, s.turn).name,
-      // ปุ่ม UNO: มีคนลืมประกาศให้จับ หรือเราเหลือ 1-2 ใบยังไม่ประกาศ
-      canUno: s.phase === "play" && ((!!s.unoOpen && s.unoOpen !== id) || (me.hand.length <= 2 && !me.uno && (s.turn === id || s.unoOpen === id))),
+      // ปุ่ม UNO: เราเพิ่งเหลือ 1 ใบและยังไม่กด
+      canUno: s.phase === "play" && s.unoOpen === id,
       log: s.log, result: s.result, winner: s.winner,
       ready: s.ready.includes(id), readyCount: s.ready.length,
     });

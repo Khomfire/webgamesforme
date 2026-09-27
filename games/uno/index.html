@@ -260,7 +260,7 @@
         <li>แจกคนละ 7 ใบ เปิดกองทิ้ง 1 ใบ</li>
         <li>ลงสีเดียวกัน เช่น <span data-card="r:7"></span> บน <span data-card="r:3"></span> หรือเลข/สัญลักษณ์เดียวกัน เช่น <span data-card="b:7"></span> บน <span data-card="r:7"></span></li>
         <li>ไม่มีไพ่ลง หรือไม่อยากลง จั่ว 1 ใบ ลงใบนั้นได้ถ้าเข้า ไม่งั้นผ่าน</li>
-        <li>เหลือ 1 ใบต้องกด UNO ก่อนคนถัดไปเล่น ถ้าโดนคนอื่นกดจับได้ จั่ว 2</li>
+        <li>เหลือ 1 ใบ กด UNO ก่อนคนถัดไปเล่น ไม่ทันจั่ว 2</li>
       </ol>
       <h2>ไพ่พิเศษ</h2>
       <ol>
@@ -568,10 +568,11 @@
       }
       if (fresh && v.log.t === "draw" && v.log.by !== v.me) playSfx("roll");
       if (fresh && v.log.t === "uno") { shout("UNO!"); playSfx("create"); }
-      if (fresh && v.log.t === "caught") {
-        shout("+2");
+      // ไม่กด UNO ทันก่อนคนถัดไปเล่น
+      if (fresh && v.log.missed) {
+        if (!v.log.hit) shout("+2");
         playSfx("vote");
-        const el = seat(v.log.id);
+        const el = seat(v.log.missed);
         if (el) el.classList.add("shake");
       }
       lastHand = v.hand.map((c) => c.id);
