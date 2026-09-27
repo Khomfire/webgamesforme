@@ -464,6 +464,29 @@
         { transform: "none" },
       ], { duration: 450, delay: 120, easing: "ease-out", fill: "backwards" });
     }
+    // เวลาเริ่มบินของไพ่ใหม่แต่ละใบ วาดใหม่กลางทางก็บินต่อตามคิวเดิม
+    const arriving = new Map();
+    // ไพ่ใหม่เข้ามือทีละใบ: ซ่อนไว้จนถึงคิว แล้วบินจากกองจั่ว มีเสียงทีละใบ
+    function dealCard(el, from, delay, sound) {
+      if (still.matches || !from) return;
+      const to = el.getBoundingClientRect(), end = getComputedStyle(el).transform;
+      const dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
+      const start = `translate(${dx}px, ${dy}px) scale(${from.width / to.width}) rotate(-30deg)`;
+      el.animate([
+        { transform: start, opacity: 0 },
+        { transform: start, opacity: 1, offset: 0.01 },
+        { transform: end, opacity: 1 },
+      ], { duration: 420, delay, easing: "cubic-bezier(.2,.8,.3,1.1)", fill: "backwards" });
+      if (sound) setTimeout(() => playSfx("click"), delay);
+    }
+    // ไพ่เดิมในมือเลื่อนไปที่ใหม่ (ตอนมีไพ่แทรกเข้ามาหรือลงไพ่ไป) แทนการกระโดด
+    function slide(el, from) {
+      if (still.matches || !from) return;
+      const to = el.getBoundingClientRect(), end = getComputedStyle(el).transform;
+      const dx = from.left - to.left, dy = from.top - to.top;
+      if (Math.abs(dx) + Math.abs(dy) < 1) return;
+      el.animate([{ transform: `translate(${dx}px, ${dy}px) ${end === "none" ? "" : end}` }, { transform: end }], { duration: 260, easing: "ease-out" });
+    }
     // ไพ่ลงกอง: บินมาถึงแล้วกระแทก เด้ง และมีคลื่นวงกว้างออกไป (big = +2/+4 ทับกัน)
     function slam(el, delay, big) {
       if (still.matches || !el) return;
@@ -696,12 +719,22 @@
       const dealt = fresh && v.log.t === "deal";
       // ไพ่ใหม่ในมือบินมาจากกองจั่ว (ตอนแจกไล่ทีละใบ)
       const had = new Set(lastHand);
-      let k = 0;
+      // ไพ่ใหม่ในมือเข้ามาทีละใบ ใบแรกที่เรากดจั่วพลิกจากหลังไพ่ที่ลอยมารอ ใบที่เหลือบินตามมาจากกองจั่ว
+      let k = drawing && !dealt ? 1 : 0;
+      const now = performance.now();
+      for (const [id, t] of arriving) if (now > t + 420) arriving.delete(id);
       app.querySelectorAll(".hand .card").forEach((el) => {
-        if (!dealt && drawing && wasScreen === "play" && !had.has(Number(el.dataset.id))) {
-          flipFrom(el, drawing); // ใบแรกที่จั่ว พลิกจากหลังไพ่ที่ลอยมารอ
+        const id = Number(el.dataset.id);
+        if (arriving.has(id)) dealCard(el, deckRect, arriving.get(id) - now, false);
+        else if (!dealt && (wasScreen !== "play" || had.has(id))) slide(el, oldRects[id]);
+        else if (!dealt && drawing) {
+          flipFrom(el, drawing);
           drawing = null;
-        } else if (dealt || (wasScreen === "play" && !had.has(Number(el.dataset.id)))) flyFrom(el, deckRect, (k++) * (dealt ? 70 : 120));
+        } else {
+          const delay = k++ * (dealt ? 70 : 250);
+          arriving.set(id, now + delay);
+          dealCard(el, deckRect, delay, !dealt);
+        }
       });
       // กดจั่วแล้ว server ไม่ได้ให้ไพ่ (หรือมีสถานะอื่นมาก่อน) เอาหลังไพ่ที่ลอยอยู่ออก
       if (drawing) drawing.remove();
