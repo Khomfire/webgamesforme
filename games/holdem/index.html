@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TEXAS HOLD'EM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .fold { --c: var(--red); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 0; text-align: center; font-size: 1.2rem; font-weight: 700; min-height: 2em; }
+    .error { color: var(--red); }
+    /* ไพ่ วาดด้วย CSS: ตัวเลขมุมบน ดอกวาดด้วย SVG (ตัวอักษรดอกไพ่บางเครื่องขึ้นเป็นอีโมจิ) */
+    .card {
+      --w: 36px;
+      position: relative;
+      flex: none;
+      width: var(--w);
+      height: calc(var(--w) * 1.4);
+      border: 2px solid #1b1830;
+      border-radius: 5px;
+      background: var(--text);
+      color: #1b1830;
+      font: 400 calc(var(--w) * 0.3) "Press Start 2P", monospace;
+      overflow: hidden;
+    }
+    .card.red { color: #e0303a; }
+    .card .rank { position: absolute; left: 7%; top: 7%; line-height: 1; }
+    .card svg { position: absolute; right: 8%; bottom: 7%; width: 55%; height: 55%; fill: currentColor; }
+    /* หลังไพ่ และไพ่ที่ยังไม่พลิก */
+    .card.back, .card.hide::after {
+      background: repeating-linear-gradient(45deg, var(--red) 0 3px, #1b1830 3px 6px);
+      border-color: var(--text);
+    }
+    .card.hide::after { content: ""; position: absolute; inset: -2px; border: 2px solid var(--text); border-radius: 5px; }
+    .card.inline { --w: 30px; display: inline-block; vertical-align: middle; margin: 2px 0; }
+    /* 5 ใบที่ดีที่สุดของคนชนะ */
+    .card.best { outline: 3px solid var(--yellow); outline-offset: 1px; overflow: visible; }
+    /* ช่องไพ่กลางที่ยังไม่เปิด */
+    .slot { flex: none; width: var(--w); height: calc(var(--w) * 1.4); border: 2px dashed #2c2950; border-radius: 5px; }
+    /* ชิป: วงกลมขอบประ */
+    .coin {
+      display: inline-block;
+      flex: none;
+      width: 22px;
+      height: 22px;
+      border: 3px dashed var(--text);
+      border-radius: 50%;
+      background: var(--yellow);
+    }
+    .coin.small { width: 14px; height: 14px; border-width: 2px; }
+    .money { font: 400 0.65rem "Press Start 2P", monospace; color: var(--yellow); }
+    /* ปุ่ม D: วงกลมขาว */
+    .dealer {
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--text);
+      color: var(--screen);
+      font: 400 0.55rem "Press Start 2P", monospace;
+      vertical-align: middle;
+    }
+    /* เลือกยอดเพิ่ม */
+    .raise-row { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+    .raise-row .icon-btn { flex: none; }
+    input[type="range"] { flex: 1; min-width: 0; padding: 0; border: 0; accent-color: var(--yellow); }
+    /* โต๊ะ: คนอื่นด้านบน ไพ่กลางกับกองกลางตรงกลาง ของเราด้านล่าง */
+    .round { display: flex; justify-content: space-between; margin: 0 0 12px; }
+    .seats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .seat { position: relative; padding: 6px 8px; border: 3px solid #2c2950; min-width: 0; }
+    .seat.now { border-color: var(--yellow); }
+    .seat.folded .cards, .seat.folded .name { opacity: 0.4; }
+    .seat .who { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 28px; }
+    .seat .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat .who > span:last-child { flex: none; display: flex; align-items: center; gap: 6px; }
+    .seat .cards { display: flex; gap: 4px; min-height: calc(36px * 1.4); margin: 6px 0 4px; }
+    .seat .info { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 1.6em; font-size: 0.9rem; }
+    .seat .bet { display: flex; align-items: center; gap: 4px; }
+    .seat.mine { margin-top: 8px; }
+    .seat.mine .card { --w: 64px; }
+    .seat.mine .cards { justify-content: center; gap: 8px; min-height: calc(64px * 1.4); }
+    .seat.mine .info { font-size: 1.05rem; }
+    .won { font: 400 0.7rem "Press Start 2P", monospace; }
+    .table { position: relative; display: flex; justify-content: center; align-items: center; gap: 12px; margin: 20px 0 8px; }
+    .board { --w: 44px; display: flex; gap: 6px; }
+    .board .card { --w: 44px; }
+    #deck { --w: 36px; box-shadow: 3px 3px 0 #1b1830, 5px 5px 0 var(--text); }
+    .pot { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 32px; margin-bottom: 8px; }
+    .pot b { font: 400 0.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    .result { margin: 0 0 8px; }
+    .result li { display: flex; justify-content: space-between; gap: 12px; }
+    .shout {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      color: var(--red);
+      font: 700 2.4rem "Chakra Petch", sans-serif;
+      white-space: nowrap;
+      text-shadow: 3px 3px 0 var(--yellow);
+      pointer-events: none;
+      animation: shout 1.2s ease-out forwards;
+    }
+    .shout.good { color: var(--cyan); }
+    @keyframes shout {
+      from { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+      40% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+      to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+    .actions { display: flex; gap: 12px; }
+    .fly { position: fixed; z-index: 5; margin: 0; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .shout { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ดอกไพ่: 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก -->
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <symbol id="suit0" viewBox="0 0 20 20"><path d="M10 1.5C4 6.5 1 9.5 1 12.3 1 14.8 3 16.4 5.3 16.4c1.7 0 3.1-.8 3.9-2L8 18.5h4l-1.2-4.1c.8 1.2 2.2 2 3.9 2 2.3 0 4.3-1.6 4.3-4.1C19 9.5 16 6.5 10 1.5z"/></symbol>
+    <symbol id="suit1" viewBox="0 0 20 20"><path d="M10 18C4 13 1 10 1 6.7 1 4.1 3 2.3 5.4 2.3c2 0 3.6 1.2 4.6 3 1-1.8 2.6-3 4.6-3C17 2.3 19 4.1 19 6.7 19 10 16 13 10 18z"/></symbol>
+    <symbol id="suit2" viewBox="0 0 20 20"><path d="M10 1l7 9-7 9-7-9z"/></symbol>
+    <symbol id="suit3" viewBox="0 0 20 20"><circle cx="10" cy="5.5" r="4"/><circle cx="5" cy="11.5" r="4"/><circle cx="15" cy="11.5" r="4"/><circle cx="10" cy="10.5" r="2.5"/><path d="M10 9l-2 9.5h4z"/></symbol>
+  </svg>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>TEXAS HOLD'EM</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กฎ</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <h2>เล่น</h2>
+      <ol>
+        <li>แจกคนละ 2 ใบ ไพ่กลาง 5 ใบใช้ร่วมกัน</li>
+        <li>ใช้ 5 ใบที่ดีที่สุดจาก 7 ใบ (ในมือ 2 + กลาง 5)</li>
+        <li>คนถัดจาก <span class="dealer">D</span> ลง blind เล็ก คนถัดไปลง blind ใหญ่ เหลือ 2 คน <span class="dealer">D</span> ลง blind เล็ก</li>
+        <li>เดิมพัน 4 รอบ: ก่อนเปิดไพ่กลาง, เปิด 3 ใบ, ใบที่ 4, ใบที่ 5</li>
+        <li>รอบแรกเริ่มจากคนถัดจาก blind ใหญ่ รอบต่อไปเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
+        <li>เหลือคนเดียวที่ไม่หมอบ ได้กองกลาง ไม่ต้องเปิดไพ่</li>
+        <li>ครบ 4 รอบ เปิดไพ่ มือสูงสุดได้กองกลาง เท่ากันแบ่ง</li>
+        <li><span class="dealer">D</span> เวียนไปคนถัดไปทุกมือ</li>
+      </ol>
+      <h2>เดิมพัน</h2>
+      <ol>
+        <li>หมอบ: ทิ้งไพ่ เสียที่ลงไปแล้ว</li>
+        <li>ผ่าน: ไม่ลงเพิ่ม ได้เมื่อไม่มีใครลงมากกว่า</li>
+        <li>ตาม: ลงให้เท่ายอดสูงสุดของรอบ</li>
+        <li>ลง / เพิ่ม: อย่างน้อยเท่า blind ใหญ่ และไม่น้อยกว่าที่คนก่อนเพิ่ม ไม่จำกัดสูงสุด</li>
+        <li>ออลอิน: ลงหมดตัว ได้เฉพาะส่วนของกองกลางที่ตัวเองลงถึง (side pot)</li>
+        <li>ออลอินที่เพิ่มไม่ถึงขั้นต่ำ คนที่เล่นไปแล้วตามหรือหมอบได้อย่างเดียว</li>
+      </ol>
+      <h2>มือ</h2>
+      <p class="hint">สูงไปต่ำ</p>
+      <ol>
+        <li>สเตรทฟลัช <span data-cards="5:1 6:1 7:1 8:1 9:1"></span></li>
+        <li>โฟร์การ์ด <span data-cards="9:0 9:1 9:2 9:3 2:0"></span></li>
+        <li>ฟูลเฮาส์ <span data-cards="8:0 8:1 8:3 4:2 4:0"></span></li>
+        <li>ฟลัช <span data-cards="2:3 6:3 9:3 11:3 13:3"></span></li>
+        <li>สเตรท <span data-cards="6:0 7:2 8:1 9:3 10:0"></span> (A 2 3 4 5 กับ 10 J Q K A ก็ได้)</li>
+        <li>ตอง <span data-cards="7:0 7:1 7:3 13:2 2:0"></span></li>
+        <li>สองคู่ <span data-cards="12:0 12:2 5:1 5:3 9:0"></span></li>
+        <li>คู่ <span data-cards="1:0 1:1 8:2 5:3 3:0"></span></li>
+        <li>ไพ่สูง <span data-cards="1:2 11:0 8:3 5:1 2:0"></span></li>
+      </ol>
+      <p class="hint">มือชนิดเดียวกันเทียบแต้มต่อไปทีละใบ A สูงสุด ดอกไม่มีผล</p>
+      <h2>ชิป</h2>
+      <ol>
+        <li>เริ่มคนละ 1000 blind 10/20 ขึ้นเท่าตัวทุก 10 มือ</li>
+        <li>แบ่งกองไม่ลงตัว เศษให้คนชนะที่นั่งถัดจาก <span class="dealer">D</span></li>
+        <li>ชิปหมดตกรอบ เหลือคนสุดท้ายชนะ</li>
+      </ol>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script>
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    let view = { screen: "home" };
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let room;
+    const send = (msg) => room.send(msg);
+    function enter(name, code, saved) {
+      room = openRoom("holdem", (v) => { view = v; render(); }, (error) => show({ screen: "home", error }), saved);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
+      else room.create(name);
+    }
+
+    // ---------- ไพ่ ----------
+    const RANK = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    const SUIT = ["โพดำ", "โพแดง", "ข้าวหลามตัด", "ดอกจิก"];
+    const cardHtml = (c, cls = "") =>
+      `<div class="card${c.s === 1 || c.s === 2 ? " red" : ""} ${cls}" data-id="${c.id}" aria-label="${RANK[c.r]} ${SUIT[c.s]}"><span class="rank">${RANK[c.r]}</span><svg aria-hidden="true"><use href="#suit${c.s}"/></svg></div>`;
+    const back = () => `<div class="card back" aria-hidden="true"></div>`;
+    // ชนิดมือ ตรงกับ server (holdem.js)
+    const KIND = ["ไพ่สูง", "คู่", "สองคู่", "ตอง", "สเตรท", "ฟลัช", "ฟูลเฮาส์", "โฟร์การ์ด", "สเตรทฟลัช"];
+    const ACT = { fold: "หมอบ", check: "ผ่าน", call: "ตาม", bet: "ลง", raise: "เพิ่ม" };
+    let raiseTo = null; // ยอดที่จะเพิ่ม (ลงรวมในรอบนี้) จำไว้ระหว่างวาดใหม่ตอนยังเป็นตาเรา
+
+    // ---------- แอนิเมชัน ----------
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    const seat = (id) => app.querySelector(`[data-seat="${id}"]`);
+    // ไพ่บินจากกองไปที่ของมัน
+    function flyIn(el, from, delay) {
+      if (still.matches || !from) return;
+      const to = el.getBoundingClientRect();
+      const dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
+      const start = `translate(${dx}px, ${dy}px) scale(${from.width / to.width}) rotate(-20deg)`;
+      el.animate([
+        { transform: start, opacity: 0 },
+        { transform: start, opacity: 1, offset: 0.01 },
+        { transform: "none", opacity: 1 },
+      ], { duration: 400, delay, easing: "cubic-bezier(.2,.8,.3,1.1)", fill: "backwards" });
+    }
+    // พลิกไพ่: โชว์หลังไพ่ไว้ก่อน ถึงเวลาก็หดแล้วกางออกเป็นหน้าไพ่ (ใช้ scale แยกจาก transform ที่ใช้ตอนบิน)
+    function flip(el, delay) {
+      if (still.matches) return;
+      el.classList.add("hide");
+      setTimeout(() => {
+        el.animate([{ scale: "1 1" }, { scale: "0 1" }], { duration: 120 }).onfinish = () => {
+          el.classList.remove("hide");
+          el.animate([{ scale: "0 1" }, { scale: "1 1" }], { duration: 120 });
+        };
+      }, Math.max(0, delay));
+    }
+    // ชิปบินจากที่นั่ง (id) หรือกองกลาง ("pot") ไปอีกที่
+    const place = (x) => (x === "pot" ? app.querySelector(".pot") : seat(x));
+    function chips(from, to) {
+      const a = place(from), b = place(to);
+      if (still.matches || !a || !b) return;
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      const x = ra.left + ra.width / 2 - 11, y = ra.top + ra.height / 2 - 11;
+      for (let i = 0; i < 5; i++) {
+        const el = document.createElement("span");
+        el.className = "coin fly";
+        Object.assign(el.style, { left: x + "px", top: y + "px" });
+        document.body.append(el);
+        el.animate([
+          { transform: "none", opacity: 1 },
+          { transform: `translate(${rb.left + rb.width / 2 - 11 - x}px, ${rb.top + rb.height / 2 - 11 - y}px)`, opacity: 1 },
+        ], { duration: 500, delay: i * 70, easing: "ease-in-out", fill: "both" }).onfinish = () => el.remove();
+      }
+    }
+    function shout(text, good) {
+      const t = app.querySelector(".table");
+      if (!t) return;
+      const el = document.createElement("div");
+      el.className = "shout" + (good ? " good" : "");
+      el.textContent = text;
+      t.append(el);
+      setTimeout(() => el.remove(), 1200);
+    }
+    // แอนิเมชันที่ผูกกับไพ่แต่ละใบ เก็บเป็นแผนตามเวลา วาดใหม่กลางทาง (มีคนกดอะไร) ก็เล่นต่อจากจุดเดิม
+    // items: { sel: ไพ่ใบไหน, fly: เวลาเริ่มบิน, flip: เวลาพลิก, fade: เวลาโชว์ข้อความ, best: เวลาไฮไลต์ }
+    let plans = [];
+    function applyPlans() {
+      const now = performance.now();
+      const deck = app.querySelector("#deck");
+      const from = deck && deck.getBoundingClientRect();
+      plans = plans.filter((p) => now - p.start < p.end);
+      for (const p of plans) {
+        const t = now - p.start;
+        for (const it of p.items) {
+          const el = app.querySelector(it.sel);
+          if (!el) continue;
+          if (it.fade !== undefined && it.fade > t && !still.matches) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: it.fade - t, fill: "backwards" });
+          if (it.best !== undefined && it.best > t && !still.matches) {
+            el.classList.remove("best");
+            setTimeout(() => el.classList.add("best"), it.best - t);
+          }
+          if (it.fly !== undefined && it.fly + 400 > t) flyIn(el, from, it.fly - t);
+          if (it.flip !== undefined && it.flip + 240 > t && !el.classList.contains("back")) flip(el, it.flip - t);
+        }
+      }
+    }
+
+    // ---------- หน้าจอ ----------
+    const scoreboard = (v) => `
+      <h2 style="margin-top: 24px">ชิป</h2>
+      <ul>${[...v.players].sort((a, b) => b.chips - a.chips).map((p) => `
+        <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">หมดตัว</span>` : ""}</span><span>${p.chips}</span></li>`).join("")}
+      </ul>`;
+
+    let lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, lastTurn, overTimer;
+    function render() {
+      const v = view;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (v.screen !== "over" && winner.open) winner.close();
+      lastScreen = v.screen;
+
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">ชื่อ</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          enter(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          enter(name, code);
+        };
+        return;
+      }
+
+      if (v.screen === "lobby") {
+        plans = [];
+        lastHand = 0; // มือแรกของเกมเล่นแอนิเมชันแจกไพ่
+        app.innerHTML = `
+          <h2>ห้อง</h2>
+          <div class="room-row">
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+          </div>
+          <h2>ผู้เล่น ${v.players.length}/10</h2>
+          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `${v.players.length >= 2 ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${v.players.length >= 2 ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        if (v.isHost) app.querySelector("#start").onclick = () => send({ t: "start" });
+        return;
+      }
+
+      // play / end / over (me ไม่มีเมื่อหมดตัวไปแล้วและเริ่มมือใหม่)
+      const me = v.seats.find((s) => s.id === v.me);
+      const o = v.opts;
+      const r = v.result;
+      const need = v.seats.filter((s) => s.chips > 0);
+      const canReady = !!me && v.screen === "end" && me.chips > 0 && !v.ready.includes(v.me);
+      const status = v.screen === "over" ? `<span class="hl">จบเกม</span>`
+        : !me || (v.screen === "end" && !me.chips) ? `<span class="bad">หมดตัว</span>`
+        : o ? `<span class="hl">ถึงตา</span>`
+        : v.screen === "end" ? (canReady ? "" : `รอคนอื่น ${v.ready.length}/${need.length}`)
+        : `รอ ${esc(v.seats.find((s) => s.id === v.turn).name)}`;
+      const shownBest = (id) => r && r.hands && r.hands[id] && r.pots.some((p) => p.ids.includes(id));
+      const bestIds = new Set(v.seats.filter((s) => shownBest(s.id)).flatMap((s) => r.hands[s.id].best));
+      // ข้อความใต้ไพ่: ชนิดมือตอนเปิดไพ่ หรือสิ่งที่ทำล่าสุด
+      const note = (s) =>
+        r && r.hands && r.hands[s.id] ? `<span class="${shownBest(s.id) ? "hl" : ""}">${KIND[r.hands[s.id].kind]}</span>`
+        : s.folded ? `<span class="hint">หมอบ</span>`
+        : v.screen === "play" && !s.chips ? `<span class="bad">ออลอิน</span>`
+        : s.id === v.me && v.mine !== undefined ? `<span>${KIND[v.mine]}</span>`
+        : s.last ? `<span class="hint">${ACT[s.last.a]}</span>` : "<span></span>";
+      const right = (s) =>
+        r && r.won[s.id] ? `<span class="won good">+${r.won[s.id]}</span>`
+        : s.bet ? `<span class="bet"><span class="coin small"></span><span class="money">${s.bet}</span></span>` : "";
+      const seatHtml = (s) => `
+        <div class="seat${s.id === v.me ? " mine" : ""}${s.id === v.turn ? " now" : ""}${s.folded ? " folded" : ""}" data-seat="${s.id}">
+          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.id === v.button ? `<span class="dealer" aria-label="ดีลเลอร์">D</span>` : ""}<span class="money">${s.chips}</span></span></div>
+          <div class="cards">${s.cards ? s.cards.map((c) => cardHtml(c, bestIds.has(c.id) ? "best" : "")).join("") : back().repeat(s.n)}</div>
+          <div class="info">${note(s)}${right(s)}</div>
+        </div>`;
+      const pots = r ? r.pots.map((p, i) => `
+        <li><span>${r.pots.length > 1 ? (i ? `กองรอง ${i}` : "กองกลาง") : "กองกลาง"} ${p.n}</span><span class="hl">${p.names.map(esc).join(", ")}</span></li>`).join("") : "";
+      // ยอดเพิ่ม: เลื่อนทีละ blind ใหญ่ ปลายสุดคือออลอิน
+      if (!o || !o.raise) raiseTo = null;
+      else raiseTo = Math.min(o.raise.max, Math.max(o.raise.min, raiseTo || o.raise.min));
+      app.innerHTML = `
+        <p class="hint round"><span>มือ ${v.handNo}</span><span>blind ${v.sb}/${v.bb}</span></p>
+        <div class="seats">${v.seats.filter((s) => s.id !== v.me).map(seatHtml).join("")}</div>
+        <div class="table">
+          <div class="card back" id="deck" aria-hidden="true"></div>
+          <div class="board" id="board" aria-label="ไพ่กลาง">${[0, 1, 2, 3, 4].map((i) => (v.board[i] ? cardHtml(v.board[i], bestIds.has(v.board[i].id) ? "best" : "") : `<div class="slot"></div>`)).join("")}</div>
+        </div>
+        <div class="pot" aria-label="กองกลาง ${v.pot}"><span class="coin"></span><b>${v.pot}</b></div>
+        ${r && v.screen !== "play" ? `<ul class="result">${pots}</ul>` : ""}
+        <p class="status">${status}</p>
+        ${me ? seatHtml(me) : ""}
+        ${o ? `
+          <div class="actions">
+            <button id="fold" class="fold" data-sfx="vote">หมอบ</button>
+            <button id="call" data-sfx="confirm">${!o.call ? "ผ่าน" : o.allin ? `ออลอิน ${o.call}` : `ตาม ${o.call}`}</button>
+          </div>
+          ${o.raise ? `
+            <div class="raise-row">
+              <button class="icon-btn" id="minus" aria-label="ลดยอด">-</button>
+              <input type="range" id="slider" aria-label="ยอดที่จะ${o.opened ? "เพิ่ม" : "ลง"}">
+              <button class="icon-btn" id="plus" aria-label="เพิ่มยอด">+</button>
+            </div>
+            <button id="raise" class="alt" data-sfx="confirm"></button>` : ""}` : ""}
+        ${canReady ? `<button id="ready" data-sfx="next">ต่อ</button>` : ""}
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
+        ${scoreboard(v)}`;
+
+      // แผนแอนิเมชันจากสถานะใหม่ (รีเฟรชกลางมือไม่ต้องเล่นย้อน)
+      const resumed = lastHand === undefined;
+      const dealt = !resumed && v.handNo !== lastHand;
+      if (resumed || dealt) {
+        plans = [];
+        lastBoard = resumed ? v.board.length : 0;
+        lastSeen = resumed ? Object.fromEntries(v.seats.map((s) => [s.id, !!s.cards])) : {};
+        lastBets = {};
+        lastResult = resumed && !!r;
+      }
+      lastHand = v.handNo;
+      const log = JSON.stringify(v.log);
+      const fresh = !resumed && log !== lastLog && v.log;
+      lastLog = log;
+      const items = [];
+      const sounds = []; // [เวลา, ชื่อเสียง]
+      let at = 0;
+      if (dealt) {
+        // แจกทีละใบ เริ่มจากคนถัดจาก D ไพ่ของเราพลิกทันทีที่ถึง
+        const i = v.seats.findIndex((s) => s.id === v.button);
+        const ord = [...v.seats.slice(i + 1), ...v.seats.slice(0, i + 1)];
+        const gap = 120;
+        ord.forEach((s, j) => [0, 1].forEach((k) => {
+          const fly = (k * ord.length + j) * gap;
+          items.push({ sel: `[data-seat="${s.id}"] .cards .card:nth-child(${k + 1})`, fly, flip: s.id === v.me ? fly + 400 : undefined });
+          sounds.push([fly, "click"]);
+        }));
+        at = (2 * ord.length - 1) * gap + 500;
+      }
+      // จบรอบเดิมพัน: ชิปที่ลงไว้ไปกองกลาง
+      if (!dealt) for (const s of v.seats) if (lastBets[s.id] && !s.bet) chips(s.id, "pot");
+      if (!dealt && Object.keys(lastBets).some((id) => lastBets[id] && !(v.seats.find((s) => s.id === id) || {}).bet)) {
+        sounds.push([0, "confirm"]);
+        at = 500;
+      }
+      // ไพ่กลางที่เพิ่งเปิด: 3 ใบแรกพร้อมกัน ใบที่ 4 และ 5 ทีละใบ (ออลอินแล้วเปิดรวดก็เว้นจังหวะให้ลุ้น)
+      const groups = [[0, 1, 2], [3], [4]].map((g) => g.filter((k) => k >= lastBoard && k < v.board.length)).filter((g) => g.length);
+      groups.forEach((g, gi) => g.forEach((k, j) => {
+        const t = at + gi * 900 + j * 120;
+        items.push({ sel: `#board .card:nth-child(${k + 1})`, fly: t, flip: t + 400 });
+        sounds.push([t, "click"]);
+      }));
+      if (groups.length) at += (groups.length - 1) * 900 + 640 + 300;
+      // เปิดไพ่: พลิกทีละคน
+      let j = 0;
+      for (const s of v.seats) if (s.cards && lastSeen[s.id] === false) {
+        for (let k = 0; k < s.cards.length; k++) items.push({ sel: `[data-seat="${s.id}"] .cards .card:nth-child(${k + 1})`, flip: at + j * 200 });
+        items.push({ sel: `[data-seat="${s.id}"] .info > span:first-child`, fade: at + j * 200 + 240 });
+        sounds.push([at + j * 200, "click"]);
+        j++;
+      }
+      if (j) at += (j - 1) * 200 + 240;
+      // ได้กองกลาง: ชิปไปหาคนชนะ ไฮไลต์ 5 ใบที่ชนะ
+      const payAt = at + 300;
+      if (r && !lastResult) {
+        for (const id of Object.keys(r.won)) setTimeout(() => chips("pot", id), payAt);
+        for (const id of bestIds) items.push({ sel: `[data-id="${id}"]`, best: payAt });
+        for (const s of v.seats) if (r.won[s.id]) items.push({ sel: `[data-seat="${s.id}"] .won`, fade: payAt + 300 });
+        if (r.won[v.me]) {
+          setTimeout(() => shout(`+${r.won[v.me]}`, true), payAt + 300);
+          sounds.push([payAt + 300, "win"]);
+        } else if (me && !me.folded && r.hands) sounds.push([payAt + 300, "vote"]);
+        sounds.push([payAt, "confirm"]);
+      }
+      // เสียงของสิ่งที่คนเพิ่งทำ ออลอินตะโกนให้ทุกคนเห็น
+      if (fresh && ACT[v.log.t] && v.log.n === v.handNo - 1) {
+        if (v.log.allin) {
+          const s = v.seats.find((x) => x.id === v.log.by);
+          if (s) shout("ออลอิน", s.id === v.me);
+          sounds.push([0, "start"]);
+        } else if (v.log.by !== v.me) sounds.push([0, v.log.t === "fold" ? "vote" : v.log.t === "check" ? "click" : "confirm"]);
+      }
+      if (o && lastTurn !== v.me) sounds.push([at, "next"]);
+      lastTurn = v.turn;
+      for (const [t, name] of sounds) setTimeout(() => playSfx(name), t);
+      if (items.length) plans.push({ start: performance.now(), items, end: payAt + 1000 });
+      applyPlans();
+      lastBoard = v.board.length;
+      lastSeen = Object.fromEntries(v.seats.map((s) => [s.id, !!s.cards]));
+      lastBets = Object.fromEntries(v.seats.map((s) => [s.id, s.bet]));
+      lastResult = !!r;
+
+      if (o) {
+        app.querySelector("#fold").onclick = () => send({ t: "fold" });
+        app.querySelector("#call").onclick = () => send({ t: o.call ? "call" : "check" });
+      }
+      if (o && o.raise) {
+        const { min, max } = o.raise;
+        // ช่องเลื่อน: ทีละ blind ใหญ่ ช่องสุดท้ายคือออลอิน
+        const steps = Math.ceil((max - min) / v.bb);
+        const amt = (i) => (i >= steps ? max : min + i * v.bb);
+        const slider = app.querySelector("#slider"), btn = app.querySelector("#raise");
+        const minus = app.querySelector("#minus"), plus = app.querySelector("#plus");
+        Object.assign(slider, { min: 0, max: steps, step: 1 });
+        const set = (i) => {
+          i = Math.min(steps, Math.max(0, i));
+          raiseTo = amt(i);
+          slider.value = i;
+          btn.textContent = raiseTo === max ? `ออลอิน ${max - me.bet}` : `${o.opened ? "เพิ่มเป็น" : "ลง"} ${raiseTo}`;
+          minus.disabled = i === 0;
+          plus.disabled = i === steps;
+        };
+        set(raiseTo >= max ? steps : Math.round((raiseTo - min) / v.bb));
+        slider.oninput = () => set(Number(slider.value));
+        minus.onclick = () => set(Number(slider.value) - 1);
+        plus.onclick = () => set(Number(slider.value) + 1);
+        btn.onclick = () => send({ t: "raise", to: raiseTo });
+      }
+      if (canReady) app.querySelector("#ready").onclick = () => send({ t: "ready" });
+      if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+      // จบเกม: รอเปิดไพ่มือสุดท้ายให้เห็นก่อนค่อยโชว์ผู้ชนะ
+      if (gameOver) {
+        clearTimeout(overTimer);
+        overTimer = setTimeout(() => {
+          if (view.screen !== "over") return;
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(view.winner)}</p>${scoreboard(view)}`;
+          winner.showModal();
+          fireworks();
+        }, still.matches ? 0 : payAt + 1500);
+      }
+    }
+
+    const rules = document.getElementById("rules");
+    // ไพ่ในกฎ: data-cards="แต้ม:ดอก แต้ม:ดอก ..."
+    rules.querySelectorAll("[data-cards]").forEach((el) => {
+      el.outerHTML = el.dataset.cards.split(" ").map((x) => {
+        const [r, s] = x.split(":").map(Number);
+        return cardHtml({ r, s }, "inline");
+      }).join(" ");
+    });
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
+
+    const saved = savedRoom("holdem");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
+  </script>
+</body>
+</html>
