@@ -587,8 +587,7 @@
             ${v.canShow && !myShow ? `<button id="show" class="alt">หงาย</button>` : ""}
             ${canReady ? `<button id="ready" data-sfx="next">ต่อ</button>` : ""}
           </div>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
-        ${scoreboard(v)}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // แผนแอนิเมชันจากสถานะใหม่ (รีเฟรชกลางมือไม่ต้องเล่นย้อน)
       const resumed = lastHand === undefined;

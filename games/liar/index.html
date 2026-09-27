@@ -122,6 +122,12 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
+    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 16px; }
+    .bar li { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border: 2px solid #2c2950; border-radius: 999px; }
+    .bar b { color: var(--yellow); }
+    .bar .out { opacity: 0.5; text-decoration: line-through; }
+    .bar .goal { padding: 2px 0; border: 0; color: var(--dim); }
     .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
@@ -334,6 +340,11 @@
         <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
       </ul>`;
 
+    const scorebar = (v) => `
+      <ul class="bar" aria-label="ผู้เล่น">${v.players.map((p) => `
+        <li class="${p.now ? "now" : ""}${p.count ? "" : " out"}"><span${v.screen === "over" && p.name === v.winner ? ' class="hl"' : ""}>${esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
+      </ul>`;
+
     // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
     // ตอนเปิด: ป้ายโกหกขึ้นก่อน FLIP_AT แล้วเปิดเต๋าทีละคนห่างกัน FLIP_GAP
     const FLIP_AT = 900, FLIP_GAP = 350;
@@ -541,7 +552,7 @@
         const canBid = higher(pick, v.bid, v);
         const locked = v.pal && v.bid; // รอบ palifico เปลี่ยนหน้าไม่ได้
         app.innerHTML = `
-          ${scoreboard(v)}
+          ${scorebar(v)}
           <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
           ${v.bid
             ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${v.bid.n} &times; ${die(v.bid.face)}</div>
@@ -586,7 +597,7 @@
               : v.out ? `<p class="hint center">รอคนอื่น</p>`
               : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
             ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
-            <div style="margin-top: 24px">${scoreboard(v)}</div>
+            <div style="margin-top: 24px">${scorebar(v)}</div>
           </div>
         </div>`;
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });

@@ -122,6 +122,12 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
+    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 16px; }
+    .bar li { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border: 2px solid #2c2950; border-radius: 999px; }
+    .bar b { color: var(--yellow); }
+    .bar .out { opacity: 0.5; text-decoration: line-through; }
+    .bar .goal { padding: 2px 0; border: 0; color: var(--dim); }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
@@ -605,6 +611,12 @@
         <li class="row"><span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">ตกรอบ</span>` : ""}</span><span>${p.score}</span></li>`).join("")}
       </ul>`;
 
+    const scorebar = (v) => `
+      <ul class="bar" aria-label="แต้มเสีย">${[...v.players].sort((a, b) => a.out - b.out || a.score - b.score).map((p) => `
+        <li${p.out ? ' class="out"' : ""}><span${v.screen === "over" && p.name === v.winner ? ' class="hl"' : ""}>${esc(p.name)}</span><b>${p.score}</b></li>`).join("")}
+        <li class="goal">ตกรอบ ${v.target}</li>
+      </ul>`;
+
     const pick = document.getElementById("pick");
     let picking = null;
     pick.querySelectorAll("[data-color]").forEach((b) => (b.onclick = () => {
@@ -759,7 +771,7 @@
           ${v.result.hands.length ? `<ul class="hands">${v.result.hands.map((h) => `
             <li><span class="who">${esc(h.name)} <span class="bad">+${h.pts}</span></span>${h.cards.map((c) => cardHtml(c, { cls: "small" })).join("")}</li>`).join("")}</ul>` : ""}
           ${v.result.out.length ? `<p class="bad">ตกรอบ: ${v.result.out.map(esc).join(", ")}</p>` : ""}
-          ${scoreboard(v)}
+          <div style="margin-top: 16px">${scorebar(v)}</div>
           ${v.screen === "over"
             ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
             : `${v.out ? "" : v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}

@@ -165,6 +165,7 @@
     .seat .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .seat .tag { margin: 0; flex: none; }
     .seat .info { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 1.6em; font-size: 0.9rem; }
+    .pts { font: 400 0.65rem "Press Start 2P", monospace; color: var(--yellow); }
     .count { display: flex; align-items: center; gap: 6px; font: 400 0.7rem "Press Start 2P", monospace; }
     .seat.mine { margin-top: 8px; padding-bottom: 12px; }
     .table { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; margin: 20px 0 12px; }
@@ -476,10 +477,11 @@
         : myTurn ? `<span class="hl">${v.pile ? "ตาคุณ" : "เริ่มกองใหม่"}</span>`
         : me && me.place >= 0 ? `<span class="good">ที่ ${me.place + 1}</span>`
         : `รอ ${esc(nameOf(v.turn))}`;
+      const pts = (id) => `<span class="pts" aria-label="แต้ม">${v.players.find((p) => p.id === id).score}</span>`;
       const seatInfo = (s) => (v.screen === "play" && s.place >= 0 ? `<span class="good">ที่ ${s.place + 1}</span>` : v.screen === "play" && s.passed ? `<span class="hint">ผ่าน</span>` : "");
       const seatHtml = (s) => `
         <div class="seat${waiting.has(s.id) ? " now" : ""}${v.screen === "play" && (s.passed || s.place >= 0) ? " out" : ""}" data-seat="${s.id}">
-          <div class="who"><span class="name">${esc(s.name)}</span>${titleTag(s.title)}</div>
+          <div class="who"><span class="name">${esc(s.name)}</span><span>${titleTag(s.title)} ${pts(s.id)}</span></div>
           <div class="info"><span class="count"><span class="card back mini" aria-hidden="true"></span>${s.count}</span>${seatInfo(s)}</div>
           ${waiting.has(s.id) ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         </div>`;
@@ -504,7 +506,7 @@
         <p class="status">${status}</p>
         ${me ? `
           <div class="seat mine${waiting.has(v.me) ? " now" : ""}" data-seat="${v.me}">
-            <div class="who"><span class="name">${esc(me.name)}</span>${titleTag(me.title)}</div>
+            <div class="who"><span class="name">${esc(me.name)}</span><span>${titleTag(me.title)} ${pts(v.me)}</span></div>
             <div class="hand" aria-label="ไพ่ในมือ">${v.hand.map((c) => `
               <button type="button" class="card${red(c)}${fresh.has(c.id) ? " new" : ""}" data-id="${c.id}" aria-pressed="${sel.has(c.id)}" aria-label="${RANK[c.r]} ${SUIT[c.s]}">${face(c)}</button>`).join("")}
             </div>
@@ -517,8 +519,7 @@
           <h2 style="margin-top: 24px">รอบนี้</h2>
           <ul>${v.result.map((r) => `<li class="row"><span>${esc(r.name)}${titleTag(r.title)}</span><span>+${r.pts}</span></li>`).join("")}</ul>` : ""}
         ${v.screen === "end" ? `<button id="ready" data-sfx="next" ${v.ready ? "disabled" : ""}>ต่อ ${v.readyCount}/${v.seats.length}</button>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
-        ${scoreboard(v)}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // ปุ่มลงเปิดเมื่อไพ่ที่เลือกลงทับกองได้ ปุ่มให้เปิดเมื่อเลือกครบ
       const playBtn = app.querySelector("#play"), passBtn = app.querySelector("#pass"), giveBtn = app.querySelector("#give");

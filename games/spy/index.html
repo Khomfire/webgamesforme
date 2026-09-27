@@ -140,6 +140,12 @@
     .bad { color: var(--red); }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
+    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 16px; }
+    .bar li { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border: 2px solid #2c2950; border-radius: 999px; }
+    .bar b { color: var(--yellow); }
+    .bar .out { opacity: 0.5; text-decoration: line-through; }
+    .bar .goal { padding: 2px 0; border: 0; color: var(--dim); }
     .gain { margin-right: 12px; color: var(--cyan); }
     .vote { --c: var(--cyan); margin-top: 12px; }
     .error { color: var(--red); }
@@ -213,6 +219,12 @@
       <h2>คะแนน (เป้าหมาย ${v.target})</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
         <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
+      </ul>`;
+
+    const scorebar = (v) => `
+      <ul class="bar" aria-label="คะแนน">${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li><span${(v.winners || []).includes(p.name) ? ' class="hl"' : ""}>${esc(p.name)}</span><b>${p.score}</b>${p.gain ? `<span class="good">+${p.gain}</span>` : ""}</li>`).join("")}
+        <li class="goal">เป้า ${v.target}</li>
       </ul>`;
 
     // สถานที่ที่สายลับขีดฆ่าไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างตอนเริ่มรอบและตอนเริ่มทาย
@@ -377,7 +389,7 @@
           <li>สถานที่: <span class="hl">${esc(v.location)}</span></li>
           <li>${v.guess === null ? "สายลับออกก่อนทาย" : `สายลับทาย "${esc(v.guess)}" ${v.correct ? '<span class="bad">ถูก</span>' : '<span class="good">ผิด</span>'}`}</li>
         </ul>
-        <div style="margin-top: 24px">${scoreboard(v)}</div>
+        <div style="margin-top: 24px">${scorebar(v)}</div>
         ${v.screen === "over"
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
           : `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next" ${enough ? "" : "disabled"}>รอบต่อไป</button>`}

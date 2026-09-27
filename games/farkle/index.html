@@ -122,6 +122,12 @@
     }
     .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
     .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
+    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 16px; }
+    .bar li { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border: 2px solid #2c2950; border-radius: 999px; }
+    .bar b { color: var(--yellow); }
+    .bar .out { opacity: 0.5; text-decoration: line-through; }
+    .bar .goal { padding: 2px 0; border: 0; color: var(--dim); }
     .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
@@ -284,6 +290,12 @@
         <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
+    const scorebar = (v) => `
+      <ul class="bar" aria-label="คะแนน">${v.players.map((p) => `
+        <li${p.now ? ' class="now"' : ""}><span${v.screen === "over" && v.winners.includes(p.name) ? ' class="hl"' : ""}>${esc(p.name)}</span><b>${p.score}</b></li>`).join("")}
+        <li class="goal">เป้า ${v.target}</li>
+      </ul>`;
+
     // เต๋าที่เลือกไว้ เก็บเฉพาะในเครื่องตัวเอง ล้างทุกครั้งที่ทอยใหม่
     const picked = new Set();
     // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่าในแถวเต๋า แล้วค่อยโชว์หน้าจริง
@@ -316,7 +328,7 @@
       holding = true;
       const shown = { ...v, players: v.players.map((p) => ({ ...p, now: p.name === v.last.name })) };
       app.innerHTML = `
-        ${scoreboard(shown)}
+        ${scorebar(shown)}
         ${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}
         <p class="status">${lastMyTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.last.name)}`}</p>
         <p class="turn" aria-label="แต้มตานี้">${v.last.lost}</p>
@@ -487,7 +499,7 @@
         ? `<p class="bad">${esc(v.last.name)} ฟาร์เคิล${v.last.lost ? ` เสีย ${v.last.lost}` : ""}</p>${smallDice(v.last.dice, "bad")}`
         : `<p class="good">${esc(v.last.name)} เก็บ +${v.last.pts}</p>`;
       app.innerHTML = `
-        ${scoreboard(v)}
+        ${scorebar(v)}
         ${v.screen === "over"
           ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
           : `${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}

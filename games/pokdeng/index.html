@@ -575,8 +575,7 @@
           </div>
           <button id="bet" data-sfx="confirm">ลง</button>` : ""}
         ${canDraw ? `<div class="actions"><button id="draw" data-sfx="roll">จั่ว</button><button id="stay" class="alt">อยู่</button></div>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
-        ${scoreboard(v)}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // แผนแอนิเมชันจากสถานะใหม่
       const log = JSON.stringify(v.log);
