@@ -370,7 +370,8 @@
     }
     const TURN = 15000; // เวลาต่อตา ตรงกับ server (uno.js)
     // ไพ่ในกองเอียงไม่เท่ากัน ใบเดิมเอียงเท่าเดิมทุกครั้งที่วาด
-    const tilt = (c) => `rotate: ${((c.id * 47) % 25) - 12}deg`;
+    const tiltDeg = (c) => ((c.id * 47) % 25) - 12;
+    const tilt = (c) => `rotate: ${tiltDeg(c)}deg`;
     const order = { r: 0, y: 1, g: 2, b: 3, w: 4 };
     const sorted = (hand) => [...hand].sort((a, b) => order[a.c] - order[b.c] || a.id - b.id);
 
@@ -404,6 +405,31 @@
           { transform: `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(0.3) rotate(20deg)`, opacity: 0.4 },
         ], { duration: 500, delay: i * 90, easing: "ease-in", fill: "both" }).onfinish = () => card.remove();
       }
+    }
+    // ไพ่ของเราบินไปกองทันทีที่กด ไม่ต้องรอ server ตอบ (ไม่งั้นไพ่ค้างในมือแล้ววาปไปกอง)
+    let flying = null;
+    function throwCard(card) {
+      const b = app.querySelector(`.hand [data-id="${card.id}"]`), top = app.querySelector("#top");
+      if (still.matches || !b || !top) return;
+      const a = b.getBoundingClientRect(), t = top.getBoundingClientRect();
+      const box = document.createElement("div");
+      box.innerHTML = cardHtml(card, { cls: "fly", attrs: `aria-hidden="true"` });
+      const el = box.firstChild;
+      Object.assign(el.style, { left: a.left + "px", top: a.top + "px" });
+      el.style.setProperty("--w", a.width + "px");
+      document.body.append(el);
+      b.style.visibility = "hidden";
+      const dx = t.left + t.width / 2 - (a.left + a.width / 2), dy = t.top + t.height / 2 - (a.top + a.height / 2);
+      const anim = el.animate([
+        { transform: "none" },
+        { transform: `translate(${dx}px, ${dy}px) scale(${t.width / a.width}) rotate(${tiltDeg(card)}deg)` },
+      ], { duration: 350, easing: "cubic-bezier(.3,.7,.4,1)", fill: "forwards" });
+      flying = { id: card.id, el, anim };
+    }
+    // ไพ่ที่โยนไว้แต่ server ไม่ได้รับ (หรือมีสถานะอื่นมาก่อน) เอาออก ไพ่จริงยังอยู่ในมือ
+    function dropFlying() {
+      if (flying) flying.el.remove();
+      flying = null;
     }
     // ไพ่ลงกอง: บินมาถึงแล้วกระแทก เด้ง และมีคลื่นวงกว้างออกไป (big = +2/+4 ทับกัน)
     function slam(el, delay, big) {
@@ -489,7 +515,10 @@
     let picking = null;
     pick.querySelectorAll("[data-color]").forEach((b) => (b.onclick = () => {
       pick.close();
-      if (picking !== null) send({ t: "play", id: picking, color: b.dataset.color });
+      if (picking !== null) {
+        throwCard(view.hand.find((c) => c.id === picking));
+        send({ t: "play", id: picking, color: b.dataset.color });
+      }
       picking = null;
     }));
     document.getElementById("pick-close").onclick = () => { picking = null; pick.close(); };
@@ -547,6 +576,7 @@
 
 
       if (v.screen === "lobby") {
+        dropFlying();
         app.innerHTML = `
           <h2>ห้อง</h2>
           <div class="room-row">
@@ -647,14 +677,27 @@
         const from = v.log.by === v.me ? oldRects[v.log.card.id] : seat(v.log.by) && seat(v.log.by).getBoundingClientRect();
         const plus = v.log.card.v === "d2" || v.log.card.v === "w4";
         const total = v.pending ? v.pending.n : v.log.hit ? v.log.hit.n : 0;
-        flyFrom(topEl, from);
-        slam(topEl, from && !still.matches ? 400 : 0, plus);
+        const thrown = flying && flying.id === v.log.card.id && v.log.by === v.me && flying;
+        if (thrown) {
+          // ไพ่ที่โยนไปก่อนแล้ว: รอให้ถึงกองก่อนค่อยโชว์ใบจริงแล้วกระแทก
+          flying = null;
+          topEl.style.visibility = "hidden";
+          thrown.anim.finished.then(() => {
+            thrown.el.remove();
+            topEl.style.visibility = "";
+            slam(topEl, 0, plus);
+          });
+        } else {
+          flyFrom(topEl, from);
+          slam(topEl, from && !still.matches ? 400 : 0, plus);
+        }
         if (plus) {
           playStack(total);
           quake(total);
           if (total > (v.log.card.v === "d2" ? 2 : 4)) shout("+" + total); // ทับกัน
         } else if (v.log.by !== v.me) playSfx("confirm");
       }
+      dropFlying();
       // มีคนจั่วตามยอด +2/+4
       if (fresh && v.log.hit) {
         shout("+" + v.log.hit.n);
@@ -690,7 +733,10 @@
         if (v.hand.find((c) => c.id === id).c === "w") {
           picking = id;
           pick.showModal();
-        } else send({ t: "play", id });
+        } else {
+          throwCard(v.hand.find((c) => c.id === id));
+          send({ t: "play", id });
+        }
       }));
       if (app.querySelector("#pass")) app.querySelector("#pass").onclick = () => send({ t: "pass" });
       if (app.querySelector("#uno-btn")) app.querySelector("#uno-btn").onclick = () => send({ t: "uno" });
