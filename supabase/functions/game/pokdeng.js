@@ -5,7 +5,7 @@
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
 const pl = (s, id) => s.players.find((p) => p.id === id);
 export const MONEY = [100, 500, 1000]; // เงินเริ่มต้นที่เลือกได้ ลงเงินทีละ 1/20 ของเงินเริ่มต้น
-const TURN = 15000; // เวลาลงเงิน เวลาเลือกจั่วหรืออยู่ และเวลาของเจ้ามือ
+const TURN = 15000; // เวลาลงเงิน เวลาเลือกจั่วหรืออยู่ และเวลาของเจ้ามือ (ค่าเริ่มต้น เจ้าของห้องตั้งได้ 5-60 วิ)
 
 function newDeck() {
   const deck = [];
@@ -144,7 +144,7 @@ function toLobby(s) {
 
 export default {
   max: 10,
-  init: () => ({ laps: 2, money: 500, phase: "lobby" }),
+  init: () => ({ laps: 2, money: 500, time: TURN, phase: "lobby" }),
   player: () => ({ cards: [], bet: null, won: null, res: null, shown: false, done: false, money: 0, out: false }),
 
   handle(s, id, msg, now) {
@@ -170,6 +170,7 @@ export default {
       }
     }
     if (id === s.owner) {
+      if (msg.t === "time" && s.phase === "lobby") s.time = Math.min(60, Math.max(5, Math.round(Number(msg.value)) || 15)) * 1000;
       if (msg.t === "laps" && s.phase === "lobby") s.laps = Math.min(5, Math.max(1, Math.round(Number(msg.value)) || 2));
       if (msg.t === "money" && s.phase === "lobby" && MONEY.includes(Number(msg.value))) s.money = Number(msg.value);
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
@@ -187,7 +188,7 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
-    if (turnKey(s) !== key) s.turnEnds = now + TURN;
+    if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
   // คนออก: เล่นต่อกับคนที่เหลือ ตัดรอบที่เขายังต้องเป็นเจ้ามือออก
@@ -211,12 +212,12 @@ export default {
     } else if (s.phase === "bet" && s.round >= s.rounds) return finish(s);
     else if (s.phase === "bet" && players(s).every((x) => x.bet !== null)) deal(s);
     else if (s.phase === "draw") afterPlayers(s);
-    if (turnKey(s) !== key) s.turnEnds = Date.now() + TURN;
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 
   view(s, id, now) {
     const v = {
-      screen: s.phase, laps: s.laps, money: s.money,
+      screen: s.phase, laps: s.laps, money: s.money, time: s.time || TURN,
       players: s.players.map((p) => ({ id: p.id, name: p.name, money: p.money, out: p.out })),
     };
     if (s.phase === "lobby") return v;

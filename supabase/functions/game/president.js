@@ -8,7 +8,7 @@
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
 const pl = (s, id) => s.players.find((p) => p.id === id);
 const has = (s, id) => !!pl(s, id) && pl(s, id).hand.length > 0;
-const TURN = 20000; // เวลาต่อตา และเวลาเลือกไพ่คืนตอนแลกไพ่
+const TURN = 20000; // เวลาต่อตา และเวลาเลือกไพ่คืนตอนแลกไพ่ (ค่าเริ่มต้น เจ้าของห้องตั้งได้ 5-60 วิ)
 
 // ความใหญ่ของไพ่: 3 เล็กสุด ... K A 2 ใหญ่สุด เลขเท่ากันดูดอก โพดำ > โพแดง > ข้าวหลามตัด > ดอกจิก
 // (หน้าเกมมีสำเนา power กับ beats ไว้เปิดปิดปุ่มลง ต้องแก้ให้ตรงกัน)
@@ -173,7 +173,7 @@ function toLobby(s) {
 
 export default {
   max: 8,
-  init: () => ({ target: 10, phase: "lobby" }),
+  init: () => ({ target: 10, time: TURN, phase: "lobby" }),
   player: () => ({ hand: [], score: 0, title: null }),
 
   handle(s, id, msg, now) {
@@ -198,6 +198,7 @@ export default {
       if (s.ready.length >= s.order.length) startRound(s);
     }
     if (id === s.owner) {
+      if (msg.t === "time" && s.phase === "lobby") s.time = Math.min(60, Math.max(5, Math.round(Number(msg.value)) || 20)) * 1000;
       if (msg.t === "target" && s.phase === "lobby") s.target = Math.min(50, Math.max(1, Math.round(Number(msg.value)) || 10));
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 3) {
         toLobby(s);
@@ -207,7 +208,7 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
-    if (turnKey(s) !== key) s.turnEnds = now + TURN;
+    if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
   // คนออก: เล่นต่อกับคนที่เหลือ ไพ่ของเขาไม่ใช้แล้ว
@@ -240,12 +241,12 @@ export default {
       s.ready = s.ready.filter((x) => x !== id);
       if (s.ready.length >= s.order.length) startRound(s);
     }
-    if (turnKey(s) !== key) s.turnEnds = Date.now() + TURN;
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 
   view(s, id, now) {
     const v = {
-      screen: s.phase, target: s.target,
+      screen: s.phase, target: s.target, time: s.time || TURN,
       players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score, title: p.title })),
     };
     if (s.phase === "lobby") return v;
