@@ -30,8 +30,9 @@ function openRoom(game, onView, onError, saved) {
   };
 
   // สถานะเดียวกันมาทั้งทางคำตอบของ fetch และทาง Realtime ใช้อันแรก ไม่วาดซ้ำ (วาดซ้ำจะตัดแอนิเมชันกลางคัน)
+  // Realtime เรียง key ใหม่ จึงเรียง key ก่อนเทียบ
   const apply = (v) => {
-    const json = JSON.stringify(v);
+    const json = JSON.stringify(v, (k, x) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x));
     if (closed || v.seq < seq || json === last) return; // มาช้ากว่าสถานะที่มีอยู่แล้ว หรือซ้ำ
     seq = v.seq;
     last = json;
