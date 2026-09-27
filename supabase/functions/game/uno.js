@@ -1,4 +1,5 @@
-// UNO: ลงไพ่สีเดียวกันหรือเลข/สัญลักษณ์เดียวกัน หมดมือก่อนได้แต้มจากไพ่ในมือคนอื่น ถึงเป้าหมายก่อนชนะ
+// UNO: ลงไพ่สีเดียวกันหรือเลข/สัญลักษณ์เดียวกัน คนหมดมือชนะรอบ คนอื่นบวกแต้มไพ่ในมือตัวเองเป็นแต้มเสีย
+// แต้มเสียถึงที่กำหนดตกรอบ เหลือคนสุดท้ายชนะ
 // ไพ่ 108 ใบ: 4 สี (r y g b) มี 0 หนึ่งใบ 1-9 skip rev d2 อย่างละสองใบ, wild กับ w4 อย่างละสี่ใบ
 const pl = (s, id) => s.players.find((p) => p.id === id);
 const COLORS = ["r", "y", "g", "b"];
@@ -37,9 +38,11 @@ function draw(s, p, n) {
   for (let i = 0; i < n; i++) {
     if (!s.deck.length) {
       if (s.pile.length < 2) return; // ไพ่อยู่ในมือหมดแล้ว
+      // กองจั่วหมด: สับกองทิ้ง (ยกเว้นใบบนสุด) มาเป็นกองจั่วใหม่
       const t = s.pile.pop();
       s.deck = shuffle(s.pile.map((x) => (x.c === "w" ? { ...x, pick: undefined } : x)));
       s.pile = [t];
+      s.shuffles = (s.shuffles || 0) + 1;
     }
     p.hand.push(s.deck.pop());
   }
@@ -143,25 +146,39 @@ function timeUp(s, id) {
   s.log.late = id;
 }
 
+// จบรอบ: คนที่ยังมีไพ่บวกแต้มไพ่ในมือตัวเองเป็นแต้มเสีย ถึงที่กำหนดตกรอบ
+// คนหมดมือได้ 0 แต้มจึงไม่ตกรอบ เหลืออย่างน้อยหนึ่งคนเสมอ
 function endRound(s, id) {
-  const p = pl(s, id);
-  const gained = s.players.reduce((n, x) => n + x.hand.reduce((m, c) => m + points(c), 0), 0);
-  p.score += gained;
-  s.result = { name: p.name, gained, hands: s.players.filter((x) => x.id !== id).map((x) => ({ name: x.name, cards: x.hand })) };
+  const hands = [];
+  for (const x of s.order.map((o) => pl(s, o)).filter((x) => x.id !== id)) {
+    const pts = x.hand.reduce((m, c) => m + points(c), 0);
+    x.score += pts;
+    hands.push({ name: x.name, cards: x.hand, pts });
+  }
+  const out = s.order.map((o) => pl(s, o)).filter((x) => x.score >= s.target);
+  for (const x of out) Object.assign(x, { out: true, hand: [] });
+  s.result = { name: pl(s, id).name, hands, out: out.map((x) => x.name) };
   s.unoOpen = null;
-  s.phase = p.score >= s.target ? "over" : "end";
-  if (s.phase === "over") s.winner = p.name;
+  s.pending = null;
+  s.order = s.order.filter((o) => !pl(s, o).out);
+  if (s.order.length > 1) s.phase = "end";
+  else finish(s, pl(s, s.order[0]));
+}
+
+function finish(s, p) {
+  s.phase = "over";
+  s.winner = p.name;
 }
 
 function toLobby(s) {
-  for (const p of s.players) Object.assign(p, { hand: [], score: 0, uno: false });
+  for (const p of s.players) Object.assign(p, { hand: [], score: 0, uno: false, out: false });
   s.phase = "lobby";
 }
 
 export default {
   max: 10,
   init: () => ({ target: 500, phase: "lobby" }),
-  player: () => ({ hand: [], score: 0, uno: false }),
+  player: () => ({ hand: [], score: 0, uno: false, out: false }),
 
   handle(s, id, msg, now) {
     const p = pl(s, id);
@@ -196,12 +213,13 @@ export default {
         }
       }
     }
-    if (msg.t === "ready" && s.phase === "end") {
+    // รอบต่อไปเริ่มเมื่อทุกคนที่ยังไม่ตกรอบกดพร้อม
+    if (msg.t === "ready" && s.phase === "end" && s.order.includes(id)) {
       if (!s.ready.includes(id)) s.ready.push(id);
-      if (s.ready.length >= s.players.length) startRound(s);
+      if (s.ready.length >= s.order.length) startRound(s);
     }
     if (id === s.owner) {
-      if (msg.t === "target") s.target = Math.min(1000, Math.max(50, Math.round(Number(msg.value)) || 500));
+      if (msg.t === "target" && s.phase === "lobby") s.target = Math.min(1000, Math.max(50, Math.round(Number(msg.value)) || 500));
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
         s.order = s.players.map((p) => p.id);
         s.dealer = null;
@@ -225,6 +243,8 @@ export default {
     s.order.splice(s.order.indexOf(id), 1);
     if (s.dealer === id) s.dealer = s.order.includes(dealerNext) ? dealerNext : s.order[0];
     if (s.phase === "lobby") return;
+    // เหลือคนเดียวที่ยังไม่ตกรอบ ชนะ
+    if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
     s.deck.unshift(...gone.hand);
     if (s.unoOpen === id) s.unoOpen = null;
     if (s.turn === id) {
@@ -234,14 +254,14 @@ export default {
     }
     if (s.phase === "end") {
       s.ready = s.ready.filter((x) => x !== id);
-      if (s.ready.length >= s.players.length) startRound(s);
+      if (s.ready.length >= s.order.length) startRound(s);
     }
   },
 
   view(s, id, now) {
     const v = {
       screen: s.phase, target: s.target,
-      players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score })),
+      players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score, out: p.out })),
     };
     if (s.phase === "lobby") return v;
     const me = pl(s, id);
@@ -249,14 +269,15 @@ export default {
     Object.assign(v, {
       seats: seats.map((p) => ({ id: p.id, name: p.name, count: p.hand.length, uno: p.uno, now: s.phase === "play" && s.turn === p.id })),
       hand: me.hand, top: top(s), under: s.pile.slice(-3, -1), color: s.color, pending: s.pending, dir: s.dir, deck: s.deck.length,
+      shuffles: s.shuffles || 0, out: me.out,
       myTurn: s.phase === "play" && s.turn === id, drawn: s.turn === id ? s.drawn : null,
-      turnName: pl(s, s.turn).name,
+      turnName: (pl(s, s.turn) || {}).name,
       // เวลาที่เหลือของตานี้ (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
       turnLeft: s.phase === "play" ? Math.max(0, s.turnEnds - now) : null,
       // ปุ่ม UNO: เราเพิ่งเหลือ 1 ใบและยังไม่กด
       canUno: s.phase === "play" && s.unoOpen === id,
       log: s.log, result: s.result, winner: s.winner,
-      ready: s.ready.includes(id), readyCount: s.ready.length,
+      ready: s.ready.includes(id), readyCount: s.ready.length, activeCount: s.order.length,
     });
     return v;
   },
