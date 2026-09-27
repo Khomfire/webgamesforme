@@ -178,6 +178,10 @@
     .seats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .seat { position: relative; padding: 6px 8px; border: 3px solid #2c2950; min-width: 0; }
     .seat.now { border-color: var(--yellow); }
+    /* หลอดเวลาในกรอบของคนที่ยังต้องกด */
+    .timer { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
+    .seat.mine .timer { height: 8px; }
     .seat .who { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 28px; }
     .seat .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .seat .cards { display: flex; gap: 4px; min-height: calc(36px * 1.4); margin: 6px 0 4px; }
@@ -243,6 +247,7 @@
         <li>ไม่ป๊อก จั่วอีก 1 ใบหรืออยู่ แล้วเจ้ามือเลือก</li>
         <li>เจ้ามือป๊อก เปิดเทียบทันที ไม่มีใครจั่ว</li>
         <li>สูงกว่าชนะ เท่ากันเสมอ</li>
+        <li>ตาละ 15 วิ หมดเวลา: ลงเงินขั้นต่ำ หรืออยู่</li>
       </ol>
       <h2>เด้ง</h2>
       <p class="hint">ชนะได้เงินที่ลง x เด้งของคนชนะ</p>
@@ -315,6 +320,7 @@
     const wonText = (s) => (s.res ? fmt(s.won) : "เสมอ");
     const wonHtml = (s) => `<span class="won ${s.won > 0 ? "good" : s.won < 0 ? "bad" : "hint"}">${wonText(s)}</span>`;
     const MONEY = [100, 500, 1000]; // ตรงกับ server (pokdeng.js)
+    const TURN = 15000; // เวลาต่อตา ตรงกับ server (pokdeng.js)
     let betAmt = 0; // ยอดที่จะลง จำไว้ใช้รอบต่อไป
 
     // ---------- แอนิเมชัน ----------
@@ -377,6 +383,19 @@
         { transform: "none" },
       ], { duration: 450, easing: "cubic-bezier(.2,.8,.3,1.1)" });
     }
+    // หลอดเวลา: ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
+    function drainTimer(bar, left) {
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > 5000
+        ? [
+          { transform: `scaleX(${left / TURN})`, background: yellow },
+          { transform: `scaleX(${5000 / TURN})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / TURN})`, background: red, offset: 1 - 5000 / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / TURN})`, background: red }, { transform: "scaleX(0)", background: red }];
+      bar.animate(frames, { duration: left, fill: "forwards" });
+    }
     function shout(text, good) {
       const t = app.querySelector(".table");
       if (!t) return;
@@ -425,7 +444,7 @@
         <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">หมดตัว</span>` : ""}</span><span>${p.money}</span></li>`).join("")}
       </ul>`;
 
-    let lastScreen, lastLog = "", lastSeen = {}, lastWon = {}, lastStakes = new Set(), overTimer;
+    let timeoutTimer, lastScreen, lastLog = "", lastSeen = {}, lastWon = {}, lastStakes = new Set(), overTimer;
     function render() {
       const v = view;
       const gameOver = v.screen === "over" && lastScreen !== "over";
@@ -531,6 +550,7 @@
           <div class="who"><span class="name">${esc(s.name)}</span><span>${s.out ? `<span class="tag bad">หมดตัว</span>` : s.id === v.dealer && v.screen !== "over" ? `<span class="tag hl">เจ้ามือ</span>` : ""} <span class="money">${s.money}</span></span></div>
           <div class="cards">${s.cards ? s.cards.map((c) => cardHtml(c)).join("") : back().repeat(s.n)}</div>
           <div class="info"><span>${s.rate ? rateText(s.rate) : ""}</span>${s.won !== null ? wonHtml(s) : ""}</div>
+          ${acting(s) && v.screen !== "over" ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         </div>`;
       // เงินที่ลงไว้กลางโต๊ะ ย้ายไปหาคนได้ตอนรู้ผล
       const staked = v.seats.filter((s) => s.bet !== null && (v.screen === "bet" || ((v.screen === "draw" || v.screen === "dealer") && s.won === null)));
@@ -662,6 +682,12 @@
         app.querySelector("#stay").onclick = () => send({ t: "stay" });
       }
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+      // หลอดเวลา และแจ้ง server เมื่อหมดเวลา (คนที่ต้องกดแจ้งก่อน คนอื่นแจ้งแทนถ้าเขาหลุด)
+      clearTimeout(timeoutTimer);
+      if (v.turnLeft !== null) {
+        app.querySelectorAll(".seat.now .timer i").forEach((bar) => drainTimer(bar, v.turnLeft));
+        timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (canBet || canDraw ? 200 : 1500));
+      }
       // จบเกม: รอเปิดไพ่รอบสุดท้ายให้เห็นก่อนค่อยโชว์ผู้ชนะ
       if (gameOver) {
         clearTimeout(overTimer);

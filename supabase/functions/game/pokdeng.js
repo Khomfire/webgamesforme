@@ -5,6 +5,7 @@
 // ไพ่ 52 ใบ: r = 1-13 (A-K), s = ดอก 0 โพดำ 1 โพแดง 2 ข้าวหลามตัด 3 ดอกจิก
 const pl = (s, id) => s.players.find((p) => p.id === id);
 export const MONEY = [100, 500, 1000]; // เงินเริ่มต้นที่เลือกได้ ลงเงินทีละ 1/20 ของเงินเริ่มต้น
+const TURN = 15000; // เวลาลงเงิน เวลาเลือกจั่วหรืออยู่ และเวลาของเจ้ามือ
 
 function newDeck() {
   const deck = [];
@@ -101,6 +102,7 @@ function endRound(s) {
   d.res = Math.sign(d.won);
   s.log.show = true;
   s.round++;
+  s.deals[s.dealer] = (s.deals[s.dealer] || 0) + 1;
   const i = s.order.indexOf(s.dealer);
   const next = [...s.order.slice(i + 1), ...s.order.slice(0, i + 1)].find((x) => pl(s, x).money > 0);
   for (const x of s.order) if (!pl(s, x).money) pl(s, x).out = true;
@@ -115,6 +117,25 @@ function finish(s) {
   s.winners = s.players.filter((p) => p.money === top).map((p) => p.name);
 }
 
+// หมดเวลา: คนที่ยังไม่ลงเงินลงขั้นต่ำ คนที่ยังไม่เลือกอยู่ (ไม่จั่ว)
+function timeUp(s) {
+  if (s.phase === "bet") {
+    for (const p of players(s)) if (p.bet === null) p.bet = s.step;
+    deal(s);
+    s.log.late = true;
+    return;
+  }
+  s.log = { t: "late", n: s.round };
+  if (s.phase === "draw") {
+    for (const p of players(s)) p.done = true;
+    afterPlayers(s);
+  } else showdown(s);
+}
+
+// ตาเปลี่ยน (ลงเงิน จั่วหรืออยู่ เจ้ามือ) เริ่มนับเวลาใหม่
+const turnKey = (s) => [s.phase, s.round, s.dealer].join();
+const timed = (s) => s.phase === "bet" || s.phase === "draw" || s.phase === "dealer";
+
 function toLobby(s) {
   for (const p of s.players) Object.assign(p, { cards: [], bet: null, won: null, res: null, shown: false, done: false, money: 0, out: false });
   s.order = [];
@@ -126,9 +147,12 @@ export default {
   init: () => ({ laps: 2, money: 500, phase: "lobby" }),
   player: () => ({ cards: [], bet: null, won: null, res: null, shown: false, done: false, money: 0, out: false }),
 
-  handle(s, id, msg) {
+  handle(s, id, msg, now) {
     const p = pl(s, id);
     const inRound = s.order && s.order.includes(id);
+    const key = turnKey(s);
+    // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
+    if (msg.t === "timeout" && timed(s) && now >= s.turnEnds) timeUp(s);
     // ลงเงินทีละ step ไม่เกินเงินที่มี
     const n = msg.n;
     if (s.phase === "bet" && msg.t === "bet" && inRound && id !== s.dealer && p.bet === null && Number.isInteger(n) && n >= s.step && n <= p.money && n % s.step === 0) {
@@ -155,6 +179,7 @@ export default {
         s.step = s.money / 20;
         s.rounds = s.laps * s.order.length;
         s.round = 0;
+        s.deals = {}; // เป็นเจ้ามือไปแล้วกี่ครั้ง
         s.log = null;
         s.winners = null;
         s.inHand = null;
@@ -162,28 +187,34 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
+    if (turnKey(s) !== key) s.turnEnds = now + TURN;
   },
 
-  // คนออก: เจ้ามือออกกลางรอบ ยกเลิกรอบนั้นแล้วเริ่มรอบใหม่ให้คนถัดไปเป็นเจ้ามือ
+  // คนออก: เล่นต่อกับคนที่เหลือ ตัดรอบที่เขายังต้องเป็นเจ้ามือออก
+  // เจ้ามือออกกลางรอบ ยกเลิกรอบนั้นแล้วเริ่มรอบใหม่ให้คนถัดไปเป็นเจ้ามือ
   // ผู้เล่นออก: ไม่ต้องรอเขาลงเงินหรือเลือกแล้ว
   leave(s, id) {
     if (!s.order || !s.order.includes(id)) return;
     if (s.players.length < 2) return toLobby(s);
+    const key = turnKey(s);
     const i = s.order.indexOf(id);
     s.order.splice(i, 1);
     if (s.phase === "lobby" || s.phase === "over") return;
     if (s.order.length < 2) return finish(s);
+    s.rounds -= Math.max(0, s.laps - (s.deals[id] || 0));
     if (s.dealer === id) {
       for (const x of s.order) Object.assign(pl(s, x), { cards: [], won: null, res: null, shown: false, done: false });
       s.log = null;
       s.inHand = null;
-      return startBet(s, s.order[i % s.order.length]);
-    }
-    if (s.phase === "bet" && players(s).every((x) => x.bet !== null)) deal(s);
+      if (s.round >= s.rounds) return finish(s);
+      startBet(s, s.order[i % s.order.length]);
+    } else if (s.phase === "bet" && s.round >= s.rounds) return finish(s);
+    else if (s.phase === "bet" && players(s).every((x) => x.bet !== null)) deal(s);
     else if (s.phase === "draw") afterPlayers(s);
+    if (turnKey(s) !== key) s.turnEnds = Date.now() + TURN;
   },
 
-  view(s, id) {
+  view(s, id, now) {
     const v = {
       screen: s.phase, laps: s.laps, money: s.money,
       players: s.players.map((p) => ({ id: p.id, name: p.name, money: p.money, out: p.out })),
@@ -198,6 +229,8 @@ export default {
         return { id: x, name: p.name, money: p.money, bet: p.bet, n: p.cards.length, cards: see ? p.cards : null, rate: see && p.cards.length ? rate(p.cards) : null, done: p.done, won: p.won, res: p.res, out: p.out };
       }),
       log: s.log, winners: s.winners,
+      // เวลาที่เหลือ (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
+      turnLeft: timed(s) ? Math.max(0, s.turnEnds - now) : null,
     });
     return v;
   },
