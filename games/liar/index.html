@@ -126,11 +126,24 @@
     .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
-    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 16px; }
-    .bar li { display: flex; align-items: center; gap: 6px; padding: 2px 10px; border: 2px solid #2c2950; border-radius: 999px; }
-    .bar b { color: var(--yellow); }
-    .bar .out { opacity: 0.5; text-decoration: line-through; }
-    .bar .goal { padding: 2px 0; border: 0; color: var(--dim); }
+    /* คะแนนระหว่างเล่น: การ์ดละคน หลอดคือระยะถึงเป้า */
+    .board-goal { margin: 0 0 6px; text-align: right; font-size: 0.8rem; color: var(--dim); }
+    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; margin-bottom: 16px; }
+    .board li { min-width: 0; padding: 6px 8px 8px; background: #15122c; border: 2px solid #2c2950; }
+    .board li.now { border-color: var(--yellow); box-shadow: 3px 3px 0 #6b5510; }
+    .board li.now::before { content: none; }
+    .board li.out { opacity: 0.45; }
+    .board .name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; color: var(--dim); }
+    .board .now .name { color: var(--text); }
+    .board .name.hl { color: var(--yellow); }
+    .board .out .name { text-decoration: line-through; }
+    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", monospace; color: var(--yellow); white-space: nowrap; }
+    .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
+    .board .meter { display: block; height: 4px; margin-top: 6px; background: #2c2950; }
+    .board .meter i { display: block; width: var(--p); max-width: 100%; height: 100%; background: var(--m, var(--yellow)); }
+    .board .pips { display: flex; gap: 3px; margin-top: 6px; }
+    .board .pips i { width: 10px; height: 10px; border: 2px solid #2c2950; }
+    .board .pips i.on { border-color: var(--yellow); background: var(--yellow); }
     .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
@@ -345,9 +358,10 @@
         <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
       </ul>`;
 
+    // จุดละเต๋าหนึ่งลูก ทึบคือที่ยังเหลือ
     const scorebar = (v) => `
-      <ul class="bar" aria-label="ผู้เล่น">${v.players.map((p) => `
-        <li class="${p.now ? "now" : ""}${p.count ? "" : " out"}"><span${v.screen === "over" && p.name === v.winner ? ' class="hl"' : ""}>${esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
+      <ul class="board" aria-label="ผู้เล่น">${v.players.map((p) => `
+        <li class="${p.now ? "now" : ""}${p.count ? "" : " out"}"><span class="name${v.screen === "over" && p.name === v.winner ? " hl" : ""}">${esc(p.name)}</span><span class="pips" role="img" aria-label="${p.count ? p.count + " ลูก" : "ออก"}">${Array.from({ length: Math.max(v.start, p.count) }, (_, i) => `<i${i < p.count ? ' class="on"' : ""}></i>`).join("")}</span></li>`).join("")}
       </ul>`;
 
     // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
