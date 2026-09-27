@@ -183,7 +183,10 @@
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     /* หลอดเวลาของเราเอง อยู่เหนือไพ่ในมือ */
     .timer.mine { position: static; height: 8px; margin: 8px 0 0; }
-    .seats { row-gap: 16px; }
+    .seats { row-gap: 16px; align-items: center; }
+    /* ลูกศรระหว่างที่นั่ง ชี้ไปคนถัดไป วาดด้วย CSS */
+    .arrow { width: 10px; height: 10px; border: solid var(--dim); border-width: 3px 3px 0 0; transform: rotate(45deg); }
+    .arrow.ccw { transform: rotate(-135deg); }
     .table { position: relative; display: flex; justify-content: center; align-items: center; gap: 32px; margin: 24px 0 16px; }
     .table .card { --w: 72px; }
     #deck:disabled { opacity: 1; cursor: default; }
@@ -251,6 +254,7 @@
     .actions { display: flex; gap: 12px; }
     .actions button { margin-top: 0; }
     #uno-btn { --c: var(--red); font-family: "Press Start 2P", monospace; }
+    #challenge { --c: var(--red); }
     .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .picks button { margin: 0; height: 72px; background: var(--k); border-color: var(--text); box-shadow: none; }
     .hands li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
@@ -279,7 +283,7 @@
         <li>แจกคนละ 7 ใบ เปิดกองทิ้ง 1 ใบ</li>
         <li>ลงสีเดียวกัน เช่น <span data-card="r:7"></span> บน <span data-card="r:3"></span> หรือเลข/สัญลักษณ์เดียวกัน เช่น <span data-card="b:7"></span> บน <span data-card="r:7"></span></li>
         <li>ไม่มีไพ่ลง หรือไม่อยากลง จั่ว 1 ใบ ลงใบนั้นได้ถ้าเข้า ไม่งั้นผ่าน</li>
-        <li>ตาละ 15 วิ หมดเวลาจั่วแล้วเสียตา</li>
+        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลาจั่วแล้วเสียตา</li>
         <li>เหลือ 1 ใบ กด UNO ก่อนคนถัดไปเล่น ไม่ทันจั่ว 2</li>
       </ol>
       <h2>ไพ่พิเศษ</h2>
@@ -289,6 +293,12 @@
         <li><span data-card="b:d2"></span> คนถัดไปจั่ว 2 และเสียตา</li>
         <li><span data-card="w:wild"></span> เลือกสี ลงได้ทุกเมื่อ</li>
         <li><span data-card="w:w4"></span> เลือกสี คนถัดไปจั่ว 4 และเสียตา ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่</li>
+      </ol>
+      <h2>ชาเลนจ์</h2>
+      <ol>
+        <li>โดน <span data-card="w:w4"></span> กดชาเลนจ์แทนจั่วได้</li>
+        <li>คนลงมีไพ่สีที่ใช้อยู่ (โกง): คนลงจั่วแทน แล้วเราเล่นต่อ</li>
+        <li>ไม่โกง: เราจั่วเพิ่มอีก 2 แล้วเสียตา</li>
       </ol>
       <h2>ลงทับ</h2>
       <ol>
@@ -365,13 +375,11 @@
       `<${tag} class="card ${c.c} ${cls}" data-id="${c.id}" aria-label="${cardName(c)}" ${attrs}><span>${LABEL[c.v] || c.v}</span></${tag}>`;
     const back = (cls = "") => `<div class="card back ${cls}" aria-hidden="true"><span>UNO</span></div>`;
     // สำเนาจาก server (uno.js playable) ต้องแก้ให้ตรงกัน
-    function playable(card, hand, color, top, pending) {
+    function playable(card, color, top, pending) {
       if (pending) return card.v === pending.v || card.v === "w4";
-      if (card.v === "wild") return true;
-      if (card.v === "w4") return !color || !hand.some((x) => x.c === color);
+      if (card.c === "w") return true;
       return !color || card.c === color || card.v === top.v;
     }
-    const TURN = 15000; // เวลาต่อตา ตรงกับ server (uno.js)
     // ไพ่ในกองเอียงไม่เท่ากัน ใบเดิมเอียงเท่าเดิมทุกครั้งที่วาด
     const tiltDeg = (c) => ((c.id * 47) % 25) - 12;
     const tilt = (c) => `rotate: ${tiltDeg(c)}deg`;
@@ -567,17 +575,17 @@
       ], { duration: 500, delay: 8 * 60 + 400 });
     }
     // หลอดเวลา: ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
-    function drainTimer(bar, left) {
+    function drainTimer(bar, left, total) {
       if (!bar) return;
       const red = "var(--red)", yellow = "var(--yellow)";
       const frames = left > 5000
         ? [
-          { transform: `scaleX(${left / TURN})`, background: yellow },
-          { transform: `scaleX(${5000 / TURN})`, background: yellow, offset: 1 - 5000 / left },
-          { transform: `scaleX(${5000 / TURN})`, background: red, offset: 1 - 5000 / left },
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${5000 / total})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / total})`, background: red, offset: 1 - 5000 / left },
           { transform: "scaleX(0)", background: red },
         ]
-        : [{ transform: `scaleX(${left / TURN})`, background: red }, { transform: "scaleX(0)", background: red }];
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
       bar.animate(frames, { duration: left, fill: "forwards" });
     }
     function shout(text) {
@@ -617,6 +625,7 @@
       if (v.screen !== "play" || !v.myTurn) { picking = null; if (pick.open) pick.close(); }
       if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.result && v.result.name === (v.players.find((p) => p.id === v.me) || {}).name ? "win" : "vote");
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const wasScreen = lastScreen;
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
@@ -674,8 +683,11 @@
           <h2>ตั้งค่า</h2>
           ${v.isHost
             ? `<label for="target">แต้มตกรอบ (50-1000)</label>
-               <input id="target" type="number" min="50" max="1000" step="50" value="${v.target}">`
-            : `<p>ตกรอบที่ : <span class="hl">${v.target}</span> แต้ม</p>`}
+               <input id="target" type="number" min="50" max="1000" step="50" value="${v.target}">
+               <label for="time">วิต่อตา (5-60)</label>
+               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
+            : `<p>ตกรอบที่ : <span class="hl">${v.target}</span> แต้ม</p>
+               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/10</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -689,6 +701,7 @@
         });
         if (v.isHost) {
           app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
+          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         lastHand = [];
@@ -704,16 +717,20 @@
       const top = v.top;
       const canDraw = v.myTurn && v.drawn === null;
       const myName = v.players.find((p) => p.id === v.me).name;
+      // ที่นั่งคนอื่นเรียงจากคนถัดจากเรา ลูกศรชี้ไปคนที่เล่นต่อ
+      const mine = v.seats.findIndex((s) => s.id === v.me);
+      const others = [...v.seats.slice(mine + 1), ...v.seats.slice(0, Math.max(mine, 0))];
+      const arrow = `<span class="arrow${v.dir < 0 ? " ccw" : ""}" aria-hidden="true"></span>`;
       const status = v.out && v.screen === "play" ? `<span class="bad">ตกรอบ</span>`
         : v.screen === "play"
         ? v.myTurn ? `<span class="hl">${v.drawn !== null ? "ลงใบที่จั่วหรือผ่าน" : v.pending ? `ลงทับหรือจั่ว +${v.pending.n}` : "ตาคุณ"}</span>` : `ตา ${esc(v.turnName)}`
         : `<span class="${v.result.name === myName ? "good" : "hint"}">${esc(v.result.name)} หมดมือ</span>`;
       app.innerHTML = `
-        <div class="seats">${v.seats.filter((s) => s.id !== v.me).map((s) => `
+        <div class="seats" aria-label="${v.dir < 0 ? "เล่นทวนเข็ม" : "เล่นตามเข็ม"}">${others.map((s) => `
           <div class="seat${s.now ? " now" : ""}" data-seat="${s.id}">
             <span class="name">${esc(s.name)}</span>${back("small")}<span class="count">${s.count}</span>${s.uno && s.count === 1 ? `<span class="uno-tag">UNO</span>` : ""}
             ${s.now ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
-          </div>`).join("")}
+          </div>`).join(arrow)}
         </div>
         <div class="table">
           <div class="deck-wrap">
@@ -731,11 +748,12 @@
         ${v.screen === "play" ? `
           ${v.myTurn ? `<div class="timer mine" aria-hidden="true"><i></i></div>` : ""}
           <div class="hand" aria-label="ไพ่ในมือ">${hand.map((c) => {
-            const ok = v.myTurn && (v.drawn === null || v.drawn === c.id) && playable(c, v.hand, v.color, top, v.pending);
+            const ok = v.myTurn && (v.drawn === null || v.drawn === c.id) && playable(c, v.color, top, v.pending);
             return cardHtml(c, { tag: "button", cls: ok ? "ok" : "", attrs: `data-sfx="confirm" ${ok ? "" : "disabled"}` });
           }).join("")}</div>
           <div class="actions">
             ${v.drawn !== null ? `<button id="pass" class="alt">ผ่าน</button>` : ""}
+            ${v.canChallenge ? `<button id="challenge" data-sfx="vote" aria-label="ชาเลนจ์ +4">ชาเลนจ์</button>` : ""}
             ${v.canUno ? `<button id="uno-btn" data-sfx="create">UNO</button>` : ""}
           </div>` : `
           ${v.result.hands.length ? `<ul class="hands">${v.result.hands.map((h) => `
@@ -808,8 +826,10 @@
       }
       dropFlying();
       // มีคนจั่วตามยอด +2/+4
+      if (fresh && v.log.t === "challenge") shout(v.log.guilty ? "โกง!" : "ไม่โกง");
       if (fresh && v.log.hit) {
-        shout("+" + v.log.hit.n);
+        if (v.log.t === "challenge") setTimeout(() => shout("+" + v.log.hit.n), 900);
+        else shout("+" + v.log.hit.n);
         playSfx("vote");
         setTimeout(() => { const el = seat(v.log.hit.id); if (el) el.classList.add("shake"); }, 450);
       }
@@ -832,7 +852,7 @@
       // หลอดเวลา และแจ้ง server เมื่อหมดเวลา (คนที่ถึงตาแจ้งก่อน คนอื่นแจ้งแทนถ้าเขาหลุด)
       clearTimeout(timeoutTimer);
       if (v.screen === "play") {
-        drainTimer(app.querySelector(v.myTurn ? ".timer.mine i" : ".seat.now .timer i"), v.turnLeft);
+        drainTimer(app.querySelector(v.myTurn ? ".timer.mine i" : ".seat.now .timer i"), v.turnLeft, v.time);
         timeoutTimer = setTimeout(() => send({ t: "timeout" }), v.turnLeft + (v.myTurn ? 200 : 1500));
       }
       lastHand = v.hand.map((c) => c.id);
@@ -854,6 +874,7 @@
       }));
       if (app.querySelector("#pass")) app.querySelector("#pass").onclick = () => send({ t: "pass" });
       if (app.querySelector("#uno-btn")) app.querySelector("#uno-btn").onclick = () => send({ t: "uno" });
+      if (app.querySelector("#challenge")) app.querySelector("#challenge").onclick = () => send({ t: "challenge" });
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
       if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;

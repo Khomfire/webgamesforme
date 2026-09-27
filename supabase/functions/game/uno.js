@@ -3,7 +3,6 @@
 // ไพ่ 108 ใบ: 4 สี (r y g b) มี 0 หนึ่งใบ 1-9 skip rev d2 อย่างละสองใบ, wild กับ w4 อย่างละสี่ใบ
 const pl = (s, id) => s.players.find((p) => p.id === id);
 const COLORS = ["r", "y", "g", "b"];
-const TURN = 15000; // เวลาต่อตา
 
 function newDeck() {
   const deck = [];
@@ -24,13 +23,12 @@ function shuffle(a) {
 export const points = (card) => (card.c === "w" ? 50 : /^\d$/.test(card.v) ? Number(card.v) : 20);
 const top = (s) => s.pile[s.pile.length - 1];
 // ลงได้เมื่อสีตรงกับสีที่ใช้อยู่ หรือเลข/สัญลักษณ์ตรงกับใบบนสุด หรือเป็น wild
-// w4 ลงได้เมื่อไม่มีไพ่สีที่ใช้อยู่ในมือ
+// w4 ลงได้ทุกเมื่อ แต่ถ้ามีไพ่สีที่ใช้อยู่ในมือถือว่าโกง คนถัดไปชาเลนจ์ได้
 // มี +2/+4 ค้างอยู่ (pending): ลงทับด้วยใบชนิดเดียวกัน หรือ +4 ทับ +2 ได้ (+2 ทับ +4 ไม่ได้)
 // (หน้าเกมมีสำเนาไว้เปิดปิดไพ่ ต้องแก้ให้ตรงกัน)
-export function playable(card, hand, color, topCard, pending) {
+export function playable(card, color, topCard, pending) {
   if (pending) return card.v === pending.v || card.v === "w4";
-  if (card.v === "wild") return true;
-  if (card.v === "w4") return !color || !hand.some((x) => x.c === color);
+  if (card.c === "w") return true;
   return !color || card.c === color || card.v === topCard.v;
 }
 
@@ -72,7 +70,7 @@ function startRound(s) {
   // ใบแรก: w4 ใส่กลับแล้วสับใหม่
   while (s.deck[s.deck.length - 1].v === "w4") shuffle(s.deck);
   s.pile = [s.deck.pop()];
-  Object.assign(s, { phase: "play", dir: 1, drawn: null, pending: null, unoOpen: null, result: null, ready: [], color: top(s).c === "w" ? null : top(s).c, turnEnds: Date.now() + TURN });
+  Object.assign(s, { phase: "play", dir: 1, drawn: null, pending: null, w4: null, unoOpen: null, result: null, ready: [], color: top(s).c === "w" ? null : top(s).c, turnEnds: Date.now() + s.time });
   s.turn = step(s, s.dealer);
   s.log = { t: "deal", n: s.round++ };
   // ใบแรกเป็นการ์ดพิเศษ ใช้ผลกับคนแรก (wild: คนแรกลงสีไหนก็ได้)
@@ -93,6 +91,8 @@ function startRound(s) {
 function play(s, id, card, pick) {
   const p = pl(s, id);
   p.hand = p.hand.filter((x) => x.id !== card.id);
+  // +4 ใบบนสุด: จำไว้ว่าลงตอนมีไพ่สีที่ใช้อยู่ไหม ไว้ให้คนถัดไปชาเลนจ์
+  s.w4 = card.v === "w4" ? { by: id, guilty: !!s.color && p.hand.some((x) => x.c === s.color) } : null;
   s.pile.push(card.c === "w" ? { ...card, pick } : card);
   s.color = card.c === "w" ? pick : card.c;
   s.drawn = null;
@@ -118,6 +118,19 @@ function takePending(s, id) {
   draw(s, pl(s, id), s.pending.n);
   s.log.hit = { id, n: s.pending.n };
   s.pending = null;
+  s.w4 = null;
+}
+
+// ชาเลนจ์ +4 ใบบนสุด: คนลงโกงจริง คนลงจั่วยอดสะสมแทนแล้วเราเล่นต่อ ไม่โกง เราจั่วยอดสะสม +2 แล้วเสียตา
+function challenge(s, id) {
+  const { by, guilty } = s.w4;
+  s.log = { t: "challenge", by, guilty, missed: endUnoWindow(s, id) };
+  if (guilty) takePending(s, by);
+  else {
+    s.pending.n += 2;
+    takePending(s, id);
+    s.turn = step(s, id);
+  }
 }
 
 // จั่ว: มียอด +2/+4 จั่วตามยอดแล้วเสียตา ไม่มีก็จั่ว 1 ใบ ใบนั้นลงได้จะลงหรือผ่านก็ได้
@@ -131,7 +144,7 @@ function drawTurn(s, id) {
   }
   draw(s, p, 1);
   const card = p.hand[p.hand.length - 1];
-  if (card && playable(card, p.hand, s.color, top(s))) s.drawn = card.id;
+  if (card && playable(card, s.color, top(s))) s.drawn = card.id;
   else s.turn = step(s, id);
 }
 
@@ -160,6 +173,7 @@ function endRound(s, id) {
   s.result = { name: pl(s, id).name, hands, out: out.map((x) => x.name) };
   s.unoOpen = null;
   s.pending = null;
+  s.w4 = null;
   s.order = s.order.filter((o) => !pl(s, o).out);
   if (s.order.length > 1) s.phase = "end";
   else finish(s, pl(s, s.order[0]));
@@ -177,13 +191,13 @@ function toLobby(s) {
 
 export default {
   max: 10,
-  init: () => ({ target: 500, phase: "lobby" }),
+  init: () => ({ target: 500, time: 15000, phase: "lobby" }),
   player: () => ({ hand: [], score: 0, uno: false, out: false }),
 
   handle(s, id, msg, now) {
     const p = pl(s, id);
     // ตาเปลี่ยนหรือคนเดิมเล่นต่อ เริ่มนับเวลาใหม่
-    const turnKey = () => [s.phase, s.turn, s.drawn, s.pile && s.pile.length].join();
+    const turnKey = () => [s.phase, s.turn, s.drawn, s.pile && s.pile.length, s.pending && s.pending.n].join();
     const before = turnKey();
     if (s.phase === "play") {
       // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
@@ -199,7 +213,7 @@ export default {
           const card = p.hand.find((x) => x.id === msg.id);
           const pick = COLORS.includes(msg.color) ? msg.color : null;
           // หลังจั่ว ลงได้แค่ใบที่เพิ่งจั่ว
-          if (card && (s.drawn === null || s.drawn === card.id) && (card.c !== "w" || pick) && playable(card, p.hand, s.color, top(s), s.pending)) {
+          if (card && (s.drawn === null || s.drawn === card.id) && (card.c !== "w" || pick) && playable(card, s.color, top(s), s.pending)) {
             const missed = endUnoWindow(s, id);
             if (p.hand.length > 2) p.uno = false;
             play(s, id, card, pick);
@@ -207,6 +221,7 @@ export default {
           }
         }
         if (msg.t === "draw" && s.drawn === null) drawTurn(s, id);
+        if (msg.t === "challenge" && s.w4) challenge(s, id);
         if (msg.t === "pass" && s.drawn !== null) {
           s.drawn = null;
           s.turn = step(s, id);
@@ -220,6 +235,7 @@ export default {
     }
     if (id === s.owner) {
       if (msg.t === "target" && s.phase === "lobby") s.target = Math.min(1000, Math.max(50, Math.round(Number(msg.value)) || 500));
+      if (msg.t === "time" && s.phase === "lobby") s.time = Math.min(60, Math.max(5, Math.round(Number(msg.value)) || 15)) * 1000;
       if (msg.t === "start" && s.phase === "lobby" && s.players.length >= 2) {
         s.order = s.players.map((p) => p.id);
         s.dealer = null;
@@ -228,7 +244,7 @@ export default {
       }
       if (msg.t === "newgame" && s.phase === "over") toLobby(s);
     }
-    if (s.phase === "play" && turnKey() !== before) s.turnEnds = now + TURN;
+    if (s.phase === "play" && turnKey() !== before) s.turnEnds = now + s.time;
   },
 
   // คนออก: ไพ่ในมือกลับเข้ากองจั่ว ถ้าเป็นตาเขา ไปคนถัดไป
@@ -247,10 +263,12 @@ export default {
     if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
     s.deck.unshift(...gone.hand);
     if (s.unoOpen === id) s.unoOpen = null;
+    // คนลง +4 ออกไปแล้ว ชาเลนจ์ไม่ได้
+    if (s.w4 && s.w4.by === id) s.w4 = null;
     if (s.turn === id) {
       s.turn = next;
       s.drawn = null;
-      s.turnEnds = Date.now() + TURN;
+      s.turnEnds = Date.now() + s.time;
     }
     if (s.phase === "end") {
       s.ready = s.ready.filter((x) => x !== id);
@@ -260,7 +278,7 @@ export default {
 
   view(s, id, now) {
     const v = {
-      screen: s.phase, target: s.target,
+      screen: s.phase, target: s.target, time: s.time,
       players: s.players.map((p) => ({ id: p.id, name: p.name, score: p.score, out: p.out })),
     };
     if (s.phase === "lobby") return v;
@@ -276,6 +294,7 @@ export default {
       turnLeft: s.phase === "play" ? Math.max(0, s.turnEnds - now) : null,
       // ปุ่ม UNO: เราเพิ่งเหลือ 1 ใบและยังไม่กด
       canUno: s.phase === "play" && s.unoOpen === id,
+      canChallenge: s.phase === "play" && s.turn === id && !!s.w4,
       log: s.log, result: s.result, winner: s.winner,
       ready: s.ready.includes(id), readyCount: s.ready.length, activeCount: s.order.length,
     });
