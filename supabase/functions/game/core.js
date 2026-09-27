@@ -5,8 +5,9 @@ import xo from "./xo.js";
 import farkle from "./farkle.js";
 import liar from "./liar.js";
 import uno from "./uno.js";
+import pokdeng from "./pokdeng.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno };
+export const GAMES = { spy, xo, farkle, liar, uno, pokdeng };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
