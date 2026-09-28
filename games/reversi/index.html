@@ -128,15 +128,16 @@
     .seat .pts { color: var(--dim); font-size: 0.9rem; }
     .seat .discs { min-width: 3em; padding: 4px 8px; border: 3px solid #2c2950; text-align: right; font: 400 0.95rem "Press Start 2P", monospace; color: var(--dim); }
     .seat.on .discs { border-color: var(--yellow); color: var(--yellow); }
-    .side { display: inline-block; flex: none; width: 16px; height: 16px; border: 3px solid var(--dim); }
-    .side.w { background: var(--text); }
-    .side.b { background: var(--screen); }
-    /* กระดาน: SVG ช่องละ 10 หน่วย หมากเป็นภาพ pixel 9x9 */
+    .side { display: inline-block; flex: none; width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px var(--dim); }
+    .side.w { background: radial-gradient(circle at 35% 30%, #fff, #ecebe5 60%, #b6b1a5); }
+    .side.b { background: radial-gradient(circle at 35% 30%, #6e6e76, #26262c 35%, #050506); }
+    /* กระดาน: SVG ช่องละ 10 หน่วย */
     .board { display: block; width: 100%; margin: 4px 0; touch-action: manipulation; }
-    .board .felt { fill: #1f7a4d; }
-    .board .grid { stroke: #0f3d26; stroke-width: 0.5; }
-    .board .dot { fill: #0f3d26; }
-    .board .can { fill: #8fe0b4; }
+    .board .rim { fill: #0c3a22; }
+    .board .felt { fill: url(#felt); }
+    .board .grid { stroke: #0c3a22; stroke-width: 0.35; }
+    .board .dot { fill: #0c3a22; }
+    .board .can { fill: #fff; opacity: 0.3; }
     .board .last { fill: var(--red); }
     .board .cell { cursor: default; }
     .board .cell[tabindex] { cursor: pointer; }
@@ -146,10 +147,6 @@
     /* หมากที่เพิ่งพลิก: หดแล้วกางออกเป็นสีใหม่ */
     .board .flip { transform-box: fill-box; transform-origin: center; animation: flip 0.4s ease-out; }
     @keyframes flip { 0% { transform: scaleX(1); } 50% { transform: scaleX(0); } }
-    .sb { fill: #16132e; }
-    .sw { fill: var(--text); }
-    .ob { fill: #e3e0f7; }
-    .ow { fill: #16132e; }
     .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     .hl { color: var(--yellow); }
@@ -223,14 +220,13 @@
     }
 
     // ---------- หมาก ----------
-    // ภาพ pixel วงกลม 9x9 มีขอบรอบตัว ใช้ซ้ำด้วย <use> (แบบเดียวกับ GO)
-    const STONE = [];
-    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) if ((x - 4) ** 2 + (y - 4) ** 2 <= 20) STONE.push([x, y]);
-    const rects = (list) => list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("");
-    const inside = new Set(STONE.map(([x, y]) => x + "," + y)), edge = new Set();
-    for (const [x, y] of STONE) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inside.has(x + dx + "," + (y + dy))) edge.add(x + dx + "," + (y + dy));
-    const DEFS = ["b", "w"].map((c) => `<symbol id="${c}" viewBox="-1 -1 11 11">
-      <path class="o${c}" d="${rects([...edge].map((s) => s.split(",").map(Number)))}"/><path class="s${c}" d="${rects(STONE)}"/></symbol>`).join("");
+    // หมากกลมมีเงา ขอบล่างเข้มให้เห็นความหนา หน้าหมากไล่สีจากจุดสะท้อนแสงซ้ายบน ใช้ซ้ำด้วย <use> (ขนาด 10 หน่วยเท่าช่อง)
+    const DEFS = `
+      <radialGradient id="felt" cx="0.5" cy="0.45" r="0.75"><stop offset="0" stop-color="#2b9c62"/><stop offset="1" stop-color="#156239"/></radialGradient>
+      <radialGradient id="gb" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#5c5c64"/><stop offset="0.4" stop-color="#1e1e23"/><stop offset="1" stop-color="#060607"/></radialGradient>
+      <radialGradient id="gw" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.6" stop-color="#eeede8"/><stop offset="1" stop-color="#c4c0b5"/></radialGradient>
+      ${[["b", "#000"], ["w", "#9d998e"]].map(([c, side]) => `<symbol id="${c}" viewBox="0 0 10 10" overflow="visible">
+        <circle cx="5.3" cy="5.8" r="4.1" fill="#000" opacity="0.35"/><circle cx="5" cy="5.35" r="4.1" fill="${side}"/><circle cx="5" cy="5" r="4.1" fill="url(#g${c})"/></symbol>`).join("")}`;
 
     // ---------- หน้าจอ ----------
     const colorName = { b: "Black", w: "White" };
@@ -249,21 +245,21 @@
     function board(v, ghost, fresh) {
       const flip = v.mine === "w", can = new Set(v.moves), turned = new Set(fresh ? v.flipped : []);
       const xy = (i) => { const d = flip ? 63 - i : i; return [(d % 8) * 10, Math.floor(d / 8) * 10]; };
-      let out = `<rect class="felt" width="80" height="80"/>`;
+      let out = `<rect class="rim" x="-1" y="-1" width="82" height="82" rx="1.5"/><rect class="felt" width="80" height="80"/>`;
       for (let k = 0; k <= 8; k++) out += `<path class="grid" d="M0 ${k * 10}H80M${k * 10} 0V80"/>`;
-      for (const [x, y] of [[20, 20], [60, 20], [20, 60], [60, 60]]) out += `<rect class="dot" x="${x - 1}" y="${y - 1}" width="2" height="2"/>`;
+      for (const [x, y] of [[20, 20], [60, 20], [20, 60], [60, 60]]) out += `<circle class="dot" cx="${x}" cy="${y}" r="0.9"/>`;
       for (let i = 0; i < 64; i++) {
         const [x, y] = xy(i), p = v.board[i];
         let mark = "";
-        if (p !== ".") mark = `<use href="#${p}" class="${turned.has(i) ? "flip" : ""}" x="${x + 0.5}" y="${y + 0.5}" width="9" height="9"/>`;
-        else if (i === ghost) mark = `<use href="#${v.mine}" x="${x + 0.5}" y="${y + 0.5}" width="9" height="9" opacity="0.5"/>`;
-        else if (can.has(i)) mark = `<rect class="can" x="${x + 3.5}" y="${y + 3.5}" width="3" height="3"/>`;
-        if (i === v.last && p !== ".") mark += `<rect class="last" x="${x + 4}" y="${y + 4}" width="2" height="2"/>`;
+        if (p !== ".") mark = `<use href="#${p}" class="${turned.has(i) ? "flip" : ""}" x="${x}" y="${y}" width="10" height="10"/>`;
+        else if (i === ghost) mark = `<use href="#${v.mine}" x="${x}" y="${y}" width="10" height="10" opacity="0.5"/>`;
+        else if (can.has(i)) mark = `<circle class="can" cx="${x + 5}" cy="${y + 5}" r="1.4"/>`;
+        if (i === v.last && p !== ".") mark += `<circle class="last" cx="${x + 5}" cy="${y + 5}" r="1.1"/>`;
         const label = `${"abcdefgh"[i % 8]}${Math.floor(i / 8) + 1}${p === "." ? "" : ` ${colorName[p]}`}`;
         out += `<g class="cell" data-i="${i}"${can.has(i) ? ` tabindex="0" role="button"` : ""} aria-label="${label}">${mark}
           <rect class="hit" x="${x}" y="${y}" width="10" height="10"/></g>`;
       }
-      return `<svg class="board" viewBox="-1 -1 82 82" shape-rendering="crispEdges" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
+      return `<svg class="board" viewBox="-1 -1 82 82" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
     }
 
     // หลอดเวลา: นับจากตอนได้สถานะ ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
