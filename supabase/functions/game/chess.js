@@ -129,12 +129,35 @@ function finish(s, winner, reason) {
   s.offer = null;
 }
 
+// ชื่อตาเดินแบบ SAN เช่น e4, Nbd7, exd5, O-O, e8=Q (ยังไม่มี + หรือ #) moves คือตาเดินที่ถูกกติกาทั้งหมดของตำแหน่งนี้
+const sq = (i) => "abcdefgh"[i & 7] + (8 - (i >> 3));
+function san(g, moves, [from, to, promo]) {
+  const b = g.board, P = b[from].toUpperCase();
+  if (P === "K" && Math.abs(to - from) === 2) return to > from ? "O-O" : "O-O-O";
+  const x = b[to] !== "." || (P === "P" && to === g.ep) ? "x" : "";
+  if (P === "P") return (x ? "abcdefgh"[from & 7] + x : "") + sq(to) + (promo ? "=" + promo : "");
+  // หมากชนิดเดียวกันอีกตัวไปช่องเดียวกันได้: บอก file ก่อน ซ้ำก็บอก rank ซ้ำทั้งคู่บอกทั้งช่อง
+  const rivals = moves.filter(([f, t]) => t === to && f !== from && b[f] === b[from]).map(([f]) => f);
+  let dis = "";
+  if (rivals.length) {
+    if (!rivals.some((f) => (f & 7) === (from & 7))) dis = "abcdefgh"[from & 7];
+    else if (!rivals.some((f) => f >> 3 === from >> 3)) dis = String(8 - (from >> 3));
+    else dis = sq(from);
+  }
+  return P + dis + x + sq(to);
+}
+
 const idOf = (s, t) => (t === "w" ? s.white : other(s, s.white));
 const colorOf = (s, id) => (id === s.white ? "w" : "b");
 
 function move(s, m, now) {
   const g = s.pos, mover = g.turn;
   s.clock[mover] = s.turnEnds - now;
+  const name = san(g, s.moves, m);
+  // หมากที่โดนกิน (En passant กิน Pawn ที่อยู่ข้างๆ) เก็บไว้ที่ฝ่ายที่กิน
+  const ep = g.board[m[0]].toUpperCase() === "P" && m[1] === g.ep;
+  const taken = ep ? (mover === "w" ? "p" : "P") : g.board[m[1]];
+  if (taken !== ".") s.taken[mover].push(taken);
   const n = play(g, m);
   s.pos = n;
   s.last = [m[0], m[1]];
@@ -143,6 +166,7 @@ function move(s, m, now) {
   const key = posKey(n, s.moves);
   s.seen[key] = (s.seen[key] || 0) + 1;
   s.check = inCheck(n);
+  s.history.push(name + (s.check ? (s.moves.length ? "+" : "#") : ""));
   s.turnEnds = now + s.clock[n.turn];
   if (!s.moves.length) finish(s, s.check ? idOf(s, mover) : null, s.check ? "checkmate" : "stalemate");
   else if (deadDraw(n.board)) finish(s, null, "material");
@@ -156,7 +180,7 @@ function start(s, now) {
   const g = { board: START, turn: "w", castle: "KQkq", ep: null, half: 0 };
   Object.assign(s, {
     phase: "play", pos: g, moves: legal(g), seen: { [posKey(g, [])]: 1 }, check: false, last: null,
-    clock: { w: s.time, b: s.time }, turnEnds: now + s.time, offer: null, result: null,
+    clock: { w: s.time, b: s.time }, turnEnds: now + s.time, offer: null, result: null, history: [], taken: { w: [], b: [] },
   });
 }
 
@@ -211,6 +235,7 @@ export default {
         board: g.board, turn: g.turn, mine: colorOf(s, id), myTurn, last: s.last,
         check: s.check ? kingAt(g.board, g.turn) : null,
         moves: myTurn ? s.moves : [],
+        history: s.history, taken: s.taken,
         offer: s.offer ? (s.offer === id ? "me" : "them") : null,
         result: s.result && { ...s.result, winner: s.result.winner && pl(s, s.result.winner).name },
         // เวลาที่เหลือของแต่ละฝ่าย (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
