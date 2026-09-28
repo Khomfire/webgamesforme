@@ -156,17 +156,19 @@
     .card.best { outline: 3px solid var(--yellow); outline-offset: 1px; overflow: visible; }
     /* ช่องไพ่กลางที่ยังไม่เปิด */
     .slot { flex: none; width: var(--w); height: calc(var(--w) * 1.4); border: 2px dashed #2c2950; border-radius: 5px; }
-    /* ชิป: วงกลมขอบประ */
+    /* เหรียญทอง: ขอบเข้ม วงใน แสงสะท้อน และความหนาด้านล่าง */
     .coin {
       display: inline-block;
       flex: none;
       width: 22px;
       height: 22px;
-      border: 3px dashed var(--text);
+      border: 2px solid #9a6a00;
       border-radius: 50%;
-      background: var(--yellow);
+      background: radial-gradient(circle at 32% 30%, #fff4b8 0 14%, transparent 16%), var(--yellow);
+      box-shadow: inset 0 0 0 2px var(--yellow), inset 0 0 0 3px #d49b00, 0 2px 0 #9a6a00;
     }
-    .coin.small { width: 14px; height: 14px; border-width: 2px; }
+    .coin.small { width: 14px; height: 14px; border-width: 1px; box-shadow: inset 0 0 0 1px var(--yellow), inset 0 0 0 2px #d49b00, 0 1px 0 #9a6a00; }
+    .stake { display: inline-flex; align-items: center; gap: 4px; }
     .money { font: 400 0.65rem "Press Start 2P", monospace; color: var(--yellow); }
     /* ปุ่ม D: วงกลมขาว */
     .dealer {
@@ -445,7 +447,7 @@
     const scoreboard = (v) => `
       <h2 style="margin-top: 24px">Chips</h2>
       <ul>${[...v.players].sort((a, b) => b.chips - a.chips).map((p) => `
-        <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${p.out ? `<span class="tag bad">Out</span>` : ""}</span><span>${p.chips}</span></li>`).join("")}
+        <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${p.out ? `<span class="tag bad">Out</span>` : ""}</span><span class="stake"><span class="coin small"></span><span class="money">${p.chips}</span></span></li>`).join("")}
       </ul>`;
 
     let timeoutTimer, lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, lastTurn, overTimer;
@@ -554,7 +556,7 @@
         : s.bet ? `<span class="bet"><span class="coin small"></span><span class="money">${s.bet}</span></span>` : "";
       const seatHtml = (s) => `
         <div class="seat${s.id === v.me ? " mine" : ""}${s.id === v.turn ? " now" : ""}${s.folded ? " folded" : ""}" data-seat="${s.id}">
-          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.id === v.button ? `<span class="dealer" aria-label="Dealer">D</span>` : ""}<span class="money">${s.chips}</span></span></div>
+          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.id === v.button ? `<span class="dealer" aria-label="Dealer">D</span>` : ""}<span class="stake"><span class="coin small"></span><span class="money">${s.chips}</span></span></span></div>
           <div class="cards">${s.cards ? s.cards.map((c) => cardHtml(c, bestIds.has(c.id) ? "best" : "")).join("") : back().repeat(s.n)}</div>
           <div class="info">${note(s)}${right(s)}</div>
           ${s.id === v.turn ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
