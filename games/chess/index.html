@@ -151,6 +151,25 @@
     .pb { fill: #16132e; }
     .ow { fill: #0d0b1f; }
     .ob { fill: #e3e0f7; }
+    /* เงาด้านขวาและลายของหมาก */
+    .dw { fill: #a9a6c9; }
+    .db { fill: #4d4886; }
+    .board .pcs { pointer-events: none; }
+    /* ช่องที่เพิ่งมีหมากโดนกิน กระพริบแดงแล้วจาง */
+    .board .hit-flash { fill: var(--red); }
+    /* หมากที่กินได้ของแต่ละคน อยู่ใต้ชื่อ เรียงจากตัวแพงสุด ตัวชนิดเดียวกันซ้อนกัน */
+    .tray { display: flex; align-items: center; min-height: 26px; padding: 0 0 4px 26px; border: 0; }
+    .tray svg { display: block; width: 22px; height: 22px; }
+    .tray svg + svg.same { margin-left: -12px; }
+    .tray svg.new { animation: pop 0.4s ease-out; }
+    @keyframes pop { from { transform: scale(2.2); opacity: 0; } }
+    .tray .adv { margin-left: 6px; color: var(--dim); font: 400 0.7rem "Press Start 2P", monospace; }
+    /* ประวัติการเดิน: เลขตา White Black */
+    .moves-box { margin-top: 20px; }
+    .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; max-height: 136px; overflow-y: auto; margin: 0; padding: 4px 8px; border: 3px solid #2c2950; font: 400 0.75rem/2 "Press Start 2P", monospace; }
+    .moves span { white-space: nowrap; }
+    .moves .no { color: var(--dim); }
+    .moves .cur { color: var(--yellow); }
     .actions { display: flex; gap: 16px; }
     .actions button { --c: var(--cyan); }
     .actions .armed { --c: var(--red); }
@@ -163,6 +182,9 @@
     .bad { color: var(--red); }
     .status { margin: 8px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
     .error { color: var(--red); }
+    @media (prefers-reduced-motion: reduce) {
+      .tray svg.new { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -234,25 +256,28 @@
     }
 
     // ---------- หมาก ----------
-    // ภาพ pixel 12x12: # คือตัวหมาก ขอบรอบตัวหมากวาดให้เอง
+    // ภาพ pixel 16x16: # คือตัวหมาก + คือลาย ขอบรอบตัวหมากวาดให้เอง ช่องขวาสุดของแต่ละแถวเป็นเงา
     const SPRITES = {
-      P: ["", "", ".....##", "....####", "....####", ".....##", "....####", ".....##", ".....##", "....####", "...######"],
-      R: ["", "..##.##.##", "..########", "...######", "....####", "....####", "....####", "....####", "...######", "..########", "..########"],
-      N: ["", "......##", ".....####", "....##.###", "...#######", "..########", "..###.####", ".....#####", "....######", "...#######", "..########"],
-      B: ["", ".....##", "....####", "....#.##", "...######", "...######", "....####", ".....##", "....####", "...######", "..########"],
-      Q: ["", "..#..##..#", "..##.##.##", "..########", "...######", "....####", "....####", "...######", "....####", "...######", "..########"],
-      K: ["", ".....##", "....####", ".....##", "..########", "...######", "....####", "....####", "...######", "..########", "..########"],
+      P: ["", "", "", "......####", ".....######", ".....######", "......####", ".....++++++", "......####", "......####", ".....######", "....########", "...##########", "..############", "..############"],
+      R: ["", "", "...##..##..##", "...##########", "...##########", "....++++++++", ".....######", ".....######", ".....######", ".....######", ".....######", "....++++++++", "...##########", "..############", "..############"],
+      N: ["", "......##.#", ".....#######", "....#########", "...###.#######", "..############", ".#############", ".######.#######", "..###...#######", ".......#######", "......#######", ".....++++++++", "....##########", "...############", "...############"],
+      B: ["", ".......##", "......####", ".....##.###", ".....#.####", ".....######", "......####", ".....++++++", "......####", "......####", ".....######", "....########", "...##########", "..############", "..############"],
+      Q: [".......##", "..#....##....#", "..##..####..##", "..###.####.###", "...##########", "...##########", "....++++++++", ".....######", ".....######", "......####", ".....######", "....++++++++", "...##########", "..############", "..############"],
+      K: ["", ".......##", "......####", ".......##", "...###.##.###", "..############", "..############", "...##########", "....########", ".....######", ".....######", "....++++++++", "...##########", "..############", "..############"],
     };
     const NAMES = { P: "Pawn", N: "Knight", B: "Bishop", R: "Rook", Q: "Queen", K: "King" };
-    const cells = (rows) => rows.flatMap((row, y) => [...row].map((ch, x) => (ch === "#" ? [x, y] : null)).filter(Boolean));
+    const VALUE = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 0 };
+    const cells = (rows, chars) => rows.flatMap((row, y) => [...row].map((ch, x) => (chars.includes(ch) ? [x, y] : null)).filter(Boolean));
     const rects = (list) => list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("");
-    // symbol ละตัวต่อสี อยู่ใน <defs> ของกระดาน ใช้ซ้ำด้วย <use> (ปุ่ม Promotion ก็ใช้)
+    // symbol ละตัวต่อสี อยู่ใน <defs> ของกระดาน ใช้ซ้ำด้วย <use> (ปุ่ม Promotion กับหมากที่กินได้ก็ใช้)
     const DEFS = Object.entries(SPRITES).map(([k, rows]) => {
-      const body = cells(rows), has = new Set(body.map(([x, y]) => x + "," + y)), edge = new Set();
+      const body = cells(rows, "#+"), has = new Set(body.map(([x, y]) => x + "," + y)), edge = new Set();
       for (const [x, y] of body) for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (!has.has(x + dx + "," + (y + dy))) edge.add(x + dx + "," + (y + dy));
       const outline = rects([...edge].map((s) => s.split(",").map(Number)));
-      return ["w", "b"].map((c) => `<symbol id="${c}${k}" viewBox="0 0 12 12"><path class="o${c}" d="${outline}"/><path class="p${c}" d="${rects(body)}"/></symbol>`).join("");
+      const shade = rects([...cells(rows, "+"), ...body.filter(([x, y]) => !has.has(x + 1 + "," + y))]);
+      return ["w", "b"].map((c) => `<symbol id="${c}${k}" viewBox="-1 -1 18 18"><path class="o${c}" d="${outline}"/><path class="p${c}" d="${rects(body)}"/><path class="d${c}" d="${shade}"/></symbol>`).join("");
     }).join("");
+    const pieceSvg = (c, k, cls = "") => `<svg class="${cls}" viewBox="-1 -1 18 18" shape-rendering="crispEdges" aria-hidden="true"><use href="#${c}${k}"/></svg>`;
 
     // ---------- หน้าจอ ----------
     const colorName = { w: "White", b: "Black" };
@@ -266,8 +291,33 @@
         <span class="side ${p.color}" aria-label="${colorName[p.color]}"></span>
         <span class="who">${esc(p.name)} <span class="pts">${p.score} pts</span></span>
         <span class="clock${run ? " run" : ""}" data-c="${p.color}" aria-label="เวลาที่เหลือ">${clockText(v.clock[p.color])}</span>
-      </li>`;
+      </li>${tray(v, p.color)}`;
     };
+    // หมากที่ฝ่าย c กินได้ ใต้ชื่อ ตัวที่เพิ่งกินเด้งเข้ามา ฝ่ายที่แต้มหมากมากกว่ามี +N
+    const worth = (list) => list.reduce((m, x) => m + VALUE[x.toUpperCase()], 0);
+    function tray(v, c) {
+      const list = [...v.taken[c]].sort((a, b) => VALUE[b.toUpperCase()] - VALUE[a.toUpperCase()]);
+      const foe = c === "w" ? "b" : "w", adv = worth(v.taken[c]) - worth(v.taken[foe]);
+      const fresh = v.taken[c].length > (seenTaken[c] || 0) ? v.taken[c][v.taken[c].length - 1] : null;
+      let freshDone = false;
+      const icons = list.map((x, k) => {
+        const isNew = !freshDone && x === fresh && list.lastIndexOf(x) === k;
+        if (isNew) freshDone = true;
+        return pieceSvg(foe, x.toUpperCase(), `${k && list[k - 1] === x ? "same" : ""}${isNew ? " new" : ""}`);
+      }).join("");
+      const label = list.length ? `กินได้ ${list.map((x) => NAMES[x.toUpperCase()]).join(", ")}` : "ยังไม่ได้กิน";
+      return `<li class="tray" aria-label="${label}">${icons}${adv > 0 ? `<span class="adv">+${adv}</span>` : ""}</li>`;
+    }
+    // ประวัติการเดิน ตาละแถว: เลขตา ตาของ White ตาของ Black
+    function moveList(v) {
+      if (!v.history.length) return "";
+      let out = "";
+      for (let k = 0; k < v.history.length; k += 2) {
+        const cell = (j) => (j < v.history.length ? `<span${j === v.history.length - 1 ? ' class="cur"' : ""}>${v.history[j]}</span>` : "<span></span>");
+        out += `<span class="no">${k / 2 + 1}.</span>${cell(k)}${cell(k + 1)}`;
+      }
+      return `<div class="moves-box"><h2>Moves</h2><div class="moves" aria-label="ประวัติการเดิน">${out}</div></div>`;
+    }
     const REASON = {
       checkmate: "Checkmate", resign: "Resign", time: "หมดเวลา", stalemate: "Stalemate",
       material: "หมากไม่พอ Checkmate", repetition: "ตำแหน่งซ้ำ 3 ครั้ง", fifty: "50 ตาไม่มีกินและไม่มีเดิน Pawn", agreement: "ตกลงเสมอกัน",
@@ -280,30 +330,65 @@
     // กระดาน: ช่อง i ของ server (แถว 0 = rank 8) ฝั่ง Black หมุนกลับหัวให้หมากเราอยู่ล่าง
     const FILES = "abcdefgh";
     const sqName = (i) => FILES[i & 7] + (8 - (i >> 3));
+    // วาดเป็น 3 ชั้น: สีช่องกับเครื่องหมาย, หมาก (แยกไว้ให้เลื่อนทับช่องอื่นได้ตอนเดิน), ช่องที่แตะได้
+    const xyOf = (v, i) => { const d = v.mine === "b" ? 63 - i : i; return [(d & 7) * 14, (d >> 3) * 14]; };
     function board(v, sel) {
-      const flip = v.mine === "b", targets = sel === null ? [] : v.moves.filter((m) => m[0] === sel).map((m) => m[1]);
+      const targets = sel === null ? [] : v.moves.filter((m) => m[0] === sel).map((m) => m[1]);
       const movable = new Set(v.moves.map((m) => m[0]));
-      let out = "";
+      let bg = "", pcs = "", top = "";
       for (let i = 0; i < 64; i++) {
-        const d = flip ? 63 - i : i, x = (d & 7) * 14, y = (d >> 3) * 14, dark = ((i >> 3) + (i & 7)) % 2 === 1, p = v.board[i];
+        const [x, y] = xyOf(v, i), d = v.mine === "b" ? 63 - i : i, dark = ((i >> 3) + (i & 7)) % 2 === 1, p = v.board[i];
         const fill = (cls) => `<rect class="${cls}" x="${x}" y="${y}" width="14" height="14"/>`;
-        const mark = [v.last && v.last.includes(i) ? fill("last") : "", i === v.check ? fill("chk") : "", i === sel ? fill("sel") : ""].join("");
+        bg += fill(dark ? "dk" : "lt") + [v.last && v.last.includes(i) ? fill("last") : "", i === v.check ? fill("chk") : "", i === sel ? fill("sel") : ""].join("");
+        bg += [
+          (d & 7) === 0 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 0.5}" y="${y + 2.7}">${8 - (i >> 3)}</text>` : "",
+          d >> 3 === 7 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 11.3}" y="${y + 13.5}">${FILES[i & 7]}</text>` : "",
+        ].join("");
+        if (p !== ".") pcs += `<use data-at="${i}" href="#${p === p.toUpperCase() ? "w" : "b"}${p.toUpperCase()}" x="${x + 1}" y="${y + 1}" width="12" height="12"/>`;
         // ช่องที่ไปได้: จุดกลางช่อง ถ้ามีหมากให้กิน (รวม En passant) เป็นสามเหลี่ยมสี่มุม
         const to = !targets.includes(i) ? "" : p === "." && !(v.board[sel].toUpperCase() === "P" && (i & 7) !== (sel & 7))
           ? `<rect class="to" x="${x + 5}" y="${y + 5}" width="4" height="4"/>`
           : `<path class="to" d="M${x} ${y}h4l-4 4zM${x + 14} ${y}v4l-4-4zM${x} ${y + 14}v-4l4 4zM${x + 14} ${y + 14}h-4l4-4z"/>`;
-        const piece = p === "." ? "" : `<use href="#${p === p.toUpperCase() ? "w" : "b"}${p.toUpperCase()}" x="${x + 1}" y="${y + 1}" width="12" height="12"/>`;
-        const coord = [
-          (d & 7) === 0 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 0.5}" y="${y + 2.7}">${8 - (i >> 3)}</text>` : "",
-          d >> 3 === 7 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 11.3}" y="${y + 13.5}">${FILES[i & 7]}</text>` : "",
-        ].join("");
         const live = v.myTurn && (movable.has(i) || targets.includes(i));
         const label = `${sqName(i)}${p === "." ? "" : ` ${colorName[p === p.toUpperCase() ? "w" : "b"]} ${NAMES[p.toUpperCase()]}`}`;
-        out += `<g class="sq" data-i="${i}"${live ? ` tabindex="0" role="button"` : ""} aria-label="${label}">
-          ${fill(dark ? "dk" : "lt")}${mark}${piece}${to}${coord}
+        top += `<g class="sq" data-i="${i}"${live ? ` tabindex="0" role="button"` : ""} aria-label="${label}">${to}
           <rect class="hit" x="${x}" y="${y}" width="14" height="14"/></g>`;
       }
-      return `<svg class="board" viewBox="0 0 112 112" shape-rendering="crispEdges" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
+      return `<svg class="board" viewBox="0 0 112 112" shape-rendering="crispEdges" aria-label="กระดาน"><defs>${DEFS}</defs>
+        <g aria-hidden="true">${bg}</g><g class="pcs" aria-hidden="true">${pcs}</g>${top}</svg>`;
+    }
+
+    // เดินใหม่: หมากเลื่อนจากช่องเดิม (Castling เลื่อน Rook ด้วย) หมากที่โดนกินค้างไว้ให้โดนชนแล้วแตกหาย
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    function animateMove(v, prev) {
+      if (still.matches || !v.last) return;
+      const svg = app.querySelector(".board"), layer = svg.querySelector(".pcs");
+      const [from, to] = v.last, P = v.board[to].toUpperCase();
+      const slide = (f, t) => {
+        const el = layer.querySelector(`[data-at="${t}"]`);
+        if (!el) return;
+        layer.append(el); // อยู่บนสุด เลื่อนทับหมากตัวอื่น
+        const [fx, fy] = xyOf(v, f), [tx, ty] = xyOf(v, t);
+        el.animate([{ transform: `translate(${fx - tx}px, ${fy - ty}px)` }, { transform: "translate(0, 0)" }], { duration: 280, easing: "cubic-bezier(0.3, 0.7, 0.4, 1)" });
+      };
+      // ช่องหมากที่โดนกิน: ช่องปลายทาง หรือช่องข้างๆ ตอน En passant
+      const cap = prev[to] !== "." ? to : P === "P" && (from & 7) !== (to & 7) ? (from & ~7) | (to & 7) : null;
+      if (cap !== null) {
+        const x = prev[cap], [cx, cy] = xyOf(v, cap), ns = "http://www.w3.org/2000/svg";
+        const gone = document.createElementNS(ns, "use");
+        gone.setAttribute("href", `#${x === x.toUpperCase() ? "w" : "b"}${x.toUpperCase()}`);
+        for (const [k, val] of [["x", cx + 1], ["y", cy + 1], ["width", 12], ["height", 12]]) gone.setAttribute(k, val);
+        gone.style.transformBox = "fill-box";
+        gone.style.transformOrigin = "center";
+        layer.prepend(gone);
+        gone.animate([{ transform: "none", opacity: 1, offset: 0.55 }, { transform: "scale(1.8) rotate(25deg)", opacity: 0 }], { duration: 520, fill: "forwards" }).finished.then(() => gone.remove(), () => {});
+        const flash = document.createElementNS(ns, "rect");
+        for (const [k, val] of [["class", "hit-flash"], ["x", cx], ["y", cy], ["width", 14], ["height", 14]]) flash.setAttribute(k, val);
+        layer.before(flash);
+        flash.animate([{ opacity: 0, offset: 0.4 }, { opacity: 0.7, offset: 0.55 }, { opacity: 0 }], { duration: 700, fill: "forwards" }).finished.then(() => flash.remove(), () => {});
+      }
+      slide(from, to);
+      if (P === "K" && Math.abs(to - from) === 2) slide(to > from ? from + 3 : from - 4, to > from ? from + 1 : from - 1);
     }
 
     // นาฬิกา: ฝ่ายที่ถึงตานับถอยหลังจากตอนได้สถานะ เหลือต่ำกว่า 20 วิเป็นสีแดง
@@ -321,7 +406,7 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
     }
 
-    let lastScreen, lastMyTurn, lastBoard = null, sel = null, resignArmed = false;
+    let lastScreen, lastMyTurn, lastBoard = null, sel = null, resignArmed = false, seenTaken = {};
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -380,6 +465,7 @@
       if (v.screen === "lobby") {
         lastBoard = null;
         sel = null;
+        seenTaken = {};
         const ok = v.players.length === 2;
         const set = [{ key: "time", label: "เวลาฝ่ายละ", value: v.time / 60000, unit: "min", options: [1, 3, 5, 10, 15, 30, 60] }];
         app.innerHTML = `
@@ -407,7 +493,9 @@
         return;
       }
 
-      // play / over
+      // play / over (ห้องที่เริ่มก่อนมีประวัติการเดินจะไม่มีสองค่านี้)
+      v.taken = v.taken || { w: [], b: [] };
+      v.history = v.history || [];
       if (!v.myTurn || (sel !== null && !v.moves.some((m) => m[0] === sel))) sel = null;
       const them = v.players.find((p) => p.id !== v.me);
       const turnP = v.players.find((p) => p.color === v.turn);
@@ -427,7 +515,13 @@
           <button id="draw" data-sfx="confirm" ${v.offer === "me" ? "disabled" : ""}>${v.offer === "them" ? "Accept draw" : "Draw"}</button>
           <button id="resign" class="${resignArmed ? "armed" : ""}" data-sfx="vote">${resignArmed ? "Resign?" : "Resign"}</button>
         </div>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
+        ${moveList(v)}`;
+      // หมากที่กินได้: วาดครั้งแรก (รีเฟรช) ไม่เด้ง จำจำนวนไว้เทียบรอบหน้า
+      if (lastBoard === null) app.querySelectorAll(".tray .new").forEach((el) => el.classList.remove("new"));
+      seenTaken = { w: v.taken.w.length, b: v.taken.b.length };
+      const list = app.querySelector(".moves");
+      if (list) list.scrollTop = list.scrollHeight;
 
       // แตะหมากตัวเองเพื่อเลือก แตะช่องที่ไปได้เพื่อเดิน Pawn ถึงแถวสุดท้ายเลือกหมากก่อน
       const choose = (i) => {
@@ -463,9 +557,10 @@
       };
       runClock(v);
       // เดินใหม่: เสียงกินหรือเดิน (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
-      if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {
+      if (lastBoard !== null && v.board !== lastBoard) {
         const count = (b) => b.replace(/\./g, "").length;
-        playSfx(count(v.board) < count(lastBoard) ? "confirm" : "click");
+        if (v.screen === "play") playSfx(count(v.board) < count(lastBoard) ? "confirm" : "click");
+        animateMove(v, lastBoard);
       }
       lastBoard = v.board;
       if (gameOver) {
@@ -486,7 +581,7 @@
     function askPromo(from, to) {
       const c = view.mine;
       const box = document.getElementById("promo");
-      box.innerHTML = "QRBN".split("").map((q) => `<button data-q="${q}" aria-label="${NAMES[q]}"><svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><use href="#${c + q}"/></svg></button>`).join("");
+      box.innerHTML = "QRBN".split("").map((q) => `<button data-q="${q}" aria-label="${NAMES[q]}">${pieceSvg(c, q)}</button>`).join("");
       box.querySelectorAll("button").forEach((b) => (b.onclick = () => {
         promote.close();
         sel = null;
