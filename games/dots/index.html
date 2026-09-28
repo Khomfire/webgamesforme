@@ -412,7 +412,8 @@
       // เส้นใหม่ (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       const count = v.lines.filter(Boolean).length;
       if (lastCount !== null && count > lastCount && v.last !== null) {
-        playSfx(v.got.length ? "confirm" : "click");
+        playSfx("place");
+        if (v.got.length) playSfx("confirm");
         if (!still.matches) {
           const ln = app.querySelector(`.edge[data-e="${v.last}"] .ln`);
           const len = S;

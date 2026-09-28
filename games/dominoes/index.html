@@ -388,7 +388,8 @@
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       const logKey = JSON.stringify(v.log || null);
       const freshLog = lastLog !== undefined && logKey !== lastLog && v.log;
-      if (freshLog && v.screen === "play" && v.log.by !== v.me) playSfx(v.log.t === "draw" ? "roll" : "confirm");
+      if (freshLog && v.screen === "play" && (v.log.t === "play" || v.log.t === "set")) playSfx("place");
+      if (freshLog && v.screen === "play" && v.log.t === "draw" && v.log.by !== v.me) playSfx("roll");
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
       lastLog = logKey;
@@ -476,7 +477,7 @@
           <div class="hand" aria-label="ตัวในมือ">${hand.map((t) => {
             const ok = v.myTurn && ends(t, v.line).length > 0;
             const key = t.join(":");
-            return tileHtml(t, { tag: "button", cls: `v${ok ? " ok" : ""}${key === choosing ? " sel" : ""}`, attrs: `data-t="${key}" data-sfx="confirm" ${ok ? "" : "disabled"}` });
+            return tileHtml(t, { tag: "button", cls: `v${ok ? " ok" : ""}${key === choosing ? " sel" : ""}`, attrs: `data-t="${key}" ${ok ? "" : "disabled"}` });
           }).join("")}</div>
           ${v.canDraw ? `<button id="draw" data-sfx="roll">Draw</button>` : ""}
           <p id="log">${logText(v)}</p>` : `

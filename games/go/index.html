@@ -460,7 +460,8 @@
       // วางหมากใหม่: เสียงกินหรือวาง (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {
         const stones = (b) => b.replace(/\./g, "").length;
-        playSfx(stones(v.board) <= stones(lastBoard) ? "confirm" : "click");
+        playSfx("place");
+        if (stones(v.board) <= stones(lastBoard)) setTimeout(() => playSfx("place"), 90); // กิน: กระทบสองที
       }
       lastBoard = v.board;
       if (gameOver) {
