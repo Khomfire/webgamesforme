@@ -103,7 +103,7 @@
     .fold { --c: var(--red); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
-    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
     .copy { --c: var(--cyan); position: relative; }
@@ -254,48 +254,48 @@
     <h1>TEXAS HOLD'EM</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">กฎ</h2>
+        <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
-      <h2>เล่น</h2>
+      <h2>Play</h2>
       <ol>
         <li>แจกคนละ 2 ใบ ไพ่กลาง 5 ใบใช้ร่วมกัน</li>
         <li>ใช้ 5 ใบที่ดีที่สุดจาก 7 ใบ (ในมือ 2 + กลาง 5)</li>
-        <li>คนถัดจาก <span class="dealer">D</span> ลง blind เล็ก คนถัดไปลง blind ใหญ่ เหลือ 2 คน <span class="dealer">D</span> ลง blind เล็ก</li>
+        <li>คนถัดจาก <span class="dealer">D</span> ลง small blind คนถัดไปลง big blind เหลือ 2 คน <span class="dealer">D</span> ลง small blind</li>
         <li>เดิมพัน 4 รอบ: ก่อนเปิดไพ่กลาง, เปิด 3 ใบ, ใบที่ 4, ใบที่ 5</li>
-        <li>รอบแรกเริ่มจากคนถัดจาก blind ใหญ่ รอบต่อไปเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
-        <li>เหลือคนเดียวที่ไม่หมอบ ได้กองกลาง ไม่ต้องเปิดไพ่ จะหงายให้ดูก็ได้</li>
-        <li>ครบ 4 รอบ ผลัดกันหงายหรือหมอบ เริ่มจากคนที่ลงหรือเพิ่มล่าสุด ไม่มีเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
-        <li>หมอบ: ไม่เอากองกลาง ไม่ต้องให้ใครเห็นไพ่</li>
-        <li>มีคนออลอิน ทุกคนต้องหงาย</li>
-        <li>มือสูงสุดในคนที่หงายได้กองกลาง เท่ากันแบ่ง</li>
+        <li>รอบแรกเริ่มจากคนถัดจาก big blind รอบต่อไปเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
+        <li>เหลือคนเดียวที่ไม่ Fold ได้ pot ไม่ต้องเปิดไพ่ จะ Show ให้ดูก็ได้</li>
+        <li>ครบ 4 รอบ ผลัดกัน Show หรือ Muck เริ่มจากคนที่ Bet หรือ Raise ล่าสุด ไม่มีเริ่มจากคนถัดจาก <span class="dealer">D</span></li>
+        <li>Muck: ไม่เอา pot ไม่ต้องให้ใครเห็นไพ่</li>
+        <li>มีคน All-in ทุกคนต้อง Show</li>
+        <li>มือสูงสุดในคนที่ Show ได้ pot เท่ากันแบ่ง</li>
         <li><span class="dealer">D</span> เวียนไปคนถัดไปทุกมือ</li>
-        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: ผ่านถ้าผ่านได้ ไม่งั้นหมอบ ตอนเปิดไพ่หงายให้</li>
+        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: Check ถ้าได้ ไม่งั้น Fold ตอนเปิดไพ่ Show ให้</li>
       </ol>
-      <h2>เดิมพัน</h2>
+      <h2>Betting</h2>
       <ol>
-        <li>หมอบ: ทิ้งไพ่ เสียที่ลงไปแล้ว</li>
-        <li>ผ่าน: ไม่ลงเพิ่ม ได้เมื่อไม่มีใครลงมากกว่า</li>
-        <li>ตาม: ลงให้เท่ายอดสูงสุดของรอบ</li>
-        <li>ลง / เพิ่ม: อย่างน้อยเท่า blind ใหญ่ และไม่น้อยกว่าที่คนก่อนเพิ่ม ไม่จำกัดสูงสุด</li>
-        <li>ออลอิน: ลงหมดตัว ได้เฉพาะส่วนของกองกลางที่ตัวเองลงถึง (side pot)</li>
-        <li>ออลอินที่เพิ่มไม่ถึงขั้นต่ำ คนที่เล่นไปแล้วตามหรือหมอบได้อย่างเดียว</li>
+        <li>Fold: ทิ้งไพ่ เสียที่ลงไปแล้ว</li>
+        <li>Check: ไม่ลงเพิ่ม ได้เมื่อไม่มีใครลงมากกว่า</li>
+        <li>Call: ลงให้เท่ายอดสูงสุดของรอบ</li>
+        <li>Bet / Raise: อย่างน้อยเท่า big blind และไม่น้อยกว่าที่คนก่อน Raise ไม่จำกัดสูงสุด</li>
+        <li>All-in: ลงหมดตัว ได้เฉพาะส่วนของ pot ที่ตัวเองลงถึง (side pot)</li>
+        <li>All-in ที่ Raise ไม่ถึงขั้นต่ำ คนที่เล่นไปแล้ว Call หรือ Fold ได้อย่างเดียว</li>
       </ol>
-      <h2>มือ</h2>
+      <h2>Hands</h2>
       <p class="hint">สูงไปต่ำ</p>
       <ol>
-        <li>สเตรทฟลัช <span data-cards="5:1 6:1 7:1 8:1 9:1"></span></li>
-        <li>โฟร์การ์ด <span data-cards="9:0 9:1 9:2 9:3 2:0"></span></li>
-        <li>ฟูลเฮาส์ <span data-cards="8:0 8:1 8:3 4:2 4:0"></span></li>
-        <li>ฟลัช <span data-cards="2:3 6:3 9:3 11:3 13:3"></span></li>
-        <li>สเตรท <span data-cards="6:0 7:2 8:1 9:3 10:0"></span> (A 2 3 4 5 กับ 10 J Q K A ก็ได้)</li>
-        <li>ตอง <span data-cards="7:0 7:1 7:3 13:2 2:0"></span></li>
-        <li>สองคู่ <span data-cards="12:0 12:2 5:1 5:3 9:0"></span></li>
-        <li>คู่ <span data-cards="1:0 1:1 8:2 5:3 3:0"></span></li>
-        <li>ไพ่สูง <span data-cards="1:2 11:0 8:3 5:1 2:0"></span></li>
+        <li>Straight Flush <span data-cards="5:1 6:1 7:1 8:1 9:1"></span></li>
+        <li>Four of a Kind <span data-cards="9:0 9:1 9:2 9:3 2:0"></span></li>
+        <li>Full House <span data-cards="8:0 8:1 8:3 4:2 4:0"></span></li>
+        <li>Flush <span data-cards="2:3 6:3 9:3 11:3 13:3"></span></li>
+        <li>Straight <span data-cards="6:0 7:2 8:1 9:3 10:0"></span> (A 2 3 4 5 กับ 10 J Q K A ก็ได้)</li>
+        <li>Three of a Kind <span data-cards="7:0 7:1 7:3 13:2 2:0"></span></li>
+        <li>Two Pair <span data-cards="12:0 12:2 5:1 5:3 9:0"></span></li>
+        <li>Pair <span data-cards="1:0 1:1 8:2 5:3 3:0"></span></li>
+        <li>High Card <span data-cards="1:2 11:0 8:3 5:1 2:0"></span></li>
       </ol>
       <p class="hint">มือชนิดเดียวกันเทียบแต้มต่อไปทีละใบ A สูงสุด ดอกไม่มีผล</p>
-      <h2>ชิป</h2>
+      <h2>Chips</h2>
       <ol>
         <li>เริ่มคนละ 1000 blind 10/20 ขึ้นเท่าตัวทุก 10 มือ</li>
         <li>แบ่งกองไม่ลงตัว เศษให้คนชนะที่นั่งถัดจาก <span class="dealer">D</span></li>
@@ -304,7 +304,7 @@
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">ผู้ชนะ</h2>
+        <h2 id="winner-title">Winner</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -318,6 +318,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -344,8 +345,8 @@
       `<div class="card${c.s === 1 || c.s === 2 ? " red" : ""} ${cls}" data-id="${c.id}" aria-label="${RANK[c.r]} ${SUIT[c.s]}"><span class="rank">${RANK[c.r]}</span><svg aria-hidden="true"><use href="#suit${c.s}"/></svg></div>`;
     const back = () => `<div class="card back" aria-hidden="true"></div>`;
     // ชนิดมือ ตรงกับ server (holdem.js)
-    const KIND = ["ไพ่สูง", "คู่", "สองคู่", "ตอง", "สเตรท", "ฟลัช", "ฟูลเฮาส์", "โฟร์การ์ด", "สเตรทฟลัช"];
-    const ACT = { fold: "หมอบ", check: "ผ่าน", call: "ตาม", bet: "ลง", raise: "เพิ่ม" };
+    const KIND = ["High Card", "Pair", "Two Pair", "Three of a Kind", "Straight", "Flush", "Full House", "Four of a Kind", "Straight Flush"];
+    const ACT = { fold: "Fold", check: "Check", call: "Call", bet: "Bet", raise: "Raise" };
     let raiseTo = null; // ยอดที่จะเพิ่ม (ลงรวมในรอบนี้) จำไว้ระหว่างวาดใหม่ตอนยังเป็นตาเรา
 
     // ---------- แอนิเมชัน ----------
@@ -442,9 +443,9 @@
 
     // ---------- หน้าจอ ----------
     const scoreboard = (v) => `
-      <h2 style="margin-top: 24px">ชิป</h2>
+      <h2 style="margin-top: 24px">Chips</h2>
       <ul>${[...v.players].sort((a, b) => b.chips - a.chips).map((p) => `
-        <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">หมดตัว</span>` : ""}</span><span>${p.chips}</span></li>`).join("")}
+        <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${p.out ? `<span class="tag bad">Out</span>` : ""}</span><span>${p.chips}</span></li>`).join("")}
       </ul>`;
 
     let timeoutTimer, lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, lastTurn, overTimer;
@@ -459,16 +460,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">ชื่อ</label>
+          <label for="name">Name</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">สร้างห้อง</button>
-          <p class="or">หรือ</p>
-          <label for="code">รหัสห้อง</label>
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -498,31 +499,29 @@
       if (v.screen === "lobby") {
         plans = [];
         lastHand = 0; // มือแรกของเกมเล่นแอนิเมชันแจกไพ่
+        const set = [{ key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
-          <h2>ห้อง</h2>
           <div class="room-row">
+            <span class="hint">Room</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+            <span class="good" id="copied" hidden>Copied</span>
           </div>
-          <h2>ตั้งค่า</h2>
-          ${v.isHost
-            ? `<label for="time">วิต่อตา (5-60)</label>
-               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
-            : `<p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
-          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/10</h2>
-          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          <h2>Settings</h2>
+          ${setupHtml(set, v.isHost)}
+          <h2 style="margin-top: 16px">Players ${v.players.length}/10</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${v.players.length >= 2 ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${v.players.length >= 2 ? "" : "disabled"}>เริ่ม</button>`
+               <button id="start" data-sfx="start" ${v.players.length >= 2 ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
           done.hidden = false;
           setTimeout(() => (done.hidden = true), 1500);
         });
+        setupBind(app, set, send);
         if (v.isHost) {
-          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;
@@ -535,9 +534,9 @@
       const need = v.seats.filter((s) => s.chips > 0);
       const canReady = !!me && v.screen === "end" && me.chips > 0 && !v.ready.includes(v.me);
       const myShow = v.screen === "show" && v.canShow; // ถึงตาเราหงายหรือหมอบ
-      const status = v.screen === "over" ? `<span class="hl">จบเกม</span>`
-        : !me || (v.screen === "end" && !me.chips) ? `<span class="bad">หมดตัว</span>`
-        : o || myShow ? `<span class="hl">ถึงตา</span>`
+      const status = v.screen === "over" ? `<span class="hl">Game over</span>`
+        : !me || (v.screen === "end" && !me.chips) ? `<span class="bad">Out</span>`
+        : o || myShow ? `<span class="hl">Your turn</span>`
         : v.screen === "end" ? (canReady ? "" : `รอคนอื่น ${v.ready.length}/${need.length}`)
         : `รอ ${esc(v.seats.find((s) => s.id === v.turn).name)}`;
       const shownBest = (id) => r && r.hands && r.hands[id] && r.pots.some((p) => p.ids.includes(id));
@@ -546,8 +545,8 @@
       const note = (s) =>
         r && r.hands && r.hands[s.id] ? `<span class="${shownBest(s.id) ? "hl" : ""}">${KIND[r.hands[s.id].kind]}</span>`
         : s.kind !== undefined ? `<span>${KIND[s.kind]}</span>`
-        : s.folded ? `<span class="hint">หมอบ</span>`
-        : v.screen === "play" && !s.chips ? `<span class="bad">ออลอิน</span>`
+        : s.folded ? `<span class="hint">Fold</span>`
+        : v.screen === "play" && !s.chips ? `<span class="bad">All-in</span>`
         : s.id === v.me && v.mine !== undefined ? `<span>${KIND[v.mine]}</span>`
         : s.last ? `<span class="hint">${ACT[s.last.a]}</span>` : "<span></span>";
       const right = (s) =>
@@ -555,31 +554,31 @@
         : s.bet ? `<span class="bet"><span class="coin small"></span><span class="money">${s.bet}</span></span>` : "";
       const seatHtml = (s) => `
         <div class="seat${s.id === v.me ? " mine" : ""}${s.id === v.turn ? " now" : ""}${s.folded ? " folded" : ""}" data-seat="${s.id}">
-          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.id === v.button ? `<span class="dealer" aria-label="ดีลเลอร์">D</span>` : ""}<span class="money">${s.chips}</span></span></div>
+          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.id === v.button ? `<span class="dealer" aria-label="Dealer">D</span>` : ""}<span class="money">${s.chips}</span></span></div>
           <div class="cards">${s.cards ? s.cards.map((c) => cardHtml(c, bestIds.has(c.id) ? "best" : "")).join("") : back().repeat(s.n)}</div>
           <div class="info">${note(s)}${right(s)}</div>
           ${s.id === v.turn ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         </div>`;
       const pots = r ? r.pots.map((p, i) => `
-        <li><span>${r.pots.length > 1 ? (i ? `กองรอง ${i}` : "กองกลาง") : "กองกลาง"} ${p.n}</span><span class="hl">${p.names.map(esc).join(", ")}</span></li>`).join("") : "";
+        <li><span>${r.pots.length > 1 ? (i ? `Side pot ${i}` : "Pot") : "Pot"} ${p.n}</span><span class="hl">${p.names.map(esc).join(", ")}</span></li>`).join("") : "";
       // ยอดเพิ่ม: เลื่อนทีละ blind ใหญ่ ปลายสุดคือออลอิน
       if (!o || !o.raise) raiseTo = null;
       else raiseTo = Math.min(o.raise.max, Math.max(o.raise.min, raiseTo || o.raise.min));
       app.innerHTML = `
-        <p class="hint round"><span>มือ ${v.handNo}</span><span>blind ${v.sb}/${v.bb}</span></p>
+        <p class="hint round"><span>Hand ${v.handNo}</span><span>blind ${v.sb}/${v.bb}</span></p>
         <div class="seats">${v.seats.filter((s) => s.id !== v.me).map(seatHtml).join("")}</div>
         <div class="table">
           <div class="card back" id="deck" aria-hidden="true"></div>
           <div class="board" id="board" aria-label="ไพ่กลาง">${[0, 1, 2, 3, 4].map((i) => (v.board[i] ? cardHtml(v.board[i], bestIds.has(v.board[i].id) ? "best" : "") : `<div class="slot"></div>`)).join("")}</div>
         </div>
-        <div class="pot" aria-label="กองกลาง ${v.pot}"><span class="coin"></span><b>${v.pot}</b></div>
+        <div class="pot" aria-label="Pot ${v.pot}"><span class="coin"></span><b>${v.pot}</b></div>
         ${r && v.screen !== "play" ? `<ul class="result">${pots}</ul>` : ""}
         <p class="status">${status}</p>
         ${me ? seatHtml(me) : ""}
         ${o ? `
           <div class="actions">
-            <button id="fold" class="fold" data-sfx="vote">หมอบ</button>
-            <button id="call" data-sfx="confirm">${!o.call ? "ผ่าน" : o.allin ? `ออลอิน ${o.call}` : `ตาม ${o.call}`}</button>
+            <button id="fold" class="fold" data-sfx="vote">Fold</button>
+            <button id="call" data-sfx="confirm">${!o.call ? "Check" : o.allin ? `All-in ${o.call}` : `Call ${o.call}`}</button>
           </div>
           ${o.raise ? `
             <div class="raise-row">
@@ -590,15 +589,15 @@
             <button id="raise" class="alt" data-sfx="confirm"></button>` : ""}` : ""}
         ${myShow ? `
           <div class="actions">
-            <button id="muck" class="fold" data-sfx="vote">หมอบ</button>
-            <button id="show">หงาย</button>
+            <button id="muck" class="fold" data-sfx="vote">Muck</button>
+            <button id="show">Show</button>
           </div>` : ""}
         ${canReady || v.canShow ? `
           <div class="actions">
-            ${v.canShow && !myShow ? `<button id="show" class="alt">หงาย</button>` : ""}
-            ${canReady ? `<button id="ready" data-sfx="next">ต่อ</button>` : ""}
+            ${v.canShow && !myShow ? `<button id="show" class="alt">Show</button>` : ""}
+            ${canReady ? `<button id="ready" data-sfx="next">Next</button>` : ""}
           </div>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // แผนแอนิเมชันจากสถานะใหม่ (รีเฟรชกลางมือไม่ต้องเล่นย้อน)
       const resumed = lastHand === undefined;
@@ -668,7 +667,7 @@
       if (fresh && ACT[v.log.t] && v.log.n === v.handNo - 1) {
         if (v.log.allin) {
           const s = v.seats.find((x) => x.id === v.log.by);
-          if (s) shout("ออลอิน", s.id === v.me);
+          if (s) shout("All-in", s.id === v.me);
           sounds.push([0, "start"]);
         } else if (v.log.by !== v.me) sounds.push([0, v.log.t === "fold" ? "vote" : v.log.t === "check" ? "click" : "confirm"]);
       }
@@ -699,7 +698,7 @@
           i = Math.min(steps, Math.max(0, i));
           raiseTo = amt(i);
           slider.value = i;
-          btn.textContent = raiseTo === max ? `ออลอิน ${max - me.bet}` : `${o.opened ? "เพิ่มเป็น" : "ลง"} ${raiseTo}`;
+          btn.textContent = raiseTo === max ? `All-in ${max - me.bet}` : `${o.opened ? "Raise to" : "Bet"} ${raiseTo}`;
           minus.disabled = i === 0;
           plus.disabled = i === steps;
         };
