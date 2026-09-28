@@ -48,7 +48,7 @@
       height: 44px;
       margin: 0;
       padding: 0;
-      font: 400 1rem "Press Start 2P", monospace;
+      font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
       box-shadow: 4px 4px 0 var(--c, var(--yellow));
     }
     .help { --c: var(--cyan); }
@@ -66,7 +66,7 @@
     dialog li { padding: 4px 0; border: 0; }
     .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
     input {
@@ -101,7 +101,7 @@
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
-    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
     .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
@@ -125,9 +125,9 @@
     /* หลอดเวลาของตานี้ */
     .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
-    .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
+    .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", "Chakra Petch", monospace; font-size: 0.8rem; }
     .center { text-align: center; }
-    .turn { margin: 16px 0 0; text-align: center; font: 400 1.2rem "Press Start 2P", monospace; color: var(--yellow); }
+    .turn { margin: 16px 0 0; text-align: center; font: 400 1.2rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
@@ -138,8 +138,8 @@
     .seats li { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px 8px; background: #15122c; border: 2px solid #2c2950; }
     .seats li.on { border-color: var(--yellow); box-shadow: 3px 3px 0 var(--yellow); }
     .seats .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; }
-    .seats b { font: 400 0.7rem "Press Start 2P", monospace; color: var(--yellow); }
-    .seats .count { display: flex; align-items: center; gap: 3px; font: 400 0.7rem "Press Start 2P", monospace; }
+    .seats b { font: 400 0.7rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
+    .seats .count { display: flex; align-items: center; gap: 3px; font: 400 0.7rem "Press Start 2P", "Chakra Petch", monospace; }
     .back-tile { display: inline-block; width: 8px; height: 14px; border: 2px solid var(--text); border-radius: 2px; }
     .info { display: flex; justify-content: space-between; margin: 0 0 6px; color: var(--dim); font-size: 0.9rem; }
     /* ตัวโดมิโน: สองช่อง ช่องละจุด 3x3 แนวนอนเป็นค่าเริ่ม .v ตั้ง ขนาดช่องคือ --s */
@@ -199,24 +199,24 @@
     <h1>DOMINOES</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">Rules</h2>
+        <h2 id="rules-title">กติกา</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
         <li>โดมิโน 28 ตัว <span data-tile="0:0"></span> ถึง <span data-tile="6:6"></span> แจกคนละ 7 ตัว (เล่น 3-4 คน คนละ 5 ตัว) ที่เหลือเป็นกองจั่ว</li>
         <li>ตาแรก คนที่มีดับเบิลสูงสุดวางก่อน ไม่มีใครมีดับเบิลใช้ตัวแต้มสูงสุด ตาต่อไปคนชนะตาก่อนลงก่อน</li>
         <li>ผลัดกันต่อตัวที่แต้มตรงกับปลายแถวด้านใดด้านหนึ่ง เช่น <span data-tile="3:5"></span> ต่อปลาย 5 ได้</li>
-        <li>ไม่มีตัวลง: Draw จากกองจั่วจนได้ตัวที่ลงได้ กองจั่วหมดแล้ว Pass</li>
+        <li>ไม่มีตัวลง: จั่วจากกองจั่วจนได้ตัวที่ลงได้ กองจั่วหมดแล้วผ่าน</li>
         <li>ลงหมดมือก่อนชนะตานั้น ได้แต้มรวมของตัวที่เหลือในมือคนอื่น</li>
         <li>ไม่มีใครลงได้ (ตัน): แต้มในมือน้อยสุดชนะ ได้แต้มรวมของคนอื่น เสมอกันไม่มีใครได้</li>
-        <li>ได้ถึง <span id="rule-target">100</span> pts ก่อนชนะ</li>
-        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: ลงตัวแต้มสูงสุดให้ ไม่มีตัวลง Draw ให้</li>
+        <li>ได้ถึง <span id="rule-target">100</span> แต้ม ก่อนชนะ</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: ลงตัวแต้มสูงสุดให้ ไม่มีตัวลงจั่วให้</li>
         <li>แตะตัวในมือเพื่อลง ต่อได้สองปลาย แตะปลายที่จะต่อ</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">Winner</h2>
+        <h2 id="winner-title">ผู้ชนะ</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -323,12 +323,12 @@
         <li class="${p.id === v.turn && v.screen === "play" ? "on" : ""}">
           <span class="name">${esc(p.name)}</span>
           <span class="count" aria-label="${p.count} ตัวในมือ"><span class="back-tile"></span>${p.count}</span>
-          <b aria-label="${p.score} pts">${p.score}</b></li>`).join("")}
+          <b aria-label="${p.score} แต้ม">${p.score}</b></li>`).join("")}
       </ul>`;
     const scoreboard = (v) => `
-      <h2>Points (win at ${v.target})</h2>
+      <h2>แต้ม (ชนะที่ ${v.target})</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score}</span></li>`).join("")}
+        <li class="row"><span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score}</span></li>`).join("")}
       </ul>`;
 
     function logText(v) {
@@ -338,15 +338,15 @@
       const out = [];
       if (g.late) out.push(`<span class="bad">${name(g.late)} หมดเวลา</span>`);
       if (g.t === "set") out.push(`${name(g.by)} เริ่มด้วย ${tileHtml(g.tile, { cls: "inline" })}`);
-      if (g.t === "draw" && g.n) out.push(`${name(g.by)} Draw ${g.n}`);
-      if (g.pass.length) out.push(`<span class="hint">${g.pass.map(name).join(", ")} Pass</span>`);
+      if (g.t === "draw" && g.n) out.push(`${name(g.by)} จั่ว ${g.n}`);
+      if (g.pass.length) out.push(`<span class="hint">${g.pass.map(name).join(", ")} ผ่าน</span>`);
       return out.join(" / ");
     }
 
     function resultText(v) {
       const r = v.result, me = v.players.find((p) => p.id === v.me).name;
       const who = r.winner === me ? "คุณ" : esc(r.winner || "");
-      if (r.how === "domino") return `<span class="${r.winner === me ? "good" : "hint"}">${who} Domino <span class="hl">+${r.pts}</span></span>`;
+      if (r.how === "domino") return `<span class="${r.winner === me ? "good" : "hint"}">${who} ลงหมดมือ <span class="hl">+${r.pts}</span></span>`;
       if (!r.winner) return `<span class="bad">ตัน เสมอ ไม่มีใครได้แต้ม</span>`;
       return `<span class="${r.winner === me ? "good" : "hint"}">ตัน ${who} แต้มน้อยสุด <span class="hl">+${r.pts}</span></span>`;
     }
@@ -400,16 +400,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">Name</label>
+          <label for="name">ชื่อ</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">Create room</button>
-          <p class="or">or</p>
-          <label for="code">Room code</label>
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">Join</button>`;
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -438,21 +438,21 @@
 
       if (v.screen === "lobby") {
         const enough = v.players.length >= 2;
-        const set = [{ key: "target", label: "ชนะที่", value: v.target, unit: "pts", min: 50, max: 300, step: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
+        const set = [{ key: "target", label: "ชนะที่", value: v.target, unit: "แต้ม", min: 50, max: 300, step: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">Room</span>
+            <span class="hint">ห้อง</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>Copied</span>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
-          <h2>Settings</h2>
+          <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">Players ${v.players.length}/4</h2>
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/4</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${enough ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>Start</button>`
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -471,26 +471,26 @@
       const hand = [...v.hand].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
       app.innerHTML = `
         ${seatsBar(v)}
-        <p class="info"><span>Round ${v.deal}</span><span aria-label="กองจั่ว ${v.boneyard}">Boneyard ${v.boneyard}</span></p>
+        <p class="info"><span>รอบ ${v.deal}</span><span aria-label="กองจั่ว ${v.boneyard}">กองจั่ว ${v.boneyard}</span></p>
         ${lineHtml(v.line, choosing && v.myTurn, fresh)}
         ${v.screen === "play" ? `
-          <p class="status">${v.myTurn ? `<span class="hl">${choosing ? "แตะปลายที่จะต่อ" : v.canDraw ? "ไม่มีตัวลง" : "Your turn"}</span>` : `${turnP ? esc(turnP.name) : ""}'s turn`}</p>
+          <p class="status">${v.myTurn ? `<span class="hl">${choosing ? "แตะปลายที่จะต่อ" : v.canDraw ? "ไม่มีตัวลง" : "ตาคุณ"}</span>` : `ตา ${turnP ? esc(turnP.name) : ""}`}</p>
           <div class="timer" aria-hidden="true"><i></i></div>
           <div class="hand" aria-label="ตัวในมือ">${hand.map((t) => {
             const ok = v.myTurn && ends(t, v.line).length > 0;
             const key = t.join(":");
             return tileHtml(t, { tag: "button", cls: `v${ok ? " ok" : ""}${key === choosing ? " sel" : ""}`, attrs: `data-t="${key}" ${ok ? "" : "disabled"}` });
           }).join("")}</div>
-          ${v.canDraw ? `<button id="draw" data-sfx="roll">Draw</button>` : ""}
+          ${v.canDraw ? `<button id="draw" data-sfx="roll">จั่ว</button>` : ""}
           <p id="log">${logText(v)}</p>` : `
           ${v.result ? `<p class="status">${resultText(v)}</p>
           <ul class="hands" style="margin-top: 12px">${v.result.hands.map((h) => `
             <li><span class="who">${esc(h.name)} <span class="hint">${h.pips}</span></span>${h.tiles.map((t) => tileHtml(t, { cls: "small" })).join("")}</li>`).join("")}</ul>` : ""}
           <div style="margin-top: 16px">${scoreboard(v)}</div>
           ${v.screen === "over"
-            ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`
-            : `${v.ready || !v.seats.some((p) => p.id === v.me) ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">Next round</button>`}
-               <p class="hint">Ready ${v.readyCount}/${v.activeCount}</p>`}`}`;
+            ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
+            : `${v.ready || !v.seats.some((p) => p.id === v.me) ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
+               <p class="hint">พร้อม ${v.readyCount}/${v.activeCount}</p>`}`}`;
 
       // แตะตัวในมือ: ต่อได้ปลายเดียวลงเลย ต่อได้สองปลายรอแตะปลาย แตะตัวเดิมอีกครั้งยกเลิก
       app.querySelectorAll(".hand .tile").forEach((b) => (b.onclick = () => {

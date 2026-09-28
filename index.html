@@ -37,12 +37,12 @@
       margin: 0;
       text-align: center;
       color: var(--yellow);
-      font: 400 clamp(1.25rem, 5.5vw, 2.75rem)/1.4 "Press Start 2P", monospace;
+      font: 400 clamp(1.25rem, 5.5vw, 2.75rem)/1.4 "Press Start 2P", "Chakra Petch", monospace;
       text-shadow: 4px 4px 0 #c2410c;
       text-wrap: balance;
     }
     .sub { margin: 20px 0 32px; text-align: center; color: var(--dim); font-size: 1.125rem; }
-    .sub::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; animation: blink 1s steps(1) infinite; }
+    .sub::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", "Chakra Petch", monospace; animation: blink 1s steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
 
     .name { max-width: 320px; margin: 0 auto 48px; }
@@ -113,7 +113,7 @@
     <h1>Web Games For Me</h1>
     <p class="sub">เลือกเกม เล่นกับเพื่อน</p>
     <div class="name">
-      <label for="name">Name</label>
+      <label for="name">ชื่อ</label>
       <input id="name" maxlength="20" autocomplete="nickname">
     </div>
     <div id="games" class="grid"></div>
@@ -135,13 +135,13 @@
       { id: "farkle", name: "FARKLE", desc: "ทอยเต๋าเก็บแต้ม อย่าโลภ", players: "2 คนขึ้นไป" },
       { id: "liar", name: "LIAR'S DICE", desc: "ทายเต๋าทั้งวง จับคนโกหก", players: "2 คนขึ้นไป" },
       { id: "uno", name: "UNO", desc: "ลงไพ่สีหรือเลขตรงกัน หมดมือก่อนชนะ", players: "2-10 คน" },
-      { id: "blackjack", name: "BLACKJACK", desc: "สู้กับ Dealer ใกล้ 21 ที่สุดโดยไม่เกิน", players: "1-7 คน" },
+      { id: "blackjack", name: "BLACKJACK", desc: "สู้กับเจ้ามือ ใกล้ 21 ที่สุดโดยไม่เกิน", players: "1-7 คน" },
       { id: "holdem", name: "TEXAS HOLD'EM", desc: "ไพ่กลาง 5 ใบ กวาดชิปทั้งโต๊ะ", players: "2-10 คน" },
-      { id: "president", name: "PRESIDENT", desc: "ไพ่สลาฟ หมดมือก่อนได้เป็น King", players: "3-8 คน" },
+      { id: "president", name: "PRESIDENT", desc: "ไพ่สลาฟ หมดมือก่อนได้เป็นคิง", players: "3-8 คน" },
       { id: "connect4", name: "CONNECT FOUR", desc: "หยอดเหรียญ เรียง 4 ก่อนชนะ", players: "2 คน" },
       { id: "draw", name: "DRAW & GUESS", desc: "วาดให้เพื่อนทาย", players: "2-10 คน" },
       { id: "dots", name: "DOTS AND BOXES", desc: "ลากเส้นปิดช่อง ได้ช่องมากสุดชนะ", players: "2-4 คน" },
-      { id: "chess", name: "CHESS", desc: "Checkmate ก่อนชนะ", players: "2 คน" },
+      { id: "chess", name: "CHESS", desc: "รุกจนก่อนชนะ", players: "2 คน" },
       { id: "go", name: "GO", desc: "วางหมากล้อมพื้นที่ ได้มากกว่าชนะ", players: "2 คน" },
       { id: "dominoes", name: "DOMINOES", desc: "ต่อแต้มให้ตรงปลายแถว หมดมือก่อนชนะ", players: "2-4 คน" },
       { id: "reversi", name: "REVERSI", desc: "หนีบแล้วพลิกหมาก สีไหนมากกว่าชนะ", players: "2 คน" },

@@ -48,7 +48,7 @@
       height: 44px;
       margin: 0;
       padding: 0;
-      font: 400 1rem "Press Start 2P", monospace;
+      font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
       box-shadow: 4px 4px 0 var(--c, var(--yellow));
     }
     .help { --c: var(--cyan); }
@@ -66,7 +66,7 @@
     dialog li { padding: 4px 0; border: 0; }
     .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
     input {
@@ -101,7 +101,7 @@
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
-    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
     .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
@@ -138,7 +138,7 @@
     .scores li.now { border-color: var(--pc); }
     .scores .name { display: flex; align-items: center; max-width: 100%; }
     .scores .name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .scores b { font: 400 1rem "Press Start 2P", monospace; color: var(--pc); }
+    .scores b { font: 400 1rem "Press Start 2P", "Chakra Petch", monospace; color: var(--pc); }
     /* กระดาน: จุด เส้น ช่อง วาดด้วย SVG เม็ดคม */
     .board { display: block; width: 100%; margin: 8px 0 16px; touch-action: manipulation; }
     .board .pt { fill: var(--text); }
@@ -152,7 +152,7 @@
     .board .edge:focus { outline: none; }
     .board .edge:focus-visible .ln { stroke: var(--text); stroke-dasharray: 2 2; }
     .board .box { fill: var(--pc); opacity: 0.45; }
-    .board .ini { fill: var(--text); font: 400 12px "Press Start 2P", monospace; text-anchor: middle; dominant-baseline: central; }
+    .board .ini { fill: var(--text); font: 400 12px "Press Start 2P", "Chakra Petch", monospace; text-anchor: middle; dominant-baseline: central; }
     .word .dot { width: 20px; height: 20px; vertical-align: -2px; }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
@@ -170,7 +170,7 @@
     <h1>DOTS AND BOXES</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">Rules</h2>
+        <h2 id="rules-title">กติกา</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
@@ -183,7 +183,7 @@
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">Winner</h2>
+        <h2 id="winner-title">ผู้ชนะ</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -224,7 +224,7 @@
     const dot = (c) => `<span class="dot c${c}" aria-label="${COLOR[c]}"></span>`;
     const scoreboard = (v) => `
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${dot(p.color)}${v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
+        <li class="row"><span>${dot(p.color)}${v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} แต้ม</span></li>`).join("")}
       </ul>`;
     const scores = (v) => `
       <ul class="scores" style="--n: ${v.players.length}" aria-label="คะแนน">${v.players.map((p) => `
@@ -307,16 +307,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">Name</label>
+          <label for="name">ชื่อ</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">Create room</button>
-          <p class="or">or</p>
-          <label for="code">Room code</label>
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">Join</button>`;
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -353,18 +353,18 @@
         ];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">Room</span>
+            <span class="hint">ห้อง</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>Copied</span>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
-          <h2>Settings</h2>
+          <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">Players ${v.players.length}/4</h2>
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/4</h2>
           <ul class="chips">${v.players.map((p) => `<li>${dot(p.color)}${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${ok ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>Start</button>`
+               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>เริ่ม</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -380,15 +380,15 @@
       if (!v.myTurn || (pick !== null && v.lines[pick])) pick = null;
       const turnP = v.players.find((p) => p.id === v.turn);
       const status = v.screen === "over"
-        ? iWon ? `<span class="good">You win</span>` : `<span class="hl">${v.winners.map(esc).join(", ")}</span> wins`
-        : v.myTurn ? (pick !== null ? `<span class="hl">แตะซ้ำเพื่อลาก</span>` : `<span class="hl">Your turn</span>`)
-        : turnP ? `${esc(turnP.name)}'s turn` : "";
+        ? iWon ? `<span class="good">คุณชนะ</span>` : `<span class="hl">${v.winners.map(esc).join(", ")}</span> ชนะ`
+        : v.myTurn ? (pick !== null ? `<span class="hl">แตะซ้ำเพื่อลาก</span>` : `<span class="hl">ตาคุณ</span>`)
+        : turnP ? `ตา ${esc(turnP.name)}` : "";
       app.innerHTML = `
         ${scores(v)}
         ${board(v, pick)}
         <p class="status">${status}</p>
         ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
       // แตะครั้งแรกเลือกเส้น แตะเส้นเดิมอีกครั้งลากจริง
       const choose = (e) => {
         if (pick === e) {

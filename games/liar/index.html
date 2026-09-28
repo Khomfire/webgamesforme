@@ -48,7 +48,7 @@
       height: 44px;
       margin: 0;
       padding: 0;
-      font: 400 1rem "Press Start 2P", monospace;
+      font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
       box-shadow: 4px 4px 0 var(--c, var(--yellow));
     }
     .help { --c: var(--cyan); }
@@ -66,7 +66,7 @@
     dialog li { padding: 4px 0; border: 0; }
     .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", monospace; color: var(--yellow); }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
     input {
@@ -101,7 +101,7 @@
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
-    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
     .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
@@ -137,14 +137,14 @@
     .board .now .name { color: var(--text); }
     .board .name.hl { color: var(--yellow); }
     .board .out .name { text-decoration: line-through; }
-    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", monospace; color: var(--yellow); white-space: nowrap; }
+    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); white-space: nowrap; }
     .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
     .board .meter { display: block; height: 4px; margin-top: 6px; background: #2c2950; }
     .board .meter i { display: block; width: var(--p); max-width: 100%; height: 100%; background: var(--m, var(--yellow)); }
     .board .pips { display: flex; gap: 3px; margin-top: 6px; }
     .board .pips i { width: 10px; height: 10px; border: 2px solid #2c2950; }
     .board .pips i.on { border-color: var(--yellow); background: var(--yellow); }
-    .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
+    .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", "Chakra Petch", monospace; font-size: 0.8rem; }
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 
     /* ลูกเต๋า: จุด 3x3 ติดเฉพาะช่องของหน้านั้น */
@@ -176,10 +176,10 @@
     .faces { gap: 8px; }
     .faces .die { --c: var(--dim); flex-basis: min(48px, calc((100% - 40px) / 6)); padding: 6px; border-width: 3px; }
     .faces .die.picked { --c: var(--yellow); }
-    .bid { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 12px 0 4px; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
+    .bid { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 12px 0 4px; font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     .bid .die { --c: var(--yellow); width: 56px; padding: 8px; border-width: 4px; }
     .stepper { display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 20px; }
-    .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
+    .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     .liar { --c: var(--red); }
     /* กฎเสริม: ปิดอยู่เป็นสีจาง กดแล้วเป็นสีเหลือง */
     .center { text-align: center; }
@@ -256,7 +256,7 @@
     <h1>LIAR'S DICE</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">Rules</h2>
+        <h2 id="rules-title">กติกา</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <h2>เริ่ม</h2>
@@ -266,39 +266,39 @@
         <li>ต้นรอบ ทุกคนทอยเต๋าที่เหลือ เห็นแค่ของตัวเอง</li>
         <li>คนเริ่มขึ้นบนสุดของรายชื่อ เล่นไล่ลงแล้ววนกลับ ข้ามคนที่ออกแล้ว</li>
       </ol>
-      <h2>Bid</h2>
+      <h2>เสนอ</h2>
       <ol>
-        <li>Bid: บอกว่าเต๋าทั้งวง (รวมของทุกคน) มีหน้านี้อย่างน้อยกี่ลูก เช่น <span class="die inline" data-face="4"></span> x5</li>
-        <li><span class="die inline" data-face="1"></span> นับเป็นหน้าอะไรก็ได้ เช่น Bid <span class="die inline" data-face="4"></span> ให้นับทั้ง <span class="die inline" data-face="4"></span> และ <span class="die inline" data-face="1"></span></li>
-        <li>คนแรกของรอบต้อง Bid เปิดด้วย <span class="die inline" data-face="1"></span> ไม่ได้</li>
-        <li>Bid ต่อต้องสูงกว่า: จำนวนมากกว่า (หน้าไหนก็ได้) หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
+        <li>เสนอ: บอกว่าเต๋าทั้งวง (รวมของทุกคน) มีหน้านี้อย่างน้อยกี่ลูก เช่น <span class="die inline" data-face="4"></span> x5</li>
+        <li><span class="die inline" data-face="1"></span> นับเป็นหน้าอะไรก็ได้ เช่นเสนอ <span class="die inline" data-face="4"></span> ให้นับทั้ง <span class="die inline" data-face="4"></span> และ <span class="die inline" data-face="1"></span></li>
+        <li>คนแรกของรอบเสนอเปิดด้วย <span class="die inline" data-face="1"></span> ไม่ได้</li>
+        <li>เสนอต่อต้องสูงกว่า: จำนวนมากกว่า (หน้าไหนก็ได้) หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
         <li>เปลี่ยนเป็น <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว ปัดขึ้น เช่น <span class="die inline" data-face="4"></span> x5 เป็น <span class="die inline" data-face="1"></span> x3</li>
         <li>เปลี่ยนจาก <span class="die inline" data-face="1"></span> ใช้สองเท่า + 1 เช่น <span class="die inline" data-face="1"></span> x3 เป็น <span class="die inline" data-face="4"></span> x7</li>
-        <li>Bid เกินจำนวนเต๋าทั้งวงไม่ได้</li>
-        <li>ตาละ <span id="rule-time">20</span>s หมดเวลา: Bid เพิ่ม 1 ลูกหน้าเดิม (เปิดรอบ <span class="die inline" data-face="2"></span> x1) เกินทั้งวงจับโกหก</li>
+        <li>เสนอเกินจำนวนเต๋าทั้งวงไม่ได้</li>
+        <li>ตาละ <span id="rule-time">20</span>s หมดเวลา: เสนอเพิ่ม 1 ลูกหน้าเดิม (เปิดรอบ <span class="die inline" data-face="2"></span> x1) เกินทั้งวงจับโกหก</li>
       </ol>
-      <h2>Liar</h2>
+      <h2>จับโกหก</h2>
       <ol>
-        <li>ถึงตาแล้วไม่เชื่อ Bid ของคนก่อนหน้า กด Liar แทนการ Bid</li>
-        <li>กด Liar ได้แค่คนที่ถึงตา</li>
-        <li>เปิดเต๋าทุกคน นับหน้าที่ Bid รวม <span class="die inline" data-face="1"></span></li>
-        <li>มีครบหรือมากกว่า คนกด Liar เสีย <span class="die inline" data-face=""></span></li>
-        <li>มีไม่ครบ คน Bid เสีย <span class="die inline" data-face=""></span></li>
-        <li>ทุกคนกด Next round คนเสียเต๋าเริ่มรอบใหม่ ถ้าเขาออกแล้ว คนถัดไปเริ่ม</li>
+        <li>ถึงตาแล้วไม่เชื่อที่คนก่อนหน้าเสนอ กดโกหกแทนการเสนอ</li>
+        <li>กดโกหกได้แค่คนที่ถึงตา</li>
+        <li>เปิดเต๋าทุกคน นับหน้าที่เสนอ รวม <span class="die inline" data-face="1"></span></li>
+        <li>มีครบหรือมากกว่า คนกดโกหกเสีย <span class="die inline" data-face=""></span></li>
+        <li>มีไม่ครบ คนเสนอเสีย <span class="die inline" data-face=""></span></li>
+        <li>ทุกคนกดรอบต่อไป คนเสียเต๋าเริ่มรอบใหม่ ถ้าเขาออกแล้ว คนถัดไปเริ่ม</li>
         <li>เต๋าหมดออกจากเกม เหลือเต๋าคนสุดท้ายชนะ</li>
       </ol>
-      <h2>+ PALIFICO</h2>
+      <h2>+ ปาลิฟิโก</h2>
       <p class="hint">กฎเสริม เจ้าของห้องเปิดได้</p>
       <ol>
-        <li>ใครเหลือ <span class="die inline" data-face=""></span> รอบถัดไปเป็นรอบ PALIFICO เขาเริ่มก่อน</li>
-        <li><span class="die inline" data-face="1"></span> ไม่แทนหน้าอื่น นับแค่หน้าที่ Bid</li>
+        <li>ใครเหลือ <span class="die inline" data-face=""></span> รอบถัดไปเป็นรอบปาลิฟิโก เขาเริ่มก่อน</li>
+        <li><span class="die inline" data-face="1"></span> ไม่แทนหน้าอื่น นับแค่หน้าที่เสนอ</li>
         <li>เปิดด้วย <span class="die inline" data-face="1"></span> ได้</li>
         <li>ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">Winner</h2>
+        <h2 id="winner-title">ผู้ชนะ</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -354,9 +354,9 @@
     const die = (v, cls = "", style = "") => `<div class="die ${cls}"${style ? ` style="${style}"` : ""} role="img" aria-label="${v}">${pips(v)}</div>`;
 
     const scoreboard = (v) => `
-      <h2>Players</h2>
+      <h2>ผู้เล่น</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
+        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
       </ul>`;
 
     // จุดละเต๋าหนึ่งลูก ทึบคือที่ยังเหลือ
@@ -380,7 +380,7 @@
       const el = document.createElement("div");
       el.className = "stamp";
       el.setAttribute("aria-hidden", "true");
-      el.textContent = "LIAR!";
+      el.textContent = "โกหก!";
       document.body.append(el);
       setTimeout(() => el.remove(), 900);
     }
@@ -431,10 +431,10 @@
       if (status !== seenStatus) statusAt = now + Math.max(...o.players.map(left));
       seenStatus = status;
       app.innerHTML = `
-        <h2>Roll for first</h2>
+        <h2>ทอยหาคนเริ่ม</h2>
         <div class="pair${me.out ? " dim" : ""}${me.dice ? spin(me) : ""}" style="--left: ${left(me)}ms">${me.dice ? me.dice.map(face).join("") : blank + blank}</div>
         <p class="status landing" style="--left: ${Math.max(0, statusAt - now)}ms">${status}</p>
-        ${o.mine ? `<button id="first-roll">Roll</button>` : o.starter ? "" : `<p class="hint center">รอคนอื่นทอย</p>`}
+        ${o.mine ? `<button id="first-roll">ทอย</button>` : o.starter ? "" : `<p class="hint center">รอคนอื่นทอย</p>`}
         <ul style="margin-top: 24px">${others.map((p) => `
           <li class="row${p.out ? " dim" : ""}"><span${p.name === o.starter ? ' class="hl"' : ""}>${esc(p.name)}</span>${p.dice
             ? `<span class="roll-sum" style="--left: ${left(p)}ms"><span class="dice${spin(p)}">${p.dice.map(face).join("")}</span><span class="landing">${sum(p.dice)}</span></span>`
@@ -513,16 +513,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">Name</label>
+          <label for="name">ชื่อ</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">Create room</button>
-          <p class="or">or</p>
-          <label for="code">Room code</label>
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">Join</button>`;
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -555,18 +555,18 @@
           ...Object.entries(RULES).map(([k, name]) => ({ label: name, on: v.rules[k], toggle: () => send({ t: "rule", key: k, on: !v.rules[k] }) }))];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">Room</span>
+            <span class="hint">ห้อง</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>Copied</span>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
-          <h2>Settings</h2>
+          <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">Players ${v.players.length}</h2>
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `<p class="hint">ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</p>
-               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>Start</button>`
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -592,15 +592,15 @@
         const locked = v.pal && v.bid; // รอบ palifico เปลี่ยนหน้าไม่ได้
         app.innerHTML = `
           ${scorebar(v)}
-          <p class="status">${v.myTurn ? `<span class="hl">Your turn</span>` : `${esc(v.turnName)}'s turn`}</p>
+          <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
           ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
           ${v.bid
             ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${die(v.bid.face)} &times; ${v.bid.n}</div>
                <p class="center">${esc(v.bid.name)}</p>`
             : ""}
-          <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">PALIFICO</span>` : ""}</p>
-          <h2 style="margin-top: 24px">Your dice</h2>
-          ${v.out ? `<p class="bad">Out</p>` : `<div class="dice" id="hand">${v.hand.map((d) => die(d)).join("")}</div>`}
+          <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">ปาลิฟิโก</span>` : ""}</p>
+          <h2 style="margin-top: 24px">เต๋าของคุณ</h2>
+          ${v.out ? `<p class="bad">ตกรอบ</p>` : `<div class="dice" id="hand">${v.hand.map((d) => die(d)).join("")}</div>`}
           ${v.myTurn
             ? `<div class="stepper">
                  <button class="icon-btn" id="less" aria-label="ลดจำนวน" ${pick.n > 1 ? "" : "disabled"}>-</button>
@@ -609,8 +609,8 @@
                </div>
                <div class="dice faces">${[1, 2, 3, 4, 5, 6].map((f) => `<button class="die${f === pick.face ? " picked" : ""}" data-face="${f}" aria-label="หน้า ${f}" aria-pressed="${f === pick.face}" ${locked && f !== v.bid.face ? "disabled" : ""}>${pips(f)}</button>`).join("")}</div>
                <div class="buttons">
-                 <button id="bid" data-sfx="confirm" ${canBid ? "" : "disabled"}>Bid</button>
-                 <button id="liar" class="liar" data-sfx="vote" ${v.bid ? "" : "disabled"}>Liar!</button>
+                 <button id="bid" data-sfx="confirm" ${canBid ? "" : "disabled"}>เสนอ</button>
+                 <button id="liar" class="liar" data-sfx="vote" ${v.bid ? "" : "disabled"}>โกหก!</button>
                </div>`
             : ""}`;
         if (v.myTurn) {
@@ -632,12 +632,12 @@
         <div${elapsed < end + 300 ? ` class="revealing" style="--end: ${end}ms; --shift: -${elapsed}ms"` : ""}>
           ${v.reveal ? revealBox(v.reveal) : ""}
           <div class="later">
-            ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้า PALIFICO</p>` : ""}
+            ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้าปาลิฟิโก</p>` : ""}
             ${v.screen === "over"
-              ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint center">รอเกมใหม่</p>`
+              ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint center">รอเกมใหม่</p>`
               : v.out ? `<p class="hint center">รอคนอื่น</p>`
-              : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">Next round</button>`}
-            ${v.screen === "reveal" ? `<p class="hint center">Ready ${v.readyCount}/${v.aliveCount}</p>` : ""}
+              : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
+            ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
             <div style="margin-top: 24px">${scorebar(v)}</div>
           </div>
         </div>`;
