@@ -142,6 +142,7 @@
       { id: "draw", name: "DRAW & GUESS", desc: "วาดให้เพื่อนทาย", players: "2-10 คน" },
       { id: "dots", name: "DOTS AND BOXES", desc: "ลากเส้นปิดช่อง ได้ช่องมากสุดชนะ", players: "2-4 คน" },
       { id: "chess", name: "CHESS", desc: "Checkmate ก่อนชนะ", players: "2 คน" },
+      { id: "go", name: "GO", desc: "วางหมากล้อมพื้นที่ ได้มากกว่าชนะ", players: "2 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -190,6 +191,9 @@
       chess: `${["......##", ".....####", "....##.###", "...#######", "..########", "..###.####", ".....#####", "....######", "...#######", "..########"]
         .flatMap((row, y) => [...row].map((ch, x) => (ch === "#" ? `<rect x="${x * 4}" y="${y * 4 + 4}" width="4" height="4" fill="currentColor"/>` : ""))).join("")}
         <rect x="24" y="12" width="4" height="4" fill="${face}"/>`,
+      // กระดานโกะมีหมากขาวหนึ่ง ดำสอง
+      go: `<path d="M6 4v40M18 4v40M30 4v40M42 4v40M4 6h40M4 18h40M4 30h40M4 42h40" stroke="currentColor" stroke-width="3"/>
+        <circle cx="18" cy="30" r="7" fill="${face}" stroke="${ink}" stroke-width="2"/><circle cx="30" cy="18" r="7" fill="${ink}" stroke="${face}" stroke-width="2"/><circle cx="30" cy="30" r="7" fill="${ink}" stroke="${face}" stroke-width="2"/>`,
     };
 
     const list = document.getElementById("games");
