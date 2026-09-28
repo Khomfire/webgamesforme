@@ -254,7 +254,7 @@
         <li>Double: เฉพาะ 2 ใบแรก ลงเพิ่มเท่าตัว แล้วได้อีกใบเดียว</li>
         <li>เกิน 21 = Bust แพ้ทันที</li>
         <li>Dealer เปิดใบคว่ำ แล้วจั่วจนได้ 17 ขึ้นไป (soft 17 ก็หยุด)</li>
-        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: Bet ขั้นต่ำ, ไม่ซื้อ Insurance หรือ Stand</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: Bet ขั้นต่ำ, ไม่ซื้อ Insurance หรือ Stand</li>
       </ol>
       <h2>Payout</h2>
       <ol>
@@ -500,7 +500,7 @@
         lastShown = false;
         lastWon = {};
         betAmt = 0;
-        const set = [{ key: "rounds", label: "จำนวนมือ", value: v.rounds, min: 5, max: 50, step: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
+        const set = [{ key: "rounds", label: "จำนวนมือ", value: v.rounds, min: 5, max: 50, step: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

@@ -171,7 +171,7 @@
         <li>ผลัดกันลง X กับ O</li>
         <li>เรียงครบ 3 ช่องก่อนชนะ +1</li>
         <li>สลับกันเริ่มทุกรอบ</li>
-        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: สุ่มลงให้</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: สุ่มลงให้</li>
       </ol>
       <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
@@ -216,7 +216,7 @@
     const scoreboard = (v) => `
       <h2>Score (target ${v.target})</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
       </ul>`;
 
     const scorebar = (v) => {
@@ -306,7 +306,7 @@
 
       if (v.screen === "lobby") {
         const full = v.players.length === 2;
-        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 1, max: 20 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
+        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "pts", min: 1, max: 20 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

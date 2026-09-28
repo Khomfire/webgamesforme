@@ -231,7 +231,7 @@
         <li>เลือกเต๋าที่มีแต้ม แล้ว Roll ต่อ หรือ Bank เก็บแต้ม</li>
         <li>ทอยแล้วไม่มีแต้ม = Farkle เสียแต้มตานั้นหมด</li>
         <li>Hot dice: มีแต้มครบ <span class="die inline" data-face=""></span> x6 ทอยใหม่ได้ <span class="die inline" data-face=""></span> x6</li>
-        <li>ทอยละ <span id="rule-time">20</span> วิ หมดเวลา: เก็บเต๋าที่ได้แต้มมากสุดแล้ว Bank</li>
+        <li>ทอยละ <span id="rule-time">20</span>s หมดเวลา: เก็บเต๋าที่ได้แต้มมากสุดแล้ว Bank</li>
       </ol>
       <h2>Scoring</h2>
       <ul id="score-rules"></ul>
@@ -306,7 +306,7 @@
     const scoreboard = (v) => `
       <h2>Score (target ${v.target})</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
       </ul>`;
 
     const meter = (n, max) => `<span class="meter" aria-hidden="true"><i style="--p: ${Math.round((100 * n) / max)}%"></i></span>`;
@@ -505,7 +505,7 @@
 
       if (v.screen === "lobby") {
         const enough = v.players.length >= 2;
-        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 500, max: 20000, step: 500 }, { key: "time", label: "ทอยละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
+        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "pts", min: 500, max: 20000, step: 500 }, { key: "time", label: "ทอยละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

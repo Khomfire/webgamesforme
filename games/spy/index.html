@@ -233,7 +233,7 @@
     const scoreboard = (v) => `
       <h2>Score (target ${v.target})</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.gain ? `<span class="gain">+${p.gain}</span>` : ""}${p.score} pts</span></li>`).join("")}
       </ul>`;
 
     const meter = (n, max) => `<span class="meter" aria-hidden="true"><i style="--p: ${Math.round((100 * n) / max)}%"></i></span>`;
@@ -314,7 +314,7 @@
       const enough = v.players.length >= 3;
 
       if (v.screen === "lobby") {
-        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 1, max: 20 }, { key: "minutes", label: "รอบละ", value: v.minutes, unit: "นาที", min: 1, max: 15 }];
+        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "pts", min: 1, max: 20 }, { key: "minutes", label: "รอบละ", value: v.minutes, unit: "min", min: 1, max: 15 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

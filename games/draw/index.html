@@ -191,12 +191,12 @@
       </div>
       <ol>
         <li>ผลัดกันวาด รอบละคนละตา</li>
-        <li>คนวาดเลือก 1 ใน 3 คำ ใน 15 วิ หมดเวลาสุ่มให้</li>
+        <li>คนวาดเลือก 1 ใน 3 คำ ใน 15s หมดเวลาสุ่มให้</li>
         <li>ห้ามเขียนตัวหนังสือหรือตัวเลข</li>
         <li>คนอื่นพิมพ์ทาย ถูกเร็วได้มาก 50-500</li>
         <li>คนวาดได้ครึ่งหนึ่งของแต้มทุกคนที่ทายถูก</li>
         <li>ผ่านครึ่งเวลาและ 3/4 เวลา เปิดใบ้ทีละตัว</li>
-        <li>ทายถูกครบหรือหมดเวลา <span id="rule-time">80</span> วิ เฉลย</li>
+        <li>ทายถูกครบหรือหมดเวลา <span id="rule-time">80</span>s เฉลย</li>
       </ol>
       <p class="hint">ครบรอบ แต้มมากสุดชนะ</p>
     </dialog>
@@ -398,7 +398,7 @@
     const scoreboard = (v) => `
       <h2>Score</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
       </ul>`;
 
     const scorebar = (v) => `
@@ -489,7 +489,7 @@
       if (v.screen === "lobby") {
         lastScreen = v.screen;
         const enough = v.players.length >= 2;
-        const set = [{ key: "rounds", label: "รอบ", value: v.rounds, min: 1, max: 10 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 30, max: 180, step: 10 }];
+        const set = [{ key: "rounds", label: "รอบ", value: v.rounds, min: 1, max: 10 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 30, max: 180, step: 10 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

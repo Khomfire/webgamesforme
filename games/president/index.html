@@ -246,7 +246,7 @@
         <li>ตองทับเดี่ยวได้ โฟร์ทับคู่ได้</li>
         <li>Pass แล้วลงกองนั้นไม่ได้อีก</li>
         <li>ทุกคน Pass คนลงล่าสุดเริ่มกองใหม่ ลงอะไรก็ได้</li>
-        <li>ตาละ <span id="rule-time">20</span> วิ หมดเวลา: Pass (เริ่มกองลงใบเล็กสุด)</li>
+        <li>ตาละ <span id="rule-time">20</span>s หมดเวลา: Pass (เริ่มกองลงใบเล็กสุด)</li>
       </ol>
       <h2>Cards</h2>
       <ol>
@@ -435,7 +435,7 @@
       if (v.screen === "lobby") {
         sel = new Set();
         lastTitle = undefined;
-        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "แต้ม", min: 1, max: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
+        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "pts", min: 1, max: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

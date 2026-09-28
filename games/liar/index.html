@@ -275,7 +275,7 @@
         <li>เปลี่ยนเป็น <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว ปัดขึ้น เช่น <span class="die inline" data-face="4"></span> x5 เป็น <span class="die inline" data-face="1"></span> x3</li>
         <li>เปลี่ยนจาก <span class="die inline" data-face="1"></span> ใช้สองเท่า + 1 เช่น <span class="die inline" data-face="1"></span> x3 เป็น <span class="die inline" data-face="4"></span> x7</li>
         <li>Bid เกินจำนวนเต๋าทั้งวงไม่ได้</li>
-        <li>ตาละ <span id="rule-time">20</span> วิ หมดเวลา: Bid เพิ่ม 1 ลูกหน้าเดิม (เปิดรอบ <span class="die inline" data-face="2"></span> x1) เกินทั้งวงจับโกหก</li>
+        <li>ตาละ <span id="rule-time">20</span>s หมดเวลา: Bid เพิ่ม 1 ลูกหน้าเดิม (เปิดรอบ <span class="die inline" data-face="2"></span> x1) เกินทั้งวงจับโกหก</li>
       </ol>
       <h2>Liar</h2>
       <ol>
@@ -549,7 +549,7 @@
 
       if (v.screen === "lobby") {
         const enough = v.players.length >= 2;
-        const set = [{ key: "start-dice", label: "เต๋าคนละ", value: v.start, unit: "ลูก", min: 1, max: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 },
+        const set = [{ key: "start-dice", label: "เต๋าคนละ", value: v.start, unit: "ลูก", min: 1, max: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 },
           ...Object.entries(RULES).map(([k, name]) => ({ label: name, on: v.rules[k], toggle: () => send({ t: "rule", key: k, on: !v.rules[k] }) }))];
         app.innerHTML = `
           <div class="room-row">
