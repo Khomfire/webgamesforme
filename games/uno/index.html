@@ -302,7 +302,7 @@
         <li>แจกคนละ 7 ใบ เปิดกองทิ้ง 1 ใบ</li>
         <li>ลงสีเดียวกัน เช่น <span data-card="r:7"></span> บน <span data-card="r:3"></span> หรือเลข/สัญลักษณ์เดียวกัน เช่น <span data-card="b:7"></span> บน <span data-card="r:7"></span></li>
         <li>ไม่มีไพ่ลง หรือไม่อยากลง จั่ว 1 ใบ ลงใบนั้นได้ถ้าเข้า ไม่งั้น Pass</li>
-        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลาจั่วแล้วเสียตา</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลาจั่วแล้วเสียตา</li>
         <li>เหลือ 1 ใบ กด UNO ก่อนคนถัดไปเล่น ไม่ทันจั่ว 2</li>
       </ol>
       <h2>Action cards</h2>
@@ -703,7 +703,7 @@
       if (v.screen === "lobby") {
         dropFlying();
         lastShuffles = undefined;
-        const set = [{ key: "target", label: "ตกรอบที่", value: v.target, unit: "แต้ม", min: 50, max: 1000, step: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
+        const set = [{ key: "target", label: "ตกรอบที่", value: v.target, unit: "pts", min: 50, max: 1000, step: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>

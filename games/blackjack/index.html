@@ -151,23 +151,21 @@
     }
     .card.hide::after { content: ""; position: absolute; inset: -2px; border: 2px solid var(--text); border-radius: 5px; }
     .card.inline { --w: 30px; display: inline-block; vertical-align: middle; margin: 2px 0; }
-    /* ชิป: วงกลมขอบประ */
+    /* เหรียญทอง pixel art 12x12 ขยายทีละเท่าตัว (12, 24, 36px) ให้เม็ดคม */
     .coin {
       display: inline-block;
       flex: none;
-      width: 22px;
-      height: 22px;
-      border: 3px dashed var(--text);
-      border-radius: 50%;
-      background: var(--yellow);
+      width: 24px;
+      height: 24px;
+      background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' shape-rendering='crispEdges'><path fill='%235a3d00' d='M4 0h4v1h-4zM2 1h2v1h-2zM8 1h2v1h-2zM1 2h1v1h-1zM10 2h1v1h-1zM1 3h1v1h-1zM10 3h1v1h-1zM0 4h1v1h-1zM11 4h1v1h-1zM0 5h1v1h-1zM11 5h1v1h-1zM0 6h1v1h-1zM11 6h1v1h-1zM0 7h1v1h-1zM11 7h1v1h-1zM1 8h1v1h-1zM10 8h1v1h-1zM1 9h1v1h-1zM10 9h1v1h-1zM2 10h2v1h-2zM8 10h2v1h-2zM4 11h4v1h-4z'/><path fill='%23fff4b8' d='M4 1h2v1h-2zM2 2h2v1h-2zM2 3h1v1h-1zM5 3h1v1h-1zM1 4h1v1h-1zM5 4h1v1h-1zM1 5h1v1h-1zM5 5h1v1h-1zM1 6h1v1h-1zM5 6h1v1h-1zM1 7h1v1h-1zM5 7h1v1h-1zM5 8h1v1h-1z'/><path fill='%23ffd23f' d='M6 1h2v1h-2zM4 2h5v1h-5zM3 3h2v1h-2zM7 3h2v1h-2zM2 4h3v1h-3zM7 4h3v1h-3zM2 5h3v1h-3zM7 5h3v1h-3zM2 6h3v1h-3zM7 6h3v1h-3zM2 7h3v1h-3zM7 7h3v1h-3zM2 8h3v1h-3zM7 8h2v1h-2zM2 9h6v1h-6z'/><path fill='%23d49b00' d='M9 2h1v1h-1zM6 3h1v1h-1zM9 3h1v1h-1zM6 4h1v1h-1zM10 4h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM6 6h1v1h-1zM10 6h1v1h-1zM6 7h1v1h-1zM10 7h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM8 9h2v1h-2zM4 10h4v1h-4z'/></svg>") center / contain no-repeat;
     }
     .money { font: 400 0.65rem "Press Start 2P", monospace; color: var(--yellow); }
     .stake { display: inline-flex; align-items: center; gap: 4px; }
-    .stake .coin { width: 14px; height: 14px; border-width: 2px; }
-    /* เลือกยอดลงเงิน */
-    .bet-row { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 12px; }
-    .bet-row .icon-btn { margin: 0; }
-    .bet-row .amount { min-width: 5ch; text-align: center; font: 400 1.2rem "Press Start 2P", monospace; color: var(--yellow); }
+    .stake .coin { width: 12px; height: 12px; }
+    /* เลือกยอดลงเงิน: เลื่อนทีละขั้นต่ำ */
+    .bet-row { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+    .bet-row .icon-btn { flex: none; }
+    input[type="range"] { flex: 1; min-width: 0; padding: 0; border: 0; accent-color: var(--yellow); }
     /* โต๊ะ: เจ้ามือด้านบน คนอื่นตรงกลาง ของเราด้านล่าง */
     .round { margin: 0 0 12px; text-align: right; }
     .table { position: relative; display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin: 0 0 16px; }
@@ -254,7 +252,7 @@
         <li>Double: เฉพาะ 2 ใบแรก ลงเพิ่มเท่าตัว แล้วได้อีกใบเดียว</li>
         <li>เกิน 21 = Bust แพ้ทันที</li>
         <li>Dealer เปิดใบคว่ำ แล้วจั่วจนได้ 17 ขึ้นไป (soft 17 ก็หยุด)</li>
-        <li>ตาละ <span id="rule-time">15</span> วิ หมดเวลา: Bet ขั้นต่ำ, ไม่ซื้อ Insurance หรือ Stand</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: Bet ขั้นต่ำ, ไม่ซื้อ Insurance หรือ Stand</li>
       </ol>
       <h2>Payout</h2>
       <ol>
@@ -332,7 +330,7 @@
     const wonText = (won) => (won ? fmt(won) : "Push");
     const wonHtml = (won) => `<span class="won ${won > 0 ? "good" : won < 0 ? "bad" : "hint"}">${wonText(won)}</span>`;
     const coin = (n) => `<span class="stake"><span class="coin"></span><span class="money">${n}</span></span>`;
-    let betAmt = 0; // ยอดที่จะลง จำไว้ใช้มือต่อไป
+    let betAmt = null; // ยอดที่จะลง จำไว้ใช้มือต่อไป
 
     // ---------- แอนิเมชัน ----------
     const still = matchMedia("(prefers-reduced-motion: reduce)");
@@ -380,7 +378,7 @@
       const a = place(from), b = place(to);
       if (still.matches || !a || !b) return;
       const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-      const x = ra.left + ra.width / 2 - 11, y = ra.top + ra.height / 2 - 11;
+      const x = ra.left + ra.width / 2 - 12, y = ra.top + ra.height / 2 - 12;
       for (let i = 0; i < 5; i++) {
         const el = document.createElement("span");
         el.className = "coin fly";
@@ -388,7 +386,7 @@
         document.body.append(el);
         el.animate([
           { transform: "none", opacity: 1 },
-          { transform: `translate(${rb.left + rb.width / 2 - 11 - x}px, ${rb.top + rb.height / 2 - 11 - y}px)`, opacity: 1 },
+          { transform: `translate(${rb.left + rb.width / 2 - 12 - x}px, ${rb.top + rb.height / 2 - 12 - y}px)`, opacity: 1 },
         ], { duration: 500, delay: i * 70, easing: "ease-in-out", fill: "both" }).onfinish = () => el.remove();
       }
       playSfx("confirm");
@@ -443,7 +441,7 @@
     const scoreboard = (v) => `
       <h2>Chips</h2>
       <ul>${[...v.players].sort((a, b) => b.chips - a.chips).map((p) => `
-        <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${p.out ? `<span class="tag bad">Out</span>` : ""}</span><span>${p.chips}</span></li>`).join("")}
+        <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${p.out ? `<span class="tag bad">Out</span>` : ""}</span>${coin(p.chips)}</li>`).join("")}
       </ul>`;
 
     let timeoutTimer, lastScreen, lastLog = "", lastCount = {}, lastShown = false, lastWon = {}, overTimer;
@@ -499,8 +497,8 @@
         lastCount = {};
         lastShown = false;
         lastWon = {};
-        betAmt = 0;
-        const set = [{ key: "rounds", label: "จำนวนมือ", value: v.rounds, min: 5, max: 50, step: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
+        betAmt = null;
+        const set = [{ key: "rounds", label: "จำนวนมือ", value: v.rounds, min: 5, max: 50, step: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>
@@ -547,16 +545,15 @@
       const seatHtml = (s) => `
         <div class="seat${s.id === v.me ? " mine" : ""}${acting(s) && v.screen !== "over" ? " now" : ""}" data-seat="${s.id}">
           <div class="who"><span class="name">${esc(s.name)}</span><span>${s.out ? `<span class="tag bad">Out</span>`
-            : v.screen === "bet" && s.bet !== null ? coin(s.bet)
-            : s.ins ? insTag(s) : ""} <span class="money">${s.chips}</span></span></div>
-          <div class="hands">${s.hands.map((h, i) => `
+            : s.ins ? insTag(s) : ""} ${coin(s.chips)}</span></div>
+          <div class="hands">${v.screen === "bet" && s.bet !== null ? `<div class="hand"><div class="info"><span></span>${coin(s.bet)}</div></div>` : ""}${s.hands.map((h, i) => `
             <div class="hand${v.screen === "play" && v.turn.id === s.id && v.turn.h === i && s.hands.length > 1 ? " cur" : ""}" data-hand="${i}">
               <div class="cards">${h.cards.map((c) => cardHtml(c)).join("")}</div>
-              <div class="info"><span class="total">${handText(h)}</span>${h.won !== null ? wonHtml(h.won) : `<span class="money">${h.bet}</span>`}</div>
+              <div class="info"><span class="total">${handText(h)}</span>${h.won !== null ? wonHtml(h.won) : coin(h.bet)}</div>
             </div>`).join("")}</div>
           ${acting(s) && v.screen !== "over" ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
         </div>`;
-      if (canBet) betAmt = Math.min(me.chips - (me.chips % v.min), Math.max(v.min, betAmt || v.min * 5));
+      if (canBet) betAmt = Math.min(me.chips - (me.chips % v.min), betAmt ?? v.min * 5);
       app.innerHTML = `
         <p class="hint round">Hand ${v.screen === "bet" ? v.round + 1 : v.round}/${v.rounds}</p>
         <div class="table">
@@ -572,7 +569,7 @@
         ${canBet ? `
           <div class="bet-row">
             <button class="icon-btn" id="minus" aria-label="ลด Bet">-</button>
-            <span class="amount" id="amount">${betAmt}</span>
+            <input type="range" id="slider" aria-label="ยอด Bet">
             <button class="icon-btn" id="plus" aria-label="เพิ่ม Bet">+</button>
           </div>
           <button id="bet" data-sfx="confirm">Bet</button>` : ""}
@@ -663,18 +660,21 @@
       lastWon = Object.fromEntries(v.seats.map((s) => [s.id, s.won]));
 
       if (canBet) {
-        const amount = app.querySelector("#amount"), minus = app.querySelector("#minus"), plus = app.querySelector("#plus");
+        const slider = app.querySelector("#slider"), minus = app.querySelector("#minus"), plus = app.querySelector("#plus"), bet = app.querySelector("#bet");
         const max = me.chips - (me.chips % v.min);
+        Object.assign(slider, { min: v.min, max, step: v.min });
         const set = (n) => {
           betAmt = Math.min(max, Math.max(v.min, n));
-          amount.textContent = betAmt;
+          slider.value = betAmt;
+          bet.textContent = `Bet ${betAmt}`;
           minus.disabled = betAmt <= v.min;
           plus.disabled = betAmt >= max;
         };
         set(betAmt);
+        slider.oninput = () => set(Number(slider.value));
         minus.onclick = () => set(betAmt - v.min);
         plus.onclick = () => set(betAmt + v.min);
-        app.querySelector("#bet").onclick = () => send({ t: "bet", n: betAmt });
+        bet.onclick = () => send({ t: "bet", n: betAmt });
       }
       if (canInsure) {
         app.querySelector("#insure").onclick = () => send({ t: "insure", on: true });

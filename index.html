@@ -140,6 +140,10 @@
       { id: "president", name: "PRESIDENT", desc: "ไพ่สลาฟ หมดมือก่อนได้เป็น King", players: "3-8 คน" },
       { id: "connect4", name: "CONNECT FOUR", desc: "หยอดเหรียญ เรียง 4 ก่อนชนะ", players: "2 คน" },
       { id: "draw", name: "DRAW & GUESS", desc: "วาดให้เพื่อนทาย", players: "2-10 คน" },
+      { id: "dots", name: "DOTS AND BOXES", desc: "ลากเส้นปิดช่อง ได้ช่องมากสุดชนะ", players: "2-4 คน" },
+      { id: "chess", name: "CHESS", desc: "Checkmate ก่อนชนะ", players: "2 คน" },
+      { id: "go", name: "GO", desc: "วางหมากล้อมพื้นที่ ได้มากกว่าชนะ", players: "2 คน" },
+      { id: "ludo", name: "LUDO", desc: "ทอยเต๋าเดินหมาก เข้าเส้นชัยครบ 4 ตัวก่อนชนะ", players: "2-4 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -180,6 +184,21 @@
       // มงกุฎคิง
       president: `<path d="M7 36 5 13l10 9 9-13 9 13 10-9-2 23z" fill="currentColor"/><rect x="7" y="38" width="34" height="5" fill="currentColor"/>
         <circle cx="5" cy="12" r="3" fill="${face}"/><circle cx="24" cy="8" r="3" fill="${face}"/><circle cx="43" cy="12" r="3" fill="${face}"/>`,
+      // จุด 3x3 มีเส้นบางเส้น ช่องซ้ายบนปิดแล้ว
+      dots: `<rect x="8" y="8" width="16" height="16" fill="${red}"/>
+        <path d="M8 8h32M8 8v16M24 8v32M8 24h16M24 40h16" stroke="currentColor" stroke-width="4"/>
+        ${[8, 24, 40].map((y) => [8, 24, 40].map((x) => `<rect x="${x - 4}" y="${y - 4}" width="8" height="8" fill="${face}"/>`).join("")).join("")}`,
+      // Knight แบบ pixel มีตาสีขาว
+      chess: `${["......##", ".....####", "....##.###", "...#######", "..########", "..###.####", ".....#####", "....######", "...#######", "..########"]
+        .flatMap((row, y) => [...row].map((ch, x) => (ch === "#" ? `<rect x="${x * 4}" y="${y * 4 + 4}" width="4" height="4" fill="currentColor"/>` : ""))).join("")}
+        <rect x="24" y="12" width="4" height="4" fill="${face}"/>`,
+      // กระดานโกะมีหมากขาวหนึ่ง ดำสอง
+      go: `<path d="M6 4v40M18 4v40M30 4v40M42 4v40M4 6h40M4 18h40M4 30h40M4 42h40" stroke="currentColor" stroke-width="3"/>
+        <circle cx="18" cy="30" r="7" fill="${face}" stroke="${ink}" stroke-width="2"/><circle cx="30" cy="18" r="7" fill="${ink}" stroke="${face}" stroke-width="2"/><circle cx="30" cy="30" r="7" fill="${ink}" stroke="${face}" stroke-width="2"/>`,
+      // กระดานลูโด้: บ้านสี่สีที่มุม ทางเดินเป็นกากบาท มีหมากในบ้าน
+      ludo: `${[[3, 3, "#ff4d4d"], [27, 3, "#3ec46d"], [27, 27, "#ffd23f"], [3, 27, "#3e8ee0"]].map(([x, y, c]) =>
+        `<rect x="${x}" y="${y}" width="18" height="18" fill="${c}"/><circle cx="${x + 9}" cy="${y + 9}" r="4" fill="${face}" stroke="${ink}" stroke-width="2"/>`).join("")}
+        <path d="M21 3h6v42h-6zM3 21h42v6H3z" fill="currentColor"/>`,
     };
 
     const list = document.getElementById("games");

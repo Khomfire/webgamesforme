@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CONNECT FOUR</title>
+  <title>DOTS AND BOXES</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
@@ -125,55 +125,35 @@
     /* หลอดเวลาของตานี้ */
     .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
-    /* คะแนนแถวเดียว: คนแรกซ้าย คะแนนกลาง คนที่สองขวา */
-    .vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .vs > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .vs > span:last-child { text-align: right; }
-    .vs > span:last-child > :last-child { margin: 0 0 0 8px; }
-    .vs > div { text-align: center; line-height: 1.3; }
-    .vs b { font: 400 1rem "Press Start 2P", monospace; }
-    .vs small { display: block; color: var(--dim); font-size: 0.8rem; }
-    /* กระดาน: 7 คอลัมน์ กดคอลัมน์ไหนก็หยอดลงคอลัมน์นั้น */
-    .board {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      margin: 16px 0 24px;
-      padding: 6px;
-      border: 3px solid #0a1a66;
-      border-radius: 8px;
-      background: #1f3fbf;
-    }
-    .board .col {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      width: auto;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      border-radius: 6px;
-      background: none;
-      box-shadow: none;
-    }
-    .board .col:disabled { opacity: 1; cursor: default; }
-    .board .col:active:not(:disabled) { transform: none; }
-    .board .col:not(:disabled):hover { background: rgba(255, 255, 255, 0.15); }
-    .board .col:focus-visible { outline-offset: 2px; }
-    .hole { position: relative; aspect-ratio: 1; border-radius: 50%; background: var(--screen); box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.6); }
-    .disc { position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.3); }
-    .disc.win { outline: 3px solid var(--text); outline-offset: -3px; animation: pulse 0.6s ease-in-out infinite alternate; }
-    @keyframes pulse { to { transform: scale(0.85); } }
-    /* เหรียญในรายชื่อ */
-    .dot { display: inline-block; width: 16px; height: 16px; margin-right: 8px; border-radius: 50%; vertical-align: -2px; }
-    /* สีผู้เล่น: แดง กับ เหลือง */
-    .r { background: var(--red); }
-    .y { background: var(--yellow); }
-    .tr { color: var(--red); }
-    .ty { color: var(--yellow); }
-    @media (prefers-reduced-motion: reduce) {
-      .disc.win { animation: none; }
-    }
+    /* สีผู้เล่น 4 สี */
+    .c0 { --pc: var(--red); }
+    .c1 { --pc: var(--cyan); }
+    .c2 { --pc: var(--yellow); }
+    .c3 { --pc: #6be675; }
+    .cx { --pc: var(--dim); }
+    .dot { display: inline-block; flex: none; width: 14px; height: 14px; margin-right: 8px; background: var(--pc); vertical-align: -1px; }
+    /* คะแนน: คนละกล่อง คนที่ถึงตามีกรอบสีของเขา */
+    .scores { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 6px; margin-bottom: 16px; }
+    .scores li { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 6px 4px; border: 3px solid #2c2950; }
+    .scores li.now { border-color: var(--pc); }
+    .scores .name { display: flex; align-items: center; max-width: 100%; }
+    .scores .name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .scores b { font: 400 1rem "Press Start 2P", monospace; color: var(--pc); }
+    /* กระดาน: จุด เส้น ช่อง วาดด้วย SVG เม็ดคม */
+    .board { display: block; width: 100%; margin: 8px 0 16px; touch-action: manipulation; }
+    .board .pt { fill: var(--text); }
+    .board .ln { stroke: #2c2950; stroke-width: 4; stroke-dasharray: 4 4; }
+    .board .edge.on .ln { stroke: var(--text); stroke-dasharray: none; stroke-width: 6; }
+    .board .edge.last .ln { stroke: var(--yellow); }
+    .board .edge.pick .ln { stroke: var(--pc); stroke-dasharray: none; stroke-width: 6; }
+    .board .hit { fill: transparent; }
+    .board.live .edge:not(.on) { cursor: pointer; }
+    .board.live .edge:not(.on):not(.pick):hover .ln { stroke: var(--dim); }
+    .board .edge:focus { outline: none; }
+    .board .edge:focus-visible .ln { stroke: var(--text); stroke-dasharray: 2 2; }
+    .board .box { fill: var(--pc); opacity: 0.45; }
+    .board .ini { fill: var(--text); font: 400 12px "Press Start 2P", monospace; text-anchor: middle; dominant-baseline: central; }
+    .word .dot { width: 20px; height: 20px; vertical-align: -2px; }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
@@ -187,20 +167,19 @@
       <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
       <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
     </div>
-    <h1>CONNECT FOUR</h1>
+    <h1>DOTS AND BOXES</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
         <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
-        <li>ผลัดกันหยอดเหรียญ ตกลงช่องล่างสุดที่ว่าง</li>
-        <li>เรียง 4 เหรียญก่อน (นอน ตั้ง หรือทแยง) ชนะ +1</li>
-        <li>เต็มกระดาน เสมอ</li>
-        <li>สลับกันเริ่มทุกรอบ</li>
-        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: สุ่มหยอดให้</li>
+        <li>ผลัดกันลากเส้นเชื่อม 2 จุดที่อยู่ติดกัน ตาละ 1 เส้น</li>
+        <li>ลากเส้นที่ 4 ของช่องไหน ได้ช่องนั้น +1 แล้วลากต่ออีกเส้น</li>
+        <li>ครบทุกช่องจบเกม ได้ช่องมากสุดชนะ เท่ากันชนะร่วม</li>
+        <li>แตะเส้น 2 ครั้งเพื่อลาก</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: สุ่มลากให้</li>
       </ol>
-      <p class="hint">ถึงเป้าหมายก่อนชนะ</p>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
@@ -233,49 +212,62 @@
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
     function enter(name, code, saved) {
-      room = openRoom("connect4", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
+      room = openRoom("dots", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
       if (saved) room.resume();
       else if (code) room.join(code, name);
       else room.create(name);
     }
 
     // ---------- หน้าจอ ----------
+    const COLOR = ["แดง", "ฟ้า", "เหลือง", "เขียว"];
+    const dot = (c) => `<span class="dot c${c}" aria-label="${COLOR[c]}"></span>`;
     const scoreboard = (v) => `
-      <h2>Score (target ${v.target})</h2>
-      <ul>${v.players.map((p) => `
-        <li class="row"><span><span class="dot ${p.color.toLowerCase()}" aria-label="${COLOR[p.color]}"></span>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
+      <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li class="row"><span>${dot(p.color)}${v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
+      </ul>`;
+    const scores = (v) => `
+      <ul class="scores" style="--n: ${v.players.length}" aria-label="คะแนน">${v.players.map((p) => `
+        <li class="c${p.color}${v.screen === "play" && p.id === v.turn ? " now" : ""}">
+          <span class="name">${dot(p.color)}<span>${esc(p.name)}</span></span><b>${p.score}</b>
+        </li>`).join("")}
       </ul>`;
 
-    const scorebar = (v) => {
-      const [a, b] = v.players;
-      const name = (p) => `<span${v.screen === "over" && p.name === v.winner ? ' class="hl"' : ""}>${esc(p.name)}</span>`;
-      const dot = (p) => `<span class="dot ${p.color.toLowerCase()}" aria-label="${COLOR[p.color]}"></span>`;
-      return `
-        <div class="vs" aria-label="คะแนน">
-          <span>${dot(a)}${name(a)}</span>
-          <div><b>${a.score} - ${b.score}</b><small>Target ${v.target}</small></div>
-          <span>${name(b)}${dot(b)}</span>
-        </div>`;
+    // กระดาน: ช่องห่าง S หน่วย ขอบ M เส้นแนวนอน i = r * n + c ต่อด้วยแนวตั้ง H + r * (n + 1) + c (เหมือน server)
+    const S = 40, M = 10;
+    const ends = (n, e) => {
+      const H = (n + 1) * n;
+      if (e < H) { const r = Math.floor(e / n), c = e % n; return [c, r, c + 1, r]; }
+      const r = Math.floor((e - H) / (n + 1)), c = (e - H) % (n + 1);
+      return [c, r, c, r + 1];
     };
-
-    const COLS = 7, ROWS = 6;
-    const COLOR = { R: "แดง", Y: "เหลือง" };
-    const still = matchMedia("(prefers-reduced-motion: reduce)");
-    // เหรียญที่เพิ่งหยอด ตกจากเหนือกระดานลงช่องของมัน แล้วเด้งนิดหนึ่ง
-    function drop(i) {
-      const disc = app.querySelector(`[data-i="${i}"] .disc`);
-      if (!disc || still.matches) return;
-      const row = Math.floor(i / COLS);
-      const step = disc.getBoundingClientRect().height + 4;
-      disc.animate([
-        { transform: `translateY(${-(row + 1) * step}px)` },
-        { transform: "none", offset: 0.75 },
-        { transform: `translateY(${-step * 0.2}px)`, offset: 0.87 },
-        { transform: "none" },
-      ], { duration: 260 + row * 50, easing: "ease-in" });
+    const at = (x) => M + x * S;
+    // พื้นที่แตะของเส้น: สี่เหลี่ยมข้าวหลามตัดจากจุดหัวท้ายไปกลางช่องทั้งสองข้าง ไม่ทับกับเส้นอื่น
+    function board(v, pick) {
+      const n = v.n, all = v.lines.length;
+      const byColor = Object.fromEntries(v.players.map((p) => [p.color, p.name]));
+      const mine = (v.players.find((p) => p.id === v.me) || {}).color;
+      const edges = Array.from({ length: all }, (_, e) => {
+        const [c1, r1, c2, r2] = ends(n, e);
+        const x1 = at(c1), y1 = at(r1), x2 = at(c2), y2 = at(r2), mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        const hit = r1 === r2 ? `${x1},${y1} ${mx},${my - S / 2} ${x2},${y2} ${mx},${my + S / 2}` : `${x1},${y1} ${mx - S / 2},${my} ${x2},${y2} ${mx + S / 2},${my}`;
+        const cls = v.lines[e] ? (e === v.last ? " on last" : " on") : e === pick ? " pick" : "";
+        const label = `เส้น${r1 === r2 ? "นอน" : "ตั้ง"} แถว ${r1 + 1} คอลัมน์ ${c1 + 1}`;
+        return `<g class="edge${cls}" data-e="${e}"${v.myTurn && !v.lines[e] ? ` tabindex="0" role="button" aria-label="${label}"` : ""}>
+          <polygon class="hit" points="${hit}"/><line class="ln" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
+      }).join("");
+      const boxes = v.boxes.map((c, b) => {
+        if (c === null) return "";
+        const x = at(b % n), y = at(Math.floor(b / n)), who = c < 0 ? "" : (byColor[c] || "")[0] || "";
+        return `<g class="got" data-b="${b}"><rect class="box c${c < 0 ? "x" : c}" x="${x}" y="${y}" width="${S}" height="${S}"/><text class="ini" x="${x + S / 2}" y="${y + S / 2}">${esc(who.toUpperCase())}</text></g>`;
+      }).join("");
+      const pts = [];
+      for (let r = 0; r <= n; r++) for (let c = 0; c <= n; c++) pts.push(`<rect class="pt" x="${at(c) - 4}" y="${at(r) - 4}" width="8" height="8"/>`);
+      const size = 2 * M + n * S;
+      return `<svg class="board c${mine}${v.myTurn ? " live" : ""}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" aria-label="กระดาน ${n}×${n}">${boxes}${edges}${pts.join("")}</svg>`;
     }
 
-    let lastScreen, lastMyTurn, lastDrop = null;
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    let lastScreen, lastMyTurn, lastCount = null, pick = null;
     // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
     let timeoutTimer;
@@ -304,7 +296,8 @@
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
-      if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
+      const iWon = v.winners && v.winners.includes((v.players.find((p) => p.id === v.me) || {}).name);
+      if (gameOver && lastScreen === "play") playSfx(iWon ? "win" : "vote");
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
@@ -349,8 +342,13 @@
       }
 
       if (v.screen === "lobby") {
-        const full = v.players.length === 2;
-        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "pts", min: 1, max: 20 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
+        lastCount = null;
+        pick = null;
+        const ok = v.players.length >= 2;
+        const set = [
+          { key: "size", label: "กระดาน", value: `${v.size}×${v.size}`, options: [3, 4, 5, 6, 7, 8].map((x) => `${x}×${x}`) },
+          { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 },
+        ];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>
@@ -360,11 +358,11 @@
           </div>
           <h2>Settings</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">Players ${v.players.length}/2</h2>
-          <ul class="chips">${v.players.map((p) => `<li><span class="dot ${p.color.toLowerCase()}" aria-label="${COLOR[p.color]}"></span>${esc(p.name)}</li>`).join("")}</ul>
+          <h2 style="margin-top: 16px">Players ${v.players.length}/4</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${dot(p.color)}${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
-            ? `${full ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${full ? "" : "disabled"}>Start</button>`
+            ? `${ok ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -372,47 +370,64 @@
           setTimeout(() => (done.hidden = true), 1500);
         });
         setupBind(app, set, send);
-        if (v.isHost) {
-          app.querySelector("#start").onclick = () => send({ t: "start" });
-        }
+        if (v.isHost) app.querySelector("#start").onclick = () => send({ t: "start" });
         return;
       }
 
-      // play / end / over
-      const status = v.screen === "play"
-        ? v.myTurn ? `<span class="t${v.mine.toLowerCase()}">Your turn</span>` : `<span class="t${v.turnColor.toLowerCase()}">${esc(v.turnName)}</span>'s turn`
-        : v.won ? `<span class="good">You win</span>` : v.lost ? `<span class="bad">You lose</span>` : `<span class="hint">Draw</span>`;
-      const over = v.screen === "over";
+      // play / over
+      if (!v.myTurn || (pick !== null && v.lines[pick])) pick = null;
+      const turnP = v.players.find((p) => p.id === v.turn);
+      const status = v.screen === "over"
+        ? iWon ? `<span class="good">You win</span>` : `<span class="hl">${v.winners.map(esc).join(", ")}</span> wins`
+        : v.myTurn ? (pick !== null ? `<span class="hl">แตะซ้ำเพื่อลาก</span>` : `<span class="hl">Your turn</span>`)
+        : turnP ? `${esc(turnP.name)}'s turn` : "";
       app.innerHTML = `
-        ${scorebar(v)}
-        <div class="board" aria-label="กระดาน">${Array.from({ length: COLS }, (_, c) => `
-          <button class="col" data-col="${c}" aria-label="คอลัมน์ ${c + 1}" ${v.myTurn && !v.board[c] ? "" : "disabled"}>${Array.from({ length: ROWS }, (_, r) => {
-            const i = r * COLS + c, d = v.board[i];
-            return `<span class="hole" data-i="${i}">${d ? `<i class="disc ${d.toLowerCase()}${v.line.includes(i) ? " win" : ""}" aria-label="${COLOR[d]}"></i>` : ""}</span>`;
-          }).join("")}</button>`).join("")}
-        </div>
+        ${scores(v)}
+        ${board(v, pick)}
         <p class="status">${status}</p>
         ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
-        ${over
-          ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`
-          : v.screen === "end"
-          ? `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">Next round</button>`}
-             <p class="hint">Ready ${v.readyCount}/2</p>`
-          : ""}`;
-      app.querySelectorAll(".col").forEach((b) => (b.onclick = () => send({ t: "drop", col: Number(b.dataset.col) })));
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+      // แตะครั้งแรกเลือกเส้น แตะเส้นเดิมอีกครั้งลากจริง
+      const choose = (e) => {
+        if (pick === e) {
+          pick = null;
+          send({ t: "line", e });
+        } else {
+          pick = e;
+          playSfx("click");
+        }
+        render();
+      };
+      if (v.myTurn) app.querySelectorAll(".edge:not(.on)").forEach((g) => {
+        const e = Number(g.dataset.e);
+        g.onclick = () => choose(e);
+        // คีย์บอร์ด: Enter หรือ Space ลากเลย
+        g.onkeydown = (ev) => {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          ev.preventDefault();
+          send({ t: "line", e });
+        };
+      });
       runTimer(v);
-      // เหรียญใหม่: วาดใหม่ด้วยสถานะเดิม (เช่นกดพร้อม) ไม่เล่นซ้ำ
-      const key = v.last === null ? null : `${v.last}:${v.board.filter(Boolean).length}`;
-      if (key && key !== lastDrop) {
-        drop(v.last);
-        playSfx("click");
+      // เส้นใหม่ (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
+      const count = v.lines.filter(Boolean).length;
+      if (lastCount !== null && count > lastCount && v.last !== null) {
+        playSfx(v.got.length ? "confirm" : "click");
+        if (!still.matches) {
+          const ln = app.querySelector(`.edge[data-e="${v.last}"] .ln`);
+          const len = S;
+          if (ln) ln.animate([{ strokeDasharray: `0 ${len}` }, { strokeDasharray: `${len} 0` }], { duration: 180, easing: "ease-out" });
+          for (const b of v.got) {
+            const g = app.querySelector(`.got[data-b="${b}"]`);
+            if (g) g.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 350, delay: 150, easing: "ease-out", fill: "backwards" });
+          }
+        }
       }
-      lastDrop = key;
-      if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+      lastCount = count;
       if (gameOver) {
         setTimeout(() => {
           if (view.screen !== "over") return;
-          document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(view.winner)}</p>${scoreboard(view)}`;
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${view.winners.map(esc).join(", ")}</p>${scoreboard(view)}`;
           winner.showModal();
           fireworks();
         }, still.matches ? 0 : 900);
@@ -429,7 +444,7 @@
     // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
     document.querySelector(".back").addEventListener("click", () => room && room.leave());
 
-    const saved = savedRoom("connect4");
+    const saved = savedRoom("dots");
     if (saved) {
       app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
       enter(null, null, saved);

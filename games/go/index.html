@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* ผู้เล่นบนกับล่างกระดาน: สีหมาก ชื่อ คะแนน นาฬิกา */
+    .seat { display: flex; align-items: center; gap: 10px; padding: 6px 0; border: 0; }
+    .seat .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat .pts { color: var(--dim); font-size: 0.9rem; }
+    .clock { min-width: 5.5em; padding: 4px 8px; border: 3px solid #2c2950; text-align: right; font: 400 0.95rem "Press Start 2P", monospace; color: var(--dim); }
+    .clock.run { border-color: var(--yellow); color: var(--yellow); }
+    .clock.low { border-color: var(--red); color: var(--red); }
+    .side { display: inline-block; flex: none; width: 16px; height: 16px; border: 3px solid var(--dim); }
+    .side.w { background: var(--text); }
+    .side.b { background: var(--screen); }
+    /* กระดาน: SVG จุดตัดห่างกัน 10 หน่วย เว้นขอบ 10 หน่วย หมากเป็นภาพ pixel 9x9 */
+    .board { display: block; width: 100%; margin: 4px 0; touch-action: manipulation; }
+    .board .wood { fill: #b9b4e0; }
+    .board .line { stroke: #16132e; stroke-width: 0.5; }
+    .board .star { fill: #16132e; }
+    .board .ghost { opacity: 0.5; }
+    .board .dead { opacity: 0.35; }
+    .board .last { fill: var(--red); }
+    .board .tb { fill: #16132e; }
+    .board .tw { fill: var(--text); stroke: #16132e; stroke-width: 0.4; }
+    .board .pt { cursor: default; }
+    .board .pt[tabindex] { cursor: pointer; }
+    .board .pt:focus { outline: none; }
+    .board .pt:focus-visible .hit { stroke: var(--screen); stroke-width: 0.6; stroke-dasharray: 1 1; }
+    .board .hit { fill: transparent; }
+    .sb { fill: #16132e; }
+    .sw { fill: var(--text); }
+    .ob { fill: #e3e0f7; }
+    .ow { fill: #16132e; }
+    .actions { display: flex; gap: 16px; }
+    .actions button { --c: var(--cyan); }
+    .actions .armed { --c: var(--red); }
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 8px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .error { color: var(--red); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>GO</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">Rules</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>Black เริ่มก่อน ผลัดกันวางหมากบนจุดตัดตาละ 1 เม็ด หรือกด Pass</li>
+        <li>หมากที่ติดกันเป็นกลุ่มเดียวกัน จุดว่างที่ติดกลุ่มคือ Liberty ถ้าโดนปิด Liberty หมด กลุ่มนั้นโดนกินออกจากกระดาน</li>
+        <li>ห้ามวางแล้วกลุ่มตัวเองไม่เหลือ Liberty ยกเว้นวางแล้วกินหมากอีกฝ่ายได้</li>
+        <li>Ko: ห้ามวางจนกระดานกลับไปเหมือนตาที่เคยเกิดขึ้นแล้ว</li>
+        <li>Pass ติดกัน 2 ครั้งเข้าช่วงนับแต้ม แตะกลุ่มที่ตายแล้วให้เป็นหมากตาย แล้วกด Done ทั้งคู่ ตกลงกันไม่ได้กด Resume เล่นต่อ</li>
+        <li>แต้ม = หมากที่อยู่บนกระดาน + จุดว่างที่ล้อมไว้ White ได้ Komi <span id="rule-komi">7.5</span> pts แต้มมากกว่าชนะ</li>
+        <li>เวลาฝ่ายละ <span id="rule-time">10</span> min หมดเวลาแพ้</li>
+        <li>ชนะได้ 1 pts เกมต่อไปสลับสี</li>
+        <li>แตะจุดที่จะวาง แล้วแตะซ้ำเพื่อยืนยัน</li>
+      </ol>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">Winner</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
+  <script>
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับนาฬิกา
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code, saved) {
+      room = openRoom("go", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
+      else room.create(name);
+    }
+
+    // ---------- หมาก ----------
+    // ภาพ pixel วงกลม 9x9 มีขอบรอบตัว ใช้ซ้ำด้วย <use>
+    const STONE = [];
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) if ((x - 4) ** 2 + (y - 4) ** 2 <= 20) STONE.push([x, y]);
+    const rects = (list) => list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("");
+    const inside = new Set(STONE.map(([x, y]) => x + "," + y)), edge = new Set();
+    for (const [x, y] of STONE) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inside.has(x + dx + "," + (y + dy))) edge.add(x + dx + "," + (y + dy));
+    const DEFS = ["b", "w"].map((c) => `<symbol id="${c}" viewBox="-1 -1 11 11">
+      <path class="o${c}" d="${rects([...edge].map((s) => s.split(",").map(Number)))}"/><path class="s${c}" d="${rects(STONE)}"/></symbol>`).join("");
+
+    // ---------- หน้าจอ ----------
+    const colorName = { b: "Black", w: "White" };
+    const clockText = (ms) => {
+      const s = Math.ceil(ms / 1000);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    };
+    const seat = (v, p) => {
+      const run = v.screen === "play" && v.turn === p.color;
+      return `<li class="seat">
+        <span class="side ${p.color}" aria-label="${colorName[p.color]}"></span>
+        <span class="who">${esc(p.name)} <span class="pts">${p.score} pts</span></span>
+        <span class="clock${run ? " run" : ""}" data-c="${p.color}" aria-label="เวลาที่เหลือ">${clockText(v.clock[p.color])}</span>
+      </li>`;
+    };
+    // ผลแบบที่คนเล่นโกะเขียนกัน: B+2.5 (ชนะแต้ม) หรือเหตุที่จบ
+    const resultText = (v) => {
+      const r = v.result, c = v.players.find((p) => p.name === r.winner).color.toUpperCase();
+      return r.reason === "score" ? `${c}+${r.margin}` : r.reason === "resign" ? "Resign" : "หมดเวลา";
+    };
+    const scoreboard = (v) => `
+      <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li class="row"><span>${p.name === v.result.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
+      </ul>`;
+
+    // กระดาน: จุดตัด i = แถว * n + คอลัมน์ ชื่อจุดแบบโกะ คอลัมน์ A-T (ไม่มี I) แถว 1 อยู่ล่าง
+    // ฝั่ง White หมุนกลับหัวให้เหมือนนั่งตรงข้ามกัน
+    const COLS = "ABCDEFGHJKLMNOPQRST";
+    const STARS = { 9: [2, 4, 6], 13: [3, 6, 9], 19: [3, 9, 15] };
+    function board(v, ghost) {
+      const n = v.n, size = (n + 1) * 10, flip = v.mine === "w", dead = new Set(v.dead || []);
+      const xy = (i) => { const d = flip ? n * n - 1 - i : i; return [(d % n) * 10 + 10, Math.floor(d / n) * 10 + 10]; };
+      let out = `<rect class="wood" width="${size}" height="${size}"/>`;
+      for (let k = 1; k <= n; k++) out += `<path class="line" d="M10 ${k * 10}H${n * 10}M${k * 10} 10V${n * 10}"/>`;
+      for (const r of STARS[n]) for (const c of STARS[n]) if (n === 19 || r === c || r + c === n - 1) {
+        const [x, y] = xy(r * n + c);
+        out += `<rect class="star" x="${x - 1}" y="${y - 1}" width="2" height="2"/>`;
+      }
+      const bad = new Set(v.bad);
+      for (let i = 0; i < n * n; i++) {
+        const [x, y] = xy(i), p = v.board[i];
+        const stone = (c, cls = "") => `<use href="#${c}" class="${cls}" x="${x - 5}" y="${y - 5}" width="10" height="10"/>`;
+        let mark = "";
+        if (p !== ".") mark = stone(p, dead.has(i) ? "dead" : "");
+        else if (i === ghost) mark = stone(v.mine, "ghost");
+        if (i === v.last && p !== ".") mark += `<rect class="last" x="${x - 1}" y="${y - 1}" width="2" height="2"/>`;
+        if (v.terr && v.terr[i] !== ".") mark += `<rect class="t${v.terr[i]}" x="${x - 1.5}" y="${y - 1.5}" width="3" height="3"/>`;
+        const live = (v.myTurn && p === "." && !bad.has(i)) || (v.screen === "score" && p !== ".");
+        const label = `${COLS[i % n]}${n - Math.floor(i / n)}${p === "." ? "" : ` ${colorName[p]}${dead.has(i) ? " ตาย" : ""}`}`;
+        out += `<g class="pt" data-i="${i}"${live ? ` tabindex="0" role="button"` : ""} aria-label="${label}">${mark}
+          <rect class="hit" x="${x - 5}" y="${y - 5}" width="10" height="10"/></g>`;
+      }
+      return `<svg class="board" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
+    }
+
+    // นาฬิกา: ฝ่ายที่ถึงตานับถอยหลังจากตอนได้สถานะ เหลือต่ำกว่า 20 วิเป็นสีแดง
+    // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน อีกคนรอเผื่อเขาหลุด
+    let tick, timeoutTimer;
+    function runClock(v) {
+      const run = app.querySelector(".clock.run");
+      for (const el of app.querySelectorAll(".clock")) el.classList.toggle("low", v.clock[el.dataset.c] < 20000);
+      if (!run || v.paused) return;
+      const left = () => Math.max(0, v.clock[v.turn] - (performance.now() - viewAt));
+      tick = setInterval(() => {
+        run.textContent = clockText(left());
+        run.classList.toggle("low", left() < 20000);
+      }, 200);
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
+    }
+
+    let lastScreen, lastMyTurn, lastBoard = null, ghost = null, resignArmed = false;
+    function render() {
+      const v = view;
+      pauseUi(v, send);
+      clearInterval(tick);
+      clearTimeout(timeoutTimer);
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 60000;
+      if (v.komi) document.getElementById("rule-komi").textContent = v.komi;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (v.screen !== "over" && winner.open) winner.close();
+      const meP = (v.players || []).find((p) => p.id === v.me) || {};
+      const iWon = v.result && v.result.winner === meP.name;
+      if (gameOver && (lastScreen === "play" || lastScreen === "score")) playSfx(iWon ? "win" : "vote");
+      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
+      if (v.screen === "score" && lastScreen === "play") playSfx("confirm");
+      if (v.screen === "lobby" || v.screen !== lastScreen) resignArmed = false;
+      lastScreen = v.screen;
+      lastMyTurn = v.myTurn;
+
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">Name</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          enter(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          enter(name, code);
+        };
+        return;
+      }
+
+      if (v.screen === "lobby") {
+        lastBoard = null;
+        ghost = null;
+        const ok = v.players.length === 2;
+        const set = [
+          { key: "size", label: "ขนาดกระดาน", value: v.size, options: [9, 13, 19] },
+          { key: "time", label: "เวลาฝ่ายละ", value: v.time / 60000, unit: "min", options: [5, 10, 20, 30, 60] },
+        ];
+        app.innerHTML = `
+          <div class="room-row">
+            <span class="hint">Room</span>
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>Copied</span>
+          </div>
+          <h2>Settings</h2>
+          ${setupHtml(set, v.isHost)}
+          <h2 style="margin-top: 16px">Players ${v.players.length}/2</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}${p.score ? ` <span class="hint">${p.score} pts</span>` : ""}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `${ok ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>Start</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        setupBind(app, set, send);
+        if (v.isHost) app.querySelector("#start").onclick = () => send({ t: "start" });
+        return;
+      }
+
+      // play / score / over
+      if (!v.myTurn || v.board[ghost] !== "." || v.bad.includes(ghost)) ghost = null;
+      const them = v.players.find((p) => p.id !== v.me);
+      const turnP = v.players.find((p) => p.color === v.turn);
+      const passer = v.players.find((p) => p.color !== v.turn);
+      let status;
+      if (v.screen === "over") {
+        status = `${iWon ? `<span class="good">You win</span>` : `<span class="hl">${esc(v.result.winner)}</span> wins`} <span class="hint">${resultText(v)}</span>`;
+      } else if (v.screen === "score") {
+        status = `B ${v.points.b} : W ${v.points.w}`;
+      } else {
+        status = v.myTurn ? `<span class="hl">Your turn</span>` : `${turnP ? esc(turnP.name) : ""}'s turn`;
+        if (v.last === -1 && passer) status = `${passer.id === v.me ? "You" : esc(passer.name)} Pass <span class="hint">|</span> ${status}`;
+      }
+      const armed = `<button id="resign" class="${resignArmed ? "armed" : ""}" data-sfx="vote">${resignArmed ? "Resign?" : "Resign"}</button>`;
+      let actions = "";
+      if (v.screen === "play") actions = `<div class="actions"><button id="pass" data-sfx="confirm" ${v.myTurn ? "" : "disabled"}>Pass</button>${armed}</div>`;
+      if (v.screen === "score") {
+        const waiting = v.done.length && !v.done.includes(v.mine);
+        actions = `<p class="hint">แตะกลุ่มที่ตายแล้ว${waiting ? ` <span class="hl">${esc(them.name)}</span> กด Done แล้ว` : ""}</p>
+          <div class="actions"><button id="done" data-sfx="confirm" ${v.done.includes(v.mine) ? "disabled" : ""}>Done</button><button id="resume-play" data-sfx="next">Resume</button></div>`;
+      }
+      if (v.screen === "over") actions = v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`;
+      app.innerHTML = `
+        <ul>${them ? seat(v, them) : ""}</ul>
+        ${board(v, ghost)}
+        <ul>${seat(v, meP)}</ul>
+        <p class="status">${status}</p>
+        ${actions}`;
+
+      // ตาเรา: แตะจุดว่างวางหมากจาง แตะซ้ำจุดเดิมเพื่อวางจริง
+      // ช่วงนับแต้ม: แตะหมากเพื่อสลับตาย/ไม่ตายทั้งกลุ่ม
+      const choose = (i) => {
+        if (v.screen === "score") return send({ t: "dead", i });
+        if (ghost === i) {
+          send({ t: "move", i });
+          ghost = null;
+        } else {
+          ghost = i;
+          playSfx("click");
+        }
+        render();
+        const again = app.querySelector(`.pt[data-i="${i}"]`);
+        if (again && again.hasAttribute("tabindex")) again.focus({ preventScroll: true });
+      };
+      app.querySelectorAll(".pt[tabindex]").forEach((g) => {
+        const i = Number(g.dataset.i);
+        g.onclick = () => choose(i);
+        g.onkeydown = (ev) => {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          ev.preventDefault();
+          choose(i);
+        };
+      });
+      if (app.querySelector("#pass")) app.querySelector("#pass").onclick = () => send({ t: "pass" });
+      if (app.querySelector("#done")) app.querySelector("#done").onclick = () => send({ t: "done" });
+      if (app.querySelector("#resume-play")) app.querySelector("#resume-play").onclick = () => send({ t: "play" });
+      // Resign กดสองครั้งกันกดพลาด
+      if (app.querySelector("#resign")) app.querySelector("#resign").onclick = () => {
+        if (resignArmed) return send({ t: "resign" });
+        resignArmed = true;
+        render();
+        setTimeout(() => { if (resignArmed) { resignArmed = false; render(); } }, 3000);
+      };
+      runClock(v);
+      // วางหมากใหม่: เสียงกินหรือวาง (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
+      if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {
+        const stones = (b) => b.replace(/\./g, "").length;
+        playSfx(stones(v.board) <= stones(lastBoard) ? "confirm" : "click");
+      }
+      lastBoard = v.board;
+      if (gameOver) {
+        setTimeout(() => {
+          if (view.screen !== "over") return;
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(view.result.winner)}</p><p class="hint">${resultText(view)}</p>${scoreboard(view)}`;
+          winner.showModal();
+          fireworks();
+        }, 600);
+      }
+      if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+    }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
+
+    const saved = savedRoom("go");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
+  </script>
+</body>
+</html>

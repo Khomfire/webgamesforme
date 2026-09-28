@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LIAR'S DICE</title>
+  <title>LUDO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
@@ -66,7 +66,7 @@
     dialog li { padding: 4px 0; border: 0; }
     .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", monospace; color: var(--yellow); }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
     input {
@@ -125,29 +125,11 @@
     /* หลอดเวลาของตานี้ */
     .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
-    /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
-    /* คะแนนระหว่างเล่น: การ์ดละคน หลอดคือระยะถึงเป้า */
-    .board-goal { margin: 0 0 6px; text-align: right; font-size: 0.8rem; color: var(--dim); }
-    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; margin-bottom: 16px; }
-    .board li { min-width: 0; padding: 6px 8px 8px; background: #15122c; border: 2px solid #2c2950; }
-    .board li.now { border-color: var(--yellow); box-shadow: 3px 3px 0 #6b5510; }
-    .board li.now::before { content: none; }
-    .board li.out { opacity: 0.45; }
-    .board .name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; color: var(--dim); }
-    .board .now .name { color: var(--text); }
-    .board .name.hl { color: var(--yellow); }
-    .board .out .name { text-decoration: line-through; }
-    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", monospace; color: var(--yellow); white-space: nowrap; }
-    .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
-    .board .meter { display: block; height: 4px; margin-top: 6px; background: #2c2950; }
-    .board .meter i { display: block; width: var(--p); max-width: 100%; height: 100%; background: var(--m, var(--yellow)); }
-    .board .pips { display: flex; gap: 3px; margin-top: 6px; }
-    .board .pips i { width: 10px; height: 10px; border: 2px solid #2c2950; }
-    .board .pips i.on { border-color: var(--yellow); background: var(--yellow); }
     .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", monospace; font-size: 0.8rem; }
-    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-
     /* ลูกเต๋า: จุด 3x3 ติดเฉพาะช่องของหน้านั้น */
+    /* เต๋าอยู่กลางแถวเสมอ แม้เหลือไม่ครบ 6 ลูก แถวละ 3 ลูกให้ใหญ่พอกดบนมือถือ */
+    .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
+    .dice .die { flex: 0 0 min(96px, calc((100% - 24px) / 3)); padding: 14px; border-width: 4px; }
     .die {
       --c: var(--text);
       display: grid;
@@ -163,25 +145,7 @@
     }
     .die span { aspect-ratio: 1; }
     .die span.on { background: currentColor; }
-    /* เต๋าในข้อความกฎ */
-    .die.inline { display: inline-grid; width: 1.4em; padding: 2px; border-width: 2px; gap: 8%; vertical-align: middle; }
-    /* เต๋าในมือ: แถวละ 5 ลูก อยู่กลางแถว */
-    .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
-    .dice .die { flex: 0 0 min(64px, calc((100% - 48px) / 5)); padding: 10px; border-width: 4px; }
-    /* เต๋าเล็กตอนเปิดเต๋า: หน้าที่เสนอเป็นสีเหลือง */
-    .dice.small { justify-content: flex-end; gap: 4px; margin: 0; }
-    .dice.small .die { --c: var(--dim); flex: 0 0 26px; padding: 3px; border-width: 2px; }
-    .dice.small .die.hit { --c: var(--yellow); }
-    /* เลือกหน้าเต๋าที่จะเสนอ */
-    .faces { gap: 8px; }
-    .faces .die { --c: var(--dim); flex-basis: min(48px, calc((100% - 40px) / 6)); padding: 6px; border-width: 3px; }
-    .faces .die.picked { --c: var(--yellow); }
-    .bid { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 12px 0 4px; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
-    .bid .die { --c: var(--yellow); width: 56px; padding: 8px; border-width: 4px; }
-    .stepper { display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 20px; }
-    .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
-    .liar { --c: var(--red); }
-    /* กฎเสริม: ปิดอยู่เป็นสีจาง กดแล้วเป็นสีเหลือง */
+    #last { text-align: center; }
     .center { text-align: center; }
     /* ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางแยกกันตรงกลาง */
     .pair { display: flex; justify-content: center; gap: 32px; margin: 24px 0 8px; }
@@ -205,46 +169,46 @@
       from { transform: translate(-3px, 2px) rotate(-8deg); }
       to { transform: translate(3px, -2px) rotate(8deg); }
     }
-    /* จับโกหก: ป้าย "โกหก!" ทับจอ แล้วเปิดเต๋าทีละคน หน้าที่นับได้เด้งเป็นสีเหลือง สุดท้ายค่อยโชว์ผล
-       --t = เวลาที่เต๋าลูกนั้นพลิก, --end = เวลาโชว์ผล, --shift = เวลาที่ผ่านไปแล้ว (วาดใหม่กลางคันไม่เริ่มใหม่) */
-    .stamp {
-      position: fixed;
-      top: 40%;
-      left: 50%;
-      z-index: 10;
-      padding: 4px 20px;
-      border: 6px solid var(--red);
-      background: var(--screen);
-      color: var(--red);
-      font: 700 3.5rem "Chakra Petch", sans-serif;
-      pointer-events: none;
-      transform: translate(-50%, -50%) rotate(-12deg);
-      animation: stamp 900ms both;
-    }
-    @keyframes stamp {
-      0% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(2.5); }
-      25%, 80% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
-    }
-    .revealing .dice.small .die { animation: flip 300ms calc(var(--t) + var(--shift)) both; }
-    .revealing .dice.small .die.hit { animation: flip 300ms calc(var(--t) + var(--shift)) both, pop 400ms calc(var(--end) + var(--shift)) both; }
-    .revealing .later { animation: later 300ms calc(var(--end) + var(--shift)) both; }
-    @keyframes flip { from { opacity: 0; transform: rotateY(90deg); } }
-    @keyframes pop {
-      0% { scale: 1; color: var(--dim); border-color: var(--dim); }
-      50% { scale: 1.35; }
-      100% { scale: 1; color: var(--yellow); border-color: var(--yellow); }
-    }
-    @keyframes later { from { opacity: 0; visibility: hidden; } }
-    @media (prefers-reduced-motion: reduce) {
-      .stamp, .revealing * { animation: none !important; }
-    }
-    /* สีบอกความหมาย: เหลือง = ตาคุณ/ผู้ชนะ, ฟ้า = รอด, แดง = เสียเต๋า/โกหก */
+    .turn { margin: 16px 0 0; text-align: center; font: 400 1.2rem "Press Start 2P", monospace; color: var(--yellow); }
+    /* สีบอกความหมาย: เหลือง = แต้ม/ผู้ชนะ, ฟ้า = เก็บแต้มได้, แดง = ฟาร์เคิล/ผิด */
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
     .status { margin: 16px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
     .error { color: var(--red); }
+    /* สีผู้เล่น: 0 แดง 1 เขียว 2 เหลือง 3 น้ำเงิน */
+    .k0 { --k: #ff4d4d; }
+    .k1 { --k: #3ec46d; }
+    .k2 { --k: #ffd23f; }
+    .k3 { --k: #3e8ee0; }
+    /* แถบผู้เล่น: สี ชื่อ จำนวนหมากที่เข้าเส้นชัย */
+    .seats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .seats li { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px 8px; background: #15122c; border: 2px solid #2c2950; }
+    .seats li.on { border-color: var(--k); box-shadow: 3px 3px 0 var(--k); }
+    .seats .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; }
+    .seats b { font: 400 0.7rem "Press Start 2P", monospace; color: var(--k); }
+    .swatch { display: inline-block; flex: none; width: 12px; height: 12px; background: var(--k); }
+    /* กระดาน: SVG 15 x 15 ช่อง ช่องละ 10 หน่วย หมุนให้บ้านเราอยู่มุมซ้ายล่าง */
+    .ludo { display: block; width: 100%; margin: 4px 0; touch-action: manipulation; }
+    .ludo .sq { fill: #e3e0f7; stroke: #16132e; stroke-width: 0.4; }
+    .ludo .fill { fill: var(--k); stroke: #16132e; stroke-width: 0.4; }
+    .ludo .yard { fill: var(--k); }
+    .ludo .inner { fill: #e3e0f7; }
+    .ludo .spot { fill: none; stroke: var(--k); stroke-width: 1.2; }
+    .ludo .star { fill: #a9a6c9; }
+    .ludo .tok { fill: var(--k); stroke: #16132e; stroke-width: 0.9; }
+    .ludo .dot { fill: #16132e; }
+    .ludo .pc:focus { outline: none; }
+    .ludo .pc:focus-visible .hit { stroke: #16132e; stroke-width: 0.6; stroke-dasharray: 1 1; }
+    .ludo .hit { fill: transparent; }
+    .ludo .pc[tabindex] { cursor: pointer; }
+    /* หมากที่เดินได้: วงกระพริบรอบตัว */
+    .ludo .ring { fill: none; stroke: #16132e; stroke-width: 1; animation: blink 0.6s steps(2) infinite; }
+    @keyframes blink { 50% { stroke: #f4f4f4; } }
+    .roll-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 12px 0 0; }
+    .roll-row .die { width: 64px; padding: 10px; border-width: 4px; }
+    .roll-row button:not(.die) { width: auto; margin: 0; padding: 12px 28px; }
+    #log { min-height: 1.6em; margin: 8px 0 0; text-align: center; }
   </style>
 </head>
 <body>
@@ -253,47 +217,22 @@
       <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
       <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
     </div>
-    <h1>LIAR'S DICE</h1>
+    <h1>LUDO</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
         <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
-      <h2>เริ่ม</h2>
       <ol>
-        <li>ทุกคนเริ่มด้วยเต๋าเท่ากัน ตามที่ตั้งในห้อง</li>
-        <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่เฉพาะคนที่เสมอ</li>
-        <li>ต้นรอบ ทุกคนทอยเต๋าที่เหลือ เห็นแค่ของตัวเอง</li>
-        <li>คนเริ่มขึ้นบนสุดของรายชื่อ เล่นไล่ลงแล้ววนกลับ ข้ามคนที่ออกแล้ว</li>
-      </ol>
-      <h2>Bid</h2>
-      <ol>
-        <li>Bid: บอกว่าเต๋าทั้งวง (รวมของทุกคน) มีหน้านี้อย่างน้อยกี่ลูก เช่น <span class="die inline" data-face="4"></span> x5</li>
-        <li><span class="die inline" data-face="1"></span> นับเป็นหน้าอะไรก็ได้ เช่น Bid <span class="die inline" data-face="4"></span> ให้นับทั้ง <span class="die inline" data-face="4"></span> และ <span class="die inline" data-face="1"></span></li>
-        <li>คนแรกของรอบต้อง Bid เปิดด้วย <span class="die inline" data-face="1"></span> ไม่ได้</li>
-        <li>Bid ต่อต้องสูงกว่า: จำนวนมากกว่า (หน้าไหนก็ได้) หรือจำนวนเท่ากันแต่หน้าสูงกว่า</li>
-        <li>เปลี่ยนเป็น <span class="die inline" data-face="1"></span> ใช้จำนวนครึ่งเดียว ปัดขึ้น เช่น <span class="die inline" data-face="4"></span> x5 เป็น <span class="die inline" data-face="1"></span> x3</li>
-        <li>เปลี่ยนจาก <span class="die inline" data-face="1"></span> ใช้สองเท่า + 1 เช่น <span class="die inline" data-face="1"></span> x3 เป็น <span class="die inline" data-face="4"></span> x7</li>
-        <li>Bid เกินจำนวนเต๋าทั้งวงไม่ได้</li>
-        <li>ตาละ <span id="rule-time">20</span>s หมดเวลา: Bid เพิ่ม 1 ลูกหน้าเดิม (เปิดรอบ <span class="die inline" data-face="2"></span> x1) เกินทั้งวงจับโกหก</li>
-      </ol>
-      <h2>Liar</h2>
-      <ol>
-        <li>ถึงตาแล้วไม่เชื่อ Bid ของคนก่อนหน้า กด Liar แทนการ Bid</li>
-        <li>กด Liar ได้แค่คนที่ถึงตา</li>
-        <li>เปิดเต๋าทุกคน นับหน้าที่ Bid รวม <span class="die inline" data-face="1"></span></li>
-        <li>มีครบหรือมากกว่า คนกด Liar เสีย <span class="die inline" data-face=""></span></li>
-        <li>มีไม่ครบ คน Bid เสีย <span class="die inline" data-face=""></span></li>
-        <li>ทุกคนกด Next round คนเสียเต๋าเริ่มรอบใหม่ ถ้าเขาออกแล้ว คนถัดไปเริ่ม</li>
-        <li>เต๋าหมดออกจากเกม เหลือเต๋าคนสุดท้ายชนะ</li>
-      </ol>
-      <h2>+ PALIFICO</h2>
-      <p class="hint">กฎเสริม เจ้าของห้องเปิดได้</p>
-      <ol>
-        <li>ใครเหลือ <span class="die inline" data-face=""></span> รอบถัดไปเป็นรอบ PALIFICO เขาเริ่มก่อน</li>
-        <li><span class="die inline" data-face="1"></span> ไม่แทนหน้าอื่น นับแค่หน้าที่ Bid</li>
-        <li>เปิดด้วย <span class="die inline" data-face="1"></span> ได้</li>
-        <li>ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน</li>
+        <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่ แล้วผลัดกันตามเข็มนาฬิกา</li>
+        <li>ได้ <span class="die inline" data-face="6"></span> ถึงเอาหมากออกจากบ้านได้</li>
+        <li>เดินตามแต้มรอบกระดานตามเข็มนาฬิกา แล้วเข้าทางสีตัวเองไปเส้นชัยตรงกลาง</li>
+        <li>ได้ <span class="die inline" data-face="6"></span> ทอยอีกครั้ง ได้ติดกัน 3 ครั้งเสียตา</li>
+        <li>หยุดช่องที่มีหมากคนอื่น กินหมากนั้นกลับบ้าน แล้วทอยอีกครั้ง ช่องเริ่มกับช่องดาวกินไม่ได้</li>
+        <li>เข้าเส้นชัยต้องได้แต้มพอดี เข้าได้ทอยอีกครั้ง</li>
+        <li>หมากเข้าเส้นชัยครบ 4 ตัวก่อนชนะ</li>
+        <li>ตาละ <span id="rule-time">15</span>s หมดเวลา: ทอยให้ แล้วเดินตัวที่ไปไกลสุด</li>
+        <li>แตะหมากที่กระพริบเพื่อเดิน เดินได้ตัวเดียวเดินให้เลย</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
@@ -320,20 +259,6 @@
     const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
     const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
 
-    // กติกา (สำเนาจาก supabase/functions/game/liar.js ไว้เปิดปิดปุ่มเสนอ ต้องแก้ให้ตรงกัน)
-    // เสนอใหม่ต้องสูงกว่าเดิม: จำนวนมากกว่า หรือจำนวนเท่ากันแต่หน้าสูงกว่า
-    // หน้า 1 แทนทุกหน้า: เปิดรอบด้วยหน้า 1 ไม่ได้ เปลี่ยนไปหน้า 1 ใช้จำนวนครึ่งหนึ่ง (ปัดขึ้น) เปลี่ยนจากหน้า 1 ใช้สองเท่า + 1
-    // pal (รอบ palifico): ห้ามเปลี่ยนหน้า เพิ่มได้แค่จำนวน หน้า 1 ไม่แทนหน้าอื่น
-    function higher(a, b, { pal }) {
-      if (pal) return !b || (a.face === b.face && a.n > b.n);
-      if (!b) return a.face !== 1;
-      if (a.face === 1) return b.face === 1 ? a.n > b.n : a.n >= Math.ceil(b.n / 2);
-      if (b.face === 1) return a.n >= b.n * 2 + 1;
-      return a.n > b.n || (a.n === b.n && a.face > b.face);
-    }
-    const counts = (d, face, wild) => d === face || (wild && d === 1);
-    const RULES = { palifico: "PALIFICO" };
-
     let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับเวลาที่เหลือของตา
     function show(next) { view = { ...view, ...next }; render(); }
 
@@ -341,66 +266,122 @@
     const send = (msg) => room.send(msg);
     // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
     function enter(name, code, saved) {
-      room = openRoom("liar", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
+      room = openRoom("ludo", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
       if (saved) room.resume();
       else if (code) room.join(code, name);
       else room.create(name);
     }
 
-    // ---------- หน้าจอ ----------
+    // ---------- เต๋า ----------
     const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-    const pips = (v) => Array.from({ length: 9 }, (_, i) => `<span${PIPS[v].includes(i) ? ' class="on"' : ""}></span>`).join("");
-    const die = (v, cls = "", style = "") => `<div class="die ${cls}"${style ? ` style="${style}"` : ""} role="img" aria-label="${v}">${pips(v)}</div>`;
-
-    const scoreboard = (v) => `
-      <h2>Players</h2>
-      <ul>${v.players.map((p) => `
-        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span>${p.count ? `<span role="img" aria-label="${p.count} ลูก"><span class="die inline" aria-hidden="true">${"<span></span>".repeat(9)}</span> x${p.count}</span>` : `<span class="bad">ออก</span>`}</li>`).join("")}
-      </ul>`;
-
-    // จุดละเต๋าหนึ่งลูก ทึบคือที่ยังเหลือ
-    const scorebar = (v) => `
-      <ul class="board" aria-label="ผู้เล่น">${v.players.map((p) => `
-        <li class="${p.now ? "now" : ""}${p.count ? "" : " out"}"><span class="name${v.screen === "over" && p.name === v.winner ? " hl" : ""}">${esc(p.name)}</span><span class="pips" role="img" aria-label="${p.count ? p.count + " ลูก" : "ออก"}">${Array.from({ length: Math.max(v.start, p.count) }, (_, i) => `<i${i < p.count ? ' class="on"' : ""}></i>`).join("")}</span></li>`).join("")}
-      </ul>`;
-
-    // ผลเปิดเต๋า: เต๋าทุกคน หน้าที่เสนอเป็นสีเหลือง
-    // ตอนเปิด: ป้ายโกหกขึ้นก่อน FLIP_AT แล้วเปิดเต๋าทีละคนห่างกัน FLIP_GAP
-    const FLIP_AT = 900, FLIP_GAP = 350;
-    const revealEnd = (r) => FLIP_AT + r.hands.length * FLIP_GAP + 300;
-    const revealBox = (r) => `
-      <p class="status">${esc(r.caller)} จับโกหก ${esc(r.bidder)}</p>
-      <div class="bid" aria-label="เสนอ ${r.n} ลูก หน้า ${r.face}">${die(r.face)} &times; ${r.n}</div>
-      <ul>${r.hands.map((h, row) => `<li class="row"><span>${esc(h.name)}</span><div class="dice small">${h.dice.map((d, i) => die(d, counts(d, r.face, r.wild) ? "hit" : "", `--t: ${FLIP_AT + row * FLIP_GAP + i * 60}ms`)).join("")}</div></li>`).join("")}</ul>
-      <p class="center later">มีจริง <span class="hl">${r.count}</span> ลูก</p>
-      <p class="status bad later">${esc(r.loser)} เสีย 1 ลูก</p>`;
-
-    function stamp() {
-      const el = document.createElement("div");
-      el.className = "stamp";
-      el.setAttribute("aria-hidden", "true");
-      el.textContent = "LIAR!";
-      document.body.append(el);
-      setTimeout(() => el.remove(), 900);
-    }
-    let revealAt = 0;
+    const pips = (v) => Array.from({ length: 9 }, (_, i) => `<span${PIPS[v] && PIPS[v].includes(i) ? ' class="on"' : ""}></span>`).join("");
 
     // ทอยเต๋า: สุ่มหน้าเต๋าสลับไปมาพร้อมเขย่า แล้วค่อยโชว์หน้าจริง
     let rollTimer;
     function animateRoll(box) {
       clearInterval(rollTimer);
       if (!box || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      const dice = [...box.querySelectorAll(".die")];
-      const faces = dice.map((d) => d.innerHTML);
+      const die = box.querySelector(".die"), face = die.innerHTML;
       box.classList.add("rolling");
       playSfx("roll");
       let n = 0;
       rollTimer = setInterval(() => {
-        if (++n < 9) return dice.forEach((d) => (d.innerHTML = pips(1 + Math.floor(Math.random() * 6))));
+        if (++n < 9) return (die.innerHTML = pips(1 + Math.floor(Math.random() * 6)));
         clearInterval(rollTimer);
-        dice.forEach((d, i) => (d.innerHTML = faces[i]));
+        die.innerHTML = face;
         box.classList.remove("rolling");
       }, 70);
+    }
+
+    // ---------- กระดาน ----------
+    const COLOR = ["Red", "Green", "Yellow", "Blue"];
+    // ทางรอบกระดาน 52 ช่อง [คอลัมน์, แถว] เริ่มที่ช่องเริ่มของแดง (ซ้าย) วนตามเข็มนาฬิกา
+    // สีอื่นคือทางเดียวกันที่เลื่อนไป 13 ช่องต่อสี (กระดานหมุนได้ 90 องศาแล้วเหมือนเดิม)
+    const TRACK = [];
+    const add = (cs, rs) => cs.forEach((c, i) => TRACK.push([c, rs[i]]));
+    const run = (a, b) => (a <= b ? Array.from({ length: b - a + 1 }, (_, i) => a + i) : Array.from({ length: a - b + 1 }, (_, i) => a - i));
+    const same = (x, n) => Array(n).fill(x);
+    add(run(1, 5), same(6, 5)); add(same(6, 6), run(5, 0)); add([7, 8], [0, 0]); add(same(8, 5), run(1, 5));
+    add(run(9, 14), same(6, 6)); add([14, 14], [7, 8]); add(run(13, 9), same(8, 5)); add(same(8, 6), run(9, 14));
+    add([7, 6], [14, 14]); add(same(6, 5), run(13, 9)); add(run(5, 0), same(8, 6)); add([0, 0], [7, 6]);
+    const SAFE = [0, 8, 13, 21, 26, 34, 39, 47];
+    // หมุนจุด (หน่วยช่อง x10) ตามเข็มนาฬิกา n รอบรอบกลางกระดาน
+    const rot = ([x, y], n) => { for (let i = 0; i < n; i++) [x, y] = [150 - y, x]; return [x, y]; };
+    const center = ([c, r]) => [c * 10 + 5, r * 10 + 5];
+    const YARD = [[20, 20], [40, 20], [20, 40], [40, 40]];
+    // จุดกลางหมากสี c ที่ตำแหน่ง t (-1 บ้าน, 0-50 ทางรอบกระดาน, 51-55 ทางเข้าเส้นชัย, 56 เส้นชัย)
+    function spot(c, t, k) {
+      if (t < 0) return rot(YARD[k], c);
+      if (t <= 50) return center(TRACK[(c * 13 + t) % 52]);
+      if (t < 56) return rot(center([t - 50, 7]), c);
+      return rot([66, 75], c);
+    }
+    const starPath = (cx, cy) => Array.from({ length: 10 }, (_, i) => {
+      const a = (Math.PI / 5) * i - Math.PI / 2, r = i % 2 ? 1.6 : 3.6;
+      return `${i ? "L" : "M"}${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+    }).join("") + "Z";
+
+    function board(v) {
+      const turnSeat = v.seats.find((p) => p.id === v.turn);
+      let out = "";
+      for (const [i, [c, r]] of TRACK.entries()) {
+        out += `<rect class="sq" x="${c * 10}" y="${r * 10}" width="10" height="10"/>`;
+        if (SAFE.includes(i) && i % 13) out += `<path class="star" d="${starPath(c * 10 + 5, r * 10 + 5)}"/>`;
+      }
+      // ของแต่ละสี วาดในมุมของแดงแล้วหมุนไป: บ้าน ช่องเริ่ม ทางเข้าเส้นชัย สามเหลี่ยมกลาง
+      for (let c = 0; c < 4; c++) {
+        out += `<g class="k${c}" transform="rotate(${90 * c} 75 75)">
+          <rect class="yard" width="60" height="60"/><rect class="inner" x="8" y="8" width="44" height="44"/>
+          ${YARD.map(([x, y]) => `<circle class="spot" cx="${x}" cy="${y}" r="6"/>`).join("")}
+          <rect class="fill" x="10" y="60" width="10" height="10"/>
+          ${[1, 2, 3, 4, 5].map((x) => `<rect class="fill" x="${x * 10}" y="70" width="10" height="10"/>`).join("")}
+          <path class="fill" d="M60 60L75 75L60 90Z"/></g>`;
+      }
+      // หมาก: จุดเดียวกันหลายตัววางเยื้องกันและเล็กลง
+      const at = {};
+      for (const p of v.seats) p.tokens.forEach((t, k) => {
+        const [x, y] = spot(p.color, t, k), key = `${x},${y}`;
+        (at[key] = at[key] || []).push({ p, t, k, x, y });
+      });
+      const movable = new Set(v.movable);
+      const OFF = [[-2.2, -2.2], [2.2, 2.2], [2.2, -2.2], [-2.2, 2.2]];
+      let toks = "";
+      for (const list of Object.values(at)) list.forEach(({ p, t, k, x, y }, i) => {
+        const many = list.length > 1, r = many ? 2.8 : 3.8;
+        const [dx, dy] = many ? OFF[i % 4] : [0, 0], cx = x + dx, cy = y + dy;
+        const live = p.id === v.me && movable.has(k);
+        const where = t < 0 ? "ในบ้าน" : t === 56 ? "เส้นชัย" : "";
+        toks += `<g class="pc k${p.color}" data-k="${k}"${live ? ` tabindex="0" role="button"` : ""} aria-label="${COLOR[p.color]} ${k + 1} ${where}">
+          ${live ? `<circle class="ring" cx="${cx}" cy="${cy}" r="${r + 1.4}"/>` : ""}
+          <circle class="tok" cx="${cx}" cy="${cy}" r="${r}"/><circle class="dot" cx="${cx}" cy="${cy}" r="${r / 3}"/>
+          <circle class="hit" cx="${cx}" cy="${cy}" r="${Math.max(r + 1.5, 5)}"/></g>`;
+      });
+      // เราอยู่มุมซ้ายล่าง (ที่เดียวกับน้ำเงิน สี 3)
+      const turnAt = (3 - v.mine + 4) % 4;
+      return `<svg class="ludo" viewBox="0 0 150 150" aria-label="กระดาน${turnSeat ? ` ตาของ ${esc(turnSeat.name)}` : ""}">
+        <g transform="rotate(${90 * turnAt} 75 75)">${out}${toks}</g></svg>`;
+    }
+
+    const seatsBar = (v) => `
+      <ul class="seats" aria-label="ผู้เล่น">${v.seats.map((p) => `
+        <li class="k${p.color}${p.id === v.turn && v.screen === "play" ? " on" : ""}">
+          <span class="swatch" aria-label="${COLOR[p.color]}"></span><span class="name">${esc(p.name)}</span>
+          <b aria-label="เข้าเส้นชัย">${p.tokens.filter((t) => t === 56).length}/4</b></li>`).join("")}
+      </ul>`;
+    const scoreboard = (v) => `
+      <ul>${[...v.seats].sort((a, b) => b.tokens.filter((t) => t === 56).length - a.tokens.filter((t) => t === 56).length).map((p) => `
+        <li class="row"><span>${p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.tokens.filter((t) => t === 56).length}/4</span></li>`).join("")}
+      </ul>`;
+
+    function logText(v) {
+      const g = v.log;
+      if (!g) return "";
+      const name = (id) => (id === v.me ? "คุณ" : esc((v.seats.find((p) => p.id === id) || { name: "?" }).name));
+      if (g.t === "three") return `<span class="bad">${name(g.id)} ได้ 6 ติดกัน 3 ครั้ง เสียตา</span>`;
+      if (g.t === "stuck") return `<span class="hint">${name(g.id)} เดินไม่ได้</span>`;
+      if (g.caps.length) return `<span class="bad">${name(g.id)} กิน ${[...new Set(g.caps)].map(name).join(", ")}</span>`;
+      if (g.to === 56) return `<span class="good">${name(g.id)} เข้าเส้นชัย</span>`;
+      return "";
     }
 
     // ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางแยกกันตรงกลาง คนอื่นอยู่ในรายการ ตัดสินได้แล้วเจ้าของห้องเริ่มเกมให้
@@ -411,7 +392,7 @@
       const o = v.opening;
       const me = o.players.find((p) => p.me);
       const others = o.players.filter((p) => !p.me);
-      const face = (d) => die(d);
+      const face = (d) => `<div class="die" role="img" aria-label="${d}">${pips(d)}</div>`;
       const blank = `<div class="die" aria-hidden="true">${"<span></span>".repeat(9)}</div>`;
       const sum = (d) => d[0] + d[1];
       const now = performance.now();
@@ -462,9 +443,6 @@
       spinFrame = requestAnimationFrame(spinFaces);
     }
 
-    // ค่าที่กำลังเลือกจะเสนอ เก็บในเครื่องตัวเอง เริ่มใหม่เมื่อมีคนเสนอ
-    let pick, pickKey;
-    let lastScreen, lastMyTurn, lastRound;
     // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
     let timeoutTimer;
@@ -486,26 +464,24 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
     }
 
+    let lastScreen, lastMyTurn, lastRolls, lastLog;
     function render() {
-      clearInterval(rollTimer);
+      clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const v = view;
       pauseUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
-      // เพิ่งจับโกหก: ป้ายโกหก เสียงพลิกเต๋าทีละคน
-      if ((v.screen === "reveal" || v.screen === "over") && lastScreen === "play") {
-        revealAt = Date.now();
-        stamp();
-        playSfx("vote");
-        v.reveal.hands.forEach((_, row) => setTimeout(() => playSfx("click"), FLIP_AT + row * FLIP_GAP));
-      }
+      if (gameOver) playSfx("win");
       if (v.screen !== "over" && winner.open) winner.close();
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && v.round === lastRound) playSfx("next");
-      const newRound = v.screen === "play" && v.round !== lastRound;
+      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
+      const newRoll = v.screen !== "home" && v.rolls !== lastRolls && lastRolls !== undefined && v.roll;
+      const logKey = JSON.stringify(v.log || null);
+      if (lastLog !== undefined && logKey !== lastLog && v.log && v.log.t === "move" && v.log.caps.length) playSfx(v.log.caps.includes(v.me) ? "vote" : "confirm");
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
-      lastRound = v.round;
+      lastRolls = v.rolls;
+      lastLog = logKey;
       if (v.screen !== "order") { clearTimeout(goTimer); goTimer = null; seenOpening = {}; spinAt = {}; seenStatus = null; }
 
       if (v.screen === "home") {
@@ -549,8 +525,7 @@
 
       if (v.screen === "lobby") {
         const enough = v.players.length >= 2;
-        const set = [{ key: "start-dice", label: "เต๋าคนละ", value: v.start, unit: "ลูก", min: 1, max: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 },
-          ...Object.entries(RULES).map(([k, name]) => ({ label: name, on: v.rules[k], toggle: () => send({ t: "rule", key: k, on: !v.rules[k] }) }))];
+        const set = [{ key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>
@@ -560,10 +535,10 @@
           </div>
           <h2>Settings</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">Players ${v.players.length}</h2>
+          <h2 style="margin-top: 16px">Players ${v.players.length}/4</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
-            ? `<p class="hint">ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</p>
+            ? `${enough ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
                <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
@@ -572,83 +547,47 @@
           setTimeout(() => (done.hidden = true), 1500);
         });
         setupBind(app, set, send);
-        if (v.isHost) {
-          app.querySelector("#start").onclick = () => send({ t: "start" });
-        }
+        if (v.isHost) app.querySelector("#start").onclick = () => send({ t: "start" });
         return;
       }
 
       if (v.screen === "order") return orderScreen(v);
 
-      if (v.screen === "play") {
-        const key = `${v.round}:${v.bid ? `${v.bid.n}-${v.bid.face}` : ""}`;
-        if (key !== pickKey) {
-          pickKey = key;
-          pick = v.bid ? { n: Math.min(v.bid.n + 1, v.total), face: v.bid.face } : { n: 1, face: 2 };
-        }
-        const canBid = higher(pick, v.bid, v);
-        const locked = v.pal && v.bid; // รอบ palifico เปลี่ยนหน้าไม่ได้
-        app.innerHTML = `
-          ${scorebar(v)}
-          <p class="status">${v.myTurn ? `<span class="hl">Your turn</span>` : `${esc(v.turnName)}'s turn`}</p>
-          ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
-          ${v.bid
-            ? `<div class="bid" aria-label="เสนอ ${v.bid.n} ลูก หน้า ${v.bid.face}">${die(v.bid.face)} &times; ${v.bid.n}</div>
-               <p class="center">${esc(v.bid.name)}</p>`
-            : ""}
-          <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">PALIFICO</span>` : ""}</p>
-          <h2 style="margin-top: 24px">Your dice</h2>
-          ${v.out ? `<p class="bad">Out</p>` : `<div class="dice" id="hand">${v.hand.map((d) => die(d)).join("")}</div>`}
-          ${v.myTurn
-            ? `<div class="stepper">
-                 <button class="icon-btn" id="less" aria-label="ลดจำนวน" ${pick.n > 1 ? "" : "disabled"}>-</button>
-                 <span class="qty" aria-label="จำนวน">${pick.n}</span>
-                 <button class="icon-btn" id="more" aria-label="เพิ่มจำนวน" ${pick.n < v.total ? "" : "disabled"}>+</button>
-               </div>
-               <div class="dice faces">${[1, 2, 3, 4, 5, 6].map((f) => `<button class="die${f === pick.face ? " picked" : ""}" data-face="${f}" aria-label="หน้า ${f}" aria-pressed="${f === pick.face}" ${locked && f !== v.bid.face ? "disabled" : ""}>${pips(f)}</button>`).join("")}</div>
-               <div class="buttons">
-                 <button id="bid" data-sfx="confirm" ${canBid ? "" : "disabled"}>Bid</button>
-                 <button id="liar" class="liar" data-sfx="vote" ${v.bid ? "" : "disabled"}>Liar!</button>
-               </div>`
-            : ""}`;
-        if (v.myTurn) {
-          app.querySelector("#less").onclick = () => { pick.n--; render(); };
-          app.querySelector("#more").onclick = () => { pick.n++; render(); };
-          app.querySelectorAll("[data-face]").forEach((b) => (b.onclick = () => { pick.face = Number(b.dataset.face); render(); }));
-          app.querySelector("#bid").onclick = () => send({ t: "bid", n: pick.n, face: pick.face });
-          app.querySelector("#liar").onclick = () => send({ t: "liar" });
-        }
-        if (newRound) animateRoll(app.querySelector("#hand"));
-        runTimer(v);
-        return;
-      }
-
-      // reveal / over (ยังเปิดเต๋าไม่จบ วาดต่อจากจุดเดิม)
-      const end = revealEnd(v.reveal);
-      const elapsed = Date.now() - revealAt;
+      // play / over
+      const turnP = v.seats.find((p) => p.id === v.turn);
+      const shown = v.dice || (v.roll && v.roll.n);
       app.innerHTML = `
-        <div${elapsed < end + 300 ? ` class="revealing" style="--end: ${end}ms; --shift: -${elapsed}ms"` : ""}>
-          ${revealBox(v.reveal)}
-          <div class="later">
-            ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้า PALIFICO</p>` : ""}
-            ${v.screen === "over"
-              ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint center">รอเกมใหม่</p>`
-              : v.out ? `<p class="hint center">รอคนอื่น</p>`
-              : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">Next round</button>`}
-            ${v.screen === "reveal" ? `<p class="hint center">Ready ${v.readyCount}/${v.aliveCount}</p>` : ""}
-            <div style="margin-top: 24px">${scorebar(v)}</div>
-          </div>
-        </div>`;
-      if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
+        ${seatsBar(v)}
+        ${board(v)}
+        ${v.screen === "over"
+          ? `<p class="status"><span class="hl">${esc(v.winner)}</span> wins</p>
+             ${v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint center">รอเกมใหม่</p>`}`
+          : `<p class="status">${v.myTurn ? `<span class="hl">Your turn</span>` : `${turnP ? esc(turnP.name) : ""}'s turn`}</p>
+             <div class="timer" aria-hidden="true"><i></i></div>
+             <div class="roll-row">
+               <div class="die${v.roll ? ` k${v.seats.find((p) => p.id === v.roll.id).color}` : ""}" role="img" aria-label="${shown ? `เต๋า ${shown}` : "เต๋า"}" style="--c: var(--k, var(--text))">${pips(shown)}</div>
+               ${v.myTurn && v.dice === null ? `<button id="roll" data-sfx="click">Roll</button>` : ""}
+             </div>
+             <p class="hint center">${v.myTurn && v.dice !== null ? "แตะหมากที่กระพริบ" : ""}</p>`}
+        <p id="log">${logText(v)}</p>`;
+      if (app.querySelector("#roll")) app.querySelector("#roll").onclick = () => send({ t: "roll" });
+      app.querySelectorAll(".pc[tabindex]").forEach((g) => {
+        const k = Number(g.dataset.k);
+        g.onclick = () => send({ t: "move", k });
+        g.onkeydown = (ev) => {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          ev.preventDefault();
+          send({ t: "move", k });
+        };
+      });
+      runTimer(v);
+      if (newRoll && v.screen === "play") animateRoll(app.querySelector(".roll-row"));
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
-      // ผู้ชนะ: รอเปิดเต๋าจบก่อนค่อยขึ้น popup
-      if (gameOver) setTimeout(() => {
-        if (view.screen !== "over") return;
+      if (gameOver) {
         document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
         winner.showModal();
-        playSfx("win");
         fireworks();
-      }, Math.max(0, end + 300 - elapsed));
+      }
     }
 
     const rules = document.getElementById("rules");
@@ -666,7 +605,7 @@
     // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
     document.querySelector(".back").addEventListener("click", () => room && room.leave());
 
-    const saved = savedRoom("liar");
+    const saved = savedRoom("ludo");
     if (saved) {
       app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
       enter(null, null, saved);

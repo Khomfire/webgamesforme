@@ -1,5 +1,6 @@
 // ตัวคุมเกมฝั่ง server: ห้อง ผู้เล่น และส่งต่อคำสั่งให้กติกาของแต่ละเกม
 // สถานะห้องเป็น JSON ล้วน (เก็บลงฐานข้อมูลได้) แต่ละเกมเป็นโมดูลที่มี init, player, handle, leave, view
+// player(state) สร้างข้อมูลของผู้เล่นใหม่ ได้สถานะห้องไว้ดูคนที่อยู่ก่อน (เช่นเลือกสีที่ยังไม่มีใครใช้)
 import spy from "./spy.js";
 import xo from "./xo.js";
 import farkle from "./farkle.js";
@@ -10,8 +11,12 @@ import holdem from "./holdem.js";
 import president from "./president.js";
 import connect4 from "./connect4.js";
 import draw from "./draw.js";
+import dots from "./dots.js";
+import chess from "./chess.js";
+import go from "./go.js";
+import ludo from "./ludo.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw };
+export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots, chess, go, ludo };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
@@ -81,7 +86,7 @@ const cleanName = (n) => String(n || "").trim().slice(0, 20);
 function addPlayer(state, token, name) {
   const id = "p" + state.nextId++;
   state.tokens[token] = id;
-  state.players.push({ id, name, ...GAMES[state.game].player() });
+  state.players.push({ id, name, ...GAMES[state.game].player(state) });
   if (!state.owner) state.owner = id;
 }
 
