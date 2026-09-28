@@ -191,6 +191,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -305,6 +306,7 @@
 
       if (v.screen === "lobby") {
         const full = v.players.length === 2;
+        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 1, max: 20 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <h2>ห้อง</h2>
           <div class="room-row">
@@ -313,13 +315,7 @@
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
-          ${v.isHost
-            ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
-               <input id="target" type="number" min="1" max="20" value="${v.target}">
-               <label for="time">วิต่อตา (5-60)</label>
-               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
-            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน</p>
-               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
+          ${setupHtml(set, v.isHost)}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/2</h2>
           <ul>${v.players.map((p) => `<li><span class="mark ${p.mark.toLowerCase()}">${p.mark}</span>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -331,9 +327,8 @@
           done.hidden = false;
           setTimeout(() => (done.hidden = true), 1500);
         });
+        setupBind(app, set, send);
         if (v.isHost) {
-          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
-          app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;

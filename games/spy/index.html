@@ -207,6 +207,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -313,6 +314,7 @@
       const enough = v.players.length >= 3;
 
       if (v.screen === "lobby") {
+        const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 1, max: 20 }, { key: "minutes", label: "รอบละ", value: v.minutes, unit: "นาที", min: 1, max: 15 }];
         app.innerHTML = `
           <h2>ห้อง</h2>
           <div class="room-row">
@@ -321,12 +323,7 @@
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
-          ${v.isHost
-            ? `<label for="target">เป้าหมาย (1-20 คะแนน)</label>
-               <input id="target" type="number" min="1" max="20" value="${v.target}">
-               <label for="minutes">เวลาต่อรอบ (1-15 นาที)</label>
-               <input id="minutes" type="number" min="1" max="15" value="${v.minutes}">`
-            : `<p>เป้าหมาย : <span class="hl">${v.target}</span> คะแนน<br>เวลาต่อรอบ : <span class="hl">${v.minutes}</span> นาที</p>`}
+          ${setupHtml(set, v.isHost)}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -338,9 +335,8 @@
           done.hidden = false;
           setTimeout(() => (done.hidden = true), 1500);
         });
+        setupBind(app, set, send);
         if (v.isHost) {
-          app.querySelector("#target").onchange = (e) => send({ t: "target", value: e.target.value });
-          app.querySelector("#minutes").onchange = (e) => send({ t: "minutes", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;

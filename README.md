@@ -20,6 +20,7 @@ Hub รวมเกมเว็บไว้เล่นกับเพื่อ�
    - ข้อมูลที่ส่งถี่ๆ ระหว่างเครื่อง (เช่นเส้นที่วาดใน DRAW & GUESS) ไม่ต้องผ่าน server: ส่งด้วย `ink(data)` ของห้อง แล้วรับด้วย `onInk` ตัวที่ 5 ของ `openRoom`
    - deploy ฟังก์ชันใหม่ทุกครั้งที่แก้ไฟล์ใน `supabase/functions/game/` ตาราง `rooms` อยู่ใน `supabase/migrations/`
    - ปุ่มหยุดเกม: ใส่ `<script src="../../pause.js"></script>` หลัง `fireworks.js` แล้วเรียก `pauseUi(view, send)` ทุกครั้งที่วาดใหม่ ถ้าเกมมีเวลาต่อตา เก็บเวลาหมดไว้ที่ `turnEnds` ของสถานะ ตอนเล่นต่อจะเลื่อนให้เอง และระหว่างหยุด (`view.paused`) ให้หลอดเวลาค้างไว้ ไม่ส่ง `timeout`
+   - ตั้งค่าในห้องรอ: ใส่ `<script src="../../setup.js"></script>` หลัง `pause.js` แล้วใส่ `setupHtml(items, isHost)` ในหน้าห้องรอ และเรียก `setupBind(app, items, send)` หลังวาด (รูปแบบของ `items` อยู่หัวไฟล์ `setup.js`)
 
 ## รันในเครื่อง
 

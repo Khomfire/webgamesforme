@@ -216,6 +216,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -488,6 +489,7 @@
       if (v.screen === "lobby") {
         lastScreen = v.screen;
         const enough = v.players.length >= 2;
+        const set = [{ key: "rounds", label: "รอบ", value: v.rounds, min: 1, max: 10 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 30, max: 180, step: 10 }];
         app.innerHTML = `
           <h2>ห้อง</h2>
           <div class="room-row">
@@ -496,13 +498,7 @@
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
-          ${v.isHost
-            ? `<label for="rounds">รอบ (1-10)</label>
-               <input id="rounds" type="number" min="1" max="10" value="${v.rounds}">
-               <label for="time">วิต่อตา (30-180)</label>
-               <input id="time" type="number" min="30" max="180" step="10" value="${v.time / 1000}">`
-            : `<p>รอบ : <span class="hl">${v.rounds}</span></p>
-               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
+          ${setupHtml(set, v.isHost)}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/10</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -514,9 +510,8 @@
           done.hidden = false;
           setTimeout(() => (done.hidden = true), 1500);
         });
+        setupBind(app, set, send);
         if (v.isHost) {
-          app.querySelector("#rounds").onchange = (e) => send({ t: "rounds", value: e.target.value });
-          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;

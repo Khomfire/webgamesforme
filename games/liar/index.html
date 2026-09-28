@@ -182,7 +182,6 @@
     .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", monospace; color: var(--yellow); }
     .liar { --c: var(--red); }
     /* กฎเสริม: ปิดอยู่เป็นสีจาง กดแล้วเป็นสีเหลือง */
-    .rule[aria-pressed="false"] { --c: var(--dim); }
     .center { text-align: center; }
     /* ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางแยกกันตรงกลาง */
     .pair { display: flex; justify-content: center; gap: 32px; margin: 24px 0 8px; }
@@ -313,6 +312,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -549,6 +549,8 @@
 
       if (v.screen === "lobby") {
         const enough = v.players.length >= 2;
+        const set = [{ key: "start-dice", label: "เต๋าคนละ", value: v.start, unit: "ลูก", min: 1, max: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 },
+          ...Object.entries(RULES).map(([k, name]) => ({ label: name, on: v.rules[k], toggle: () => send({ t: "rule", key: k, on: !v.rules[k] }) }))];
         app.innerHTML = `
           <h2>ห้อง</h2>
           <div class="room-row">
@@ -557,17 +559,7 @@
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
-          ${v.isHost
-            ? `<label for="start-dice">เต๋าคนละ (1-5 ลูก)</label>
-               <input id="start-dice" type="number" min="1" max="5" value="${v.start}">
-               <label for="time">วิต่อตา (5-60)</label>
-               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
-            : `<p>เต๋าคนละ <span class="hl">${v.start}</span> ลูก</p>
-               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
-          <label id="rules-label">กฎเสริม</label>
-          ${v.isHost
-            ? `<div role="group" aria-labelledby="rules-label">${Object.entries(RULES).map(([k, name]) => `<button class="rule" data-rule="${k}" aria-pressed="${v.rules[k]}">${v.rules[k] ? "" : "+ "}${name}</button>`).join("")}</div>`
-            : `<p>${Object.keys(RULES).filter((k) => v.rules[k]).map((k) => `<span class="hl">${RULES[k]}</span>`).join(", ") || "ไม่มี"}</p>`}
+          ${setupHtml(set, v.isHost)}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -579,10 +571,8 @@
           done.hidden = false;
           setTimeout(() => (done.hidden = true), 1500);
         });
+        setupBind(app, set, send);
         if (v.isHost) {
-          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
-          app.querySelector("#start-dice").onchange = (e) => send({ t: "start-dice", value: e.target.value });
-          app.querySelectorAll("[data-rule]").forEach((b) => (b.onclick = () => send({ t: "rule", key: b.dataset.rule, on: !v.rules[b.dataset.rule] })));
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;

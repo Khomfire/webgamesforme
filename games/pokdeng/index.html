@@ -171,8 +171,6 @@
     .bet-row { display: flex; justify-content: center; align-items: center; gap: 20px; }
     .bet-row .icon-btn { margin: 0; }
     .bet-row .amount { min-width: 5ch; text-align: center; font: 400 1.2rem "Press Start 2P", monospace; color: var(--yellow); }
-    select { width: 100%; padding: 12px; border: 3px solid var(--dim); background: var(--screen); color: var(--text); font: inherit; }
-    select:focus { outline: none; border-color: var(--yellow); }
     /* โต๊ะ: คนอื่นด้านบน กองไพ่ตรงกลาง ของเราด้านล่าง */
     .round { margin: 0 0 12px; text-align: right; }
     .seats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -289,6 +287,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -500,6 +499,7 @@
         lastWon = {};
         lastStakes = new Set();
         betAmt = 0;
+        const set = [{ key: "money", label: "เงินเริ่มต้น", value: v.money, options: MONEY }, { key: "laps", label: "เจ้ามือคนละ", value: v.laps, unit: "ครั้ง", min: 1, max: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <h2>ห้อง</h2>
           <div class="room-row">
@@ -508,16 +508,7 @@
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
-          ${v.isHost
-            ? `<label for="money">เงินเริ่มต้น</label>
-               <select id="money">${MONEY.map((n) => `<option value="${n}"${n === v.money ? " selected" : ""}>${n}</option>`).join("")}</select>
-               <label for="laps">เจ้ามือคนละ (1-5) ครั้ง</label>
-               <input id="laps" type="number" min="1" max="5" value="${v.laps}">
-               <label for="time">วิต่อตา (5-60)</label>
-               <input id="time" type="number" min="5" max="60" step="5" value="${v.time / 1000}">`
-            : `<p>เงินเริ่มต้น : <span class="hl">${v.money}</span></p>
-               <p>เจ้ามือคนละ : <span class="hl">${v.laps}</span> ครั้ง</p>
-               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
+          ${setupHtml(set, v.isHost)}
           <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/10</h2>
           <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
@@ -529,10 +520,8 @@
           done.hidden = false;
           setTimeout(() => (done.hidden = true), 1500);
         });
+        setupBind(app, set, send);
         if (v.isHost) {
-          app.querySelector("#money").onchange = (e) => send({ t: "money", value: e.target.value });
-          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
-          app.querySelector("#laps").onchange = (e) => send({ t: "laps", value: e.target.value });
           app.querySelector("#start").onclick = () => send({ t: "start" });
         }
         return;
