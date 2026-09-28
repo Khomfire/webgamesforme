@@ -140,6 +140,7 @@
       { id: "president", name: "PRESIDENT", desc: "ไพ่สลาฟ หมดมือก่อนได้เป็น King", players: "3-8 คน" },
       { id: "connect4", name: "CONNECT FOUR", desc: "หยอดเหรียญ เรียง 4 ก่อนชนะ", players: "2 คน" },
       { id: "draw", name: "DRAW & GUESS", desc: "วาดให้เพื่อนทาย", players: "2-10 คน" },
+      { id: "codenames", name: "CODENAMES", desc: "ใบ้คำเดียว ให้ทีมหาสายลับ", players: "4-16 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -180,6 +181,9 @@
       // มงกุฎคิง
       president: `<path d="M7 36 5 13l10 9 9-13 9 13 10-9-2 23z" fill="currentColor"/><rect x="7" y="38" width="34" height="5" fill="currentColor"/>
         <circle cx="5" cy="12" r="3" fill="${face}"/><circle cx="24" cy="8" r="3" fill="${face}"/><circle cx="43" cy="12" r="3" fill="${face}"/>`,
+      // การ์ด 3x3 บางใบเปิดเป็นสีทีม หนึ่งใบเป็น Assassin
+      codenames: [["currentColor", 2, 2], [face, 18, 2], [red, 34, 2], [face, 2, 18], [ink, 18, 18], ["currentColor", 34, 18], [red, 2, 34], [face, 18, 34], ["currentColor", 34, 34]]
+        .map(([c, x, y]) => `<rect x="${x}" y="${y}" width="12" height="12" rx="1" fill="${c}" stroke="${face}" stroke-width="${c === ink ? 2 : 0}"/>`).join(""),
     };
 
     const list = document.getElementById("games");
