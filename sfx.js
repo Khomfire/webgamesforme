@@ -1,5 +1,5 @@
 // เสียงแบบตู้เกม สร้างด้วย Web Audio ไม่ต้องโหลดไฟล์เสียง
-// ปุ่มเลือกเสียงได้ด้วย data-sfx="ชื่อเสียง" ถ้าไม่ใส่จะเป็นเสียง click
+// ปุ่มเลือกเสียงได้ด้วย data-sfx="ชื่อเสียง" ถ้าไม่ใส่จะเป็นเสียง click ใส่ "none" ไม่มีเสียง
 // แต่ละเสียงคือลำดับโน้ต [ความถี่เริ่ม, ความถี่จบ, ความยาววินาที]
 const SOUNDS = {
   click: [[880, 440, 0.08]],
@@ -11,10 +11,12 @@ const SOUNDS = {
   confirm: [[1175, 1175, 0.06], [1568, 1568, 0.1]],
   roll: [[180, 120, 0.04], [260, 160, 0.04], [200, 140, 0.04], [300, 180, 0.05], [220, 150, 0.05]],
   win: [[523, 523, 0.12], [659, 659, 0.12], [784, 784, 0.12], [1047, 1047, 0.12], [784, 784, 0.1], [1047, 1047, 0.4]],
+  none: [],
 };
 
 let audio;
 function playSfx(name) {
+  if (name === "place") return playPlace();
   audio ??= new AudioContext();
   let t = audio.currentTime;
   for (const [from, to, length] of SOUNDS[name] || SOUNDS.click) {
@@ -56,4 +58,33 @@ function playBoom() {
   gain.gain.exponentialRampToValueAtTime(0.001, t + length);
   noise.connect(filter).connect(gain).connect(audio.destination);
   noise.start(t);
+}
+
+// เสียงวางหมากลงกระดาน ("place"): เสียงไม้กระทบกันสั้นๆ (noise ผ่าน bandpass) กับเสียงทุ้มของตัวกระดาน
+function playPlace() {
+  audio ??= new AudioContext();
+  const t = audio.currentTime;
+  const length = 0.05;
+  const buffer = audio.createBuffer(1, audio.sampleRate * length, audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) ** 4;
+  const knock = audio.createBufferSource();
+  knock.buffer = buffer;
+  const filter = audio.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 1800 + Math.random() * 400;
+  filter.Q.value = 1.5;
+  const knockGain = audio.createGain();
+  knockGain.gain.value = 0.35;
+  knock.connect(filter).connect(knockGain).connect(audio.destination);
+  knock.start(t);
+  const body = audio.createOscillator();
+  body.frequency.setValueAtTime(240, t);
+  body.frequency.exponentialRampToValueAtTime(120, t + 0.1);
+  const bodyGain = audio.createGain();
+  bodyGain.gain.setValueAtTime(0.1, t);
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  body.connect(bodyGain).connect(audio.destination);
+  body.start(t);
+  body.stop(t + 0.1);
 }

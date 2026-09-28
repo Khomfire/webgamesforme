@@ -129,28 +129,26 @@
     .clock { min-width: 5.5em; padding: 4px 8px; border: 3px solid #2c2950; text-align: right; font: 400 0.95rem "Press Start 2P", monospace; color: var(--dim); }
     .clock.run { border-color: var(--yellow); color: var(--yellow); }
     .clock.low { border-color: var(--red); color: var(--red); }
-    .side { display: inline-block; flex: none; width: 16px; height: 16px; border: 3px solid var(--dim); }
-    .side.w { background: var(--text); }
-    .side.b { background: var(--screen); }
+    .side { display: inline-block; flex: none; width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px var(--dim); }
+    .side.w { background: radial-gradient(circle at 35% 30%, #fff, #ecebe5 60%, #b6b1a5); }
+    .side.b { background: radial-gradient(circle at 35% 30%, #6e6e76, #26262c 35%, #050506); }
     /* กระดาน: SVG จุดตัดห่างกัน 10 หน่วย เว้นขอบ 10 หน่วย หมากเป็นภาพ pixel 9x9 */
     .board { display: block; width: 100%; margin: 4px 0; touch-action: manipulation; }
-    .board .wood { fill: #b9b4e0; }
-    .board .line { stroke: #16132e; stroke-width: 0.5; }
-    .board .star { fill: #16132e; }
+    .board .wood { fill: url(#wood); }
+    .board .grain { fill: none; stroke: #8a5a1e; stroke-width: 0.25; opacity: 0.18; }
+    .board .line { stroke: #3b2610; stroke-width: 0.35; }
+    .board .edge { fill: none; stroke: #3b2610; stroke-width: 0.7; }
+    .board .star { fill: #3b2610; }
     .board .ghost { opacity: 0.5; }
     .board .dead { opacity: 0.35; }
     .board .last { fill: var(--red); }
     .board .tb { fill: #16132e; }
-    .board .tw { fill: var(--text); stroke: #16132e; stroke-width: 0.4; }
+    .board .tw { fill: #fff; stroke: #16132e; stroke-width: 0.4; }
     .board .pt { cursor: default; }
     .board .pt[tabindex] { cursor: pointer; }
     .board .pt:focus { outline: none; }
     .board .pt:focus-visible .hit { stroke: var(--screen); stroke-width: 0.6; stroke-dasharray: 1 1; }
     .board .hit { fill: transparent; }
-    .sb { fill: #16132e; }
-    .sw { fill: var(--text); }
-    .ob { fill: #e3e0f7; }
-    .ow { fill: #16132e; }
     .actions { display: flex; gap: 16px; }
     .actions button { --c: var(--cyan); }
     .actions .armed { --c: var(--red); }
@@ -223,14 +221,13 @@
     }
 
     // ---------- หมาก ----------
-    // ภาพ pixel วงกลม 9x9 มีขอบรอบตัว ใช้ซ้ำด้วย <use>
-    const STONE = [];
-    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) if ((x - 4) ** 2 + (y - 4) ** 2 <= 20) STONE.push([x, y]);
-    const rects = (list) => list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("");
-    const inside = new Set(STONE.map(([x, y]) => x + "," + y)), edge = new Set();
-    for (const [x, y] of STONE) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!inside.has(x + dx + "," + (y + dy))) edge.add(x + dx + "," + (y + dy));
-    const DEFS = ["b", "w"].map((c) => `<symbol id="${c}" viewBox="-1 -1 11 11">
-      <path class="o${c}" d="${rects([...edge].map((s) => s.split(",").map(Number)))}"/><path class="s${c}" d="${rects(STONE)}"/></symbol>`).join("");
+    // หมากกลมมีเงาใต้หมาก ไล่สีจากจุดสะท้อนแสงซ้ายบนให้ดูนูน ใช้ซ้ำด้วย <use> (ขนาด 10 หน่วยเท่าช่อง)
+    const DEFS = `
+      <radialGradient id="gb" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#6e6e76"/><stop offset="0.35" stop-color="#26262c"/><stop offset="1" stop-color="#050506"/></radialGradient>
+      <radialGradient id="gw" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.6" stop-color="#ecebe5"/><stop offset="1" stop-color="#b6b1a5"/></radialGradient>
+      <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ebc377"/><stop offset="1" stop-color="#cc9546"/></linearGradient>
+      ${["b", "w"].map((c) => `<symbol id="${c}" viewBox="0 0 10 10" overflow="visible">
+        <circle cx="5.4" cy="5.7" r="4.6" fill="#000" opacity="0.35"/><circle cx="5" cy="5" r="4.6" fill="url(#g${c})"/></symbol>`).join("")}`;
 
     // ---------- หน้าจอ ----------
     const colorName = { b: "Black", w: "White" };
@@ -263,11 +260,14 @@
     function board(v, ghost) {
       const n = v.n, size = (n + 1) * 10, flip = v.mine === "w", dead = new Set(v.dead || []);
       const xy = (i) => { const d = flip ? n * n - 1 - i : i; return [(d % n) * 10 + 10, Math.floor(d / n) * 10 + 10]; };
-      let out = `<rect class="wood" width="${size}" height="${size}"/>`;
+      let out = `<rect class="wood" width="${size}" height="${size}" rx="2"/>`;
+      // ลายไม้: เส้นคลื่นจางๆ
+      for (let y = 2; y < size; y += 2.6) out += `<path class="grain" d="M0 ${y}Q${size * 0.3} ${y + Math.sin(y) * 1.5} ${size * 0.6} ${y}T${size} ${y + Math.cos(y)}"/>`;
       for (let k = 1; k <= n; k++) out += `<path class="line" d="M10 ${k * 10}H${n * 10}M${k * 10} 10V${n * 10}"/>`;
+      out += `<rect class="edge" x="10" y="10" width="${(n - 1) * 10}" height="${(n - 1) * 10}"/>`;
       for (const r of STARS[n]) for (const c of STARS[n]) if (n === 19 || r === c || r + c === n - 1) {
         const [x, y] = xy(r * n + c);
-        out += `<rect class="star" x="${x - 1}" y="${y - 1}" width="2" height="2"/>`;
+        out += `<circle class="star" cx="${x}" cy="${y}" r="1"/>`;
       }
       const bad = new Set(v.bad);
       for (let i = 0; i < n * n; i++) {
@@ -276,14 +276,14 @@
         let mark = "";
         if (p !== ".") mark = stone(p, dead.has(i) ? "dead" : "");
         else if (i === ghost) mark = stone(v.mine, "ghost");
-        if (i === v.last && p !== ".") mark += `<rect class="last" x="${x - 1}" y="${y - 1}" width="2" height="2"/>`;
+        if (i === v.last && p !== ".") mark += `<circle class="last" cx="${x}" cy="${y}" r="1.4"/>`;
         if (v.terr && v.terr[i] !== ".") mark += `<rect class="t${v.terr[i]}" x="${x - 1.5}" y="${y - 1.5}" width="3" height="3"/>`;
         const live = (v.myTurn && p === "." && !bad.has(i)) || (v.screen === "score" && p !== ".");
         const label = `${COLS[i % n]}${n - Math.floor(i / n)}${p === "." ? "" : ` ${colorName[p]}${dead.has(i) ? " ตาย" : ""}`}`;
         out += `<g class="pt" data-i="${i}"${live ? ` tabindex="0" role="button"` : ""} aria-label="${label}">${mark}
           <rect class="hit" x="${x - 5}" y="${y - 5}" width="10" height="10"/></g>`;
       }
-      return `<svg class="board" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
+      return `<svg class="board" viewBox="0 0 ${size} ${size}" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
     }
 
     // นาฬิกา: ฝ่ายที่ถึงตานับถอยหลังจากตอนได้สถานะ เหลือต่ำกว่า 20 วิเป็นสีแดง
@@ -460,7 +460,8 @@
       // วางหมากใหม่: เสียงกินหรือวาง (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {
         const stones = (b) => b.replace(/\./g, "").length;
-        playSfx(stones(v.board) <= stones(lastBoard) ? "confirm" : "click");
+        playSfx("place");
+        if (stones(v.board) <= stones(lastBoard)) setTimeout(() => playSfx("place"), 90); // กิน: กระทบสองที
       }
       lastBoard = v.board;
       if (gameOver) {

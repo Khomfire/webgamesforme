@@ -231,7 +231,7 @@
         </div>`;
     };
 
-    let lastScreen, lastMyTurn;
+    let lastScreen, lastMyTurn, lastFilled = null;
     // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
     let timeoutTimer;
@@ -342,7 +342,7 @@
       app.innerHTML = `
         ${scorebar(v)}
         <div class="board" role="grid" aria-label="กระดาน">${v.board.map((c, i) => `
-          <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
+          <button class="cell${c ? " " + c.toLowerCase() : ""}${v.line.includes(i) ? " win" : ""}" data-i="${i}" data-sfx="none" aria-label="ช่อง ${i + 1}${c ? " " + c : ""}" ${v.myTurn && !c ? "" : "disabled"}>${c || ""}</button>`).join("")}
         </div>
         <p class="status">${status}</p>
         ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
@@ -353,6 +353,10 @@
              <p class="hint">Ready ${v.readyCount}/2</p>`
           : ""}`;
       app.querySelectorAll(".cell").forEach((b) => (b.onclick = () => send({ t: "move", i: Number(b.dataset.i) })));
+      // วางใหม่ (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
+      const filled = v.board.filter(Boolean).length;
+      if (lastFilled !== null && filled > lastFilled) playSfx("place");
+      lastFilled = filled;
       runTimer(v);
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
       if (gameOver) {

@@ -264,9 +264,10 @@
     // เหรียญที่เพิ่งหยอด ตกจากเหนือกระดานลงช่องของมัน แล้วเด้งนิดหนึ่ง
     function drop(i) {
       const disc = app.querySelector(`[data-i="${i}"] .disc`);
-      if (!disc || still.matches) return;
+      if (!disc || still.matches) return playSfx("place");
       const row = Math.floor(i / COLS);
       const step = disc.getBoundingClientRect().height + 4;
+      setTimeout(() => playSfx("place"), (260 + row * 50) * 0.75); // ตอนเหรียญถึงก้น
       disc.animate([
         { transform: `translateY(${-(row + 1) * step}px)` },
         { transform: "none", offset: 0.75 },
@@ -386,7 +387,7 @@
       app.innerHTML = `
         ${scorebar(v)}
         <div class="board" aria-label="กระดาน">${Array.from({ length: COLS }, (_, c) => `
-          <button class="col" data-col="${c}" aria-label="คอลัมน์ ${c + 1}" ${v.myTurn && !v.board[c] ? "" : "disabled"}>${Array.from({ length: ROWS }, (_, r) => {
+          <button class="col" data-col="${c}" data-sfx="none" aria-label="คอลัมน์ ${c + 1}" ${v.myTurn && !v.board[c] ? "" : "disabled"}>${Array.from({ length: ROWS }, (_, r) => {
             const i = r * COLS + c, d = v.board[i];
             return `<span class="hole" data-i="${i}">${d ? `<i class="disc ${d.toLowerCase()}${v.line.includes(i) ? " win" : ""}" aria-label="${COLOR[d]}"></i>` : ""}</span>`;
           }).join("")}</button>`).join("")}
@@ -405,7 +406,6 @@
       const key = v.last === null ? null : `${v.last}:${v.board.filter(Boolean).length}`;
       if (key && key !== lastDrop) {
         drop(v.last);
-        playSfx("click");
       }
       lastDrop = key;
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });

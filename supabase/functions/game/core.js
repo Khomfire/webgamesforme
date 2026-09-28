@@ -14,11 +14,10 @@ import draw from "./draw.js";
 import dots from "./dots.js";
 import chess from "./chess.js";
 import go from "./go.js";
-import ludo from "./ludo.js";
 import dominoes from "./dominoes.js";
 import reversi from "./reversi.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots, chess, go, ludo, dominoes, reversi };
+export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots, chess, go, dominoes, reversi };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 

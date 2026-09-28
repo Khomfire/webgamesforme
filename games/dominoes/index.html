@@ -166,13 +166,10 @@
     .half span.on { border-radius: 50%; background: #1b1830; }
     .tile.inline { --s: 16px; margin: 0 2px; }
     .tile.small { --s: 18px; }
-    /* แถวโดมิโน: วนเป็นงู แถวคี่เดินจากขวาไปซ้าย ดับเบิลวางตั้ง กว้างแถวละ 10 ช่อง */
+    /* แถวโดมิโน: วนเป็นงู ถึงขอบแล้วเลี้ยวลงด้วยตัวตั้งหนึ่งตัว แถวถัดไปเดินกลับ กว้าง 12 ช่อง (--u คือหนึ่งช่อง) */
     .line { container-type: inline-size; min-height: 120px; margin: 0 0 8px; padding: 10px 6px; background: #15122c; border: 2px solid #2c2950; }
-    .lrow { display: flex; align-items: center; height: calc(100cqw / 5); }
-    .lrow.rev, .lrow.rev .tile { flex-direction: row-reverse; }
-    .lrow.rev .tile.v { flex-direction: column; }
-    .lrow.solo { justify-content: center; }
-    .line .tile { --s: calc(100cqw / 10 - 2px); margin: 1px; }
+    .chain { --u: calc(100cqw / 12); position: relative; }
+    .chain .tile { --s: calc(var(--u) - 1px); position: absolute; left: calc(var(--u) * var(--x) + 1px); top: calc(var(--u) * var(--y) + 1px); }
     .line .empty { margin: 0; padding-top: 32px; text-align: center; color: var(--dim); }
     .tile.new { animation: drop 0.35s ease-out; }
     @keyframes drop { from { transform: scale(1.6); opacity: 0; } }
@@ -272,25 +269,51 @@
     }
     const sum = (hand) => hand.reduce((m, t) => m + t[0] + t[1], 0);
 
-    // แถว: ตัดเป็นแถวละ 10 ช่อง (ตัวนอน 2 ช่อง ดับเบิลตั้ง 1 ช่อง) แถวคี่กลับทิศให้ต่อกันเป็นงู
+    // วางแถวเป็นงู (หน่วยเป็นช่อง): ตัวนอนยาว 2 ช่อง ดับเบิลวางขวาง 1 ช่อง
+    // ที่ไม่พอแล้วตัวถัดไปเป็นหัวเลี้ยว วางตั้งลงข้างล่าง แถวใหม่ต่อจากปลายล่างของมัน เดินกลับทิศ
+    // ตัวแรกหลังเลี้ยวถ้าเป็นดับเบิลวางนอน จะได้ไม่ชนหัวเลี้ยว
+    const COLS = 12;
+    function snake(line) {
+      const out = [];
+      let dir = 1, x = 0, y = 0, turned = false;
+      line.forEach((t) => {
+        const cross = t[0] === t[1] && !turned;
+        const w = cross ? 1 : 2;
+        if (dir > 0 ? x + w <= COLS - 1 : x - w >= 1) {
+          out.push({ x: dir > 0 ? x : x - w, y: cross ? y - 0.5 : y, v: cross, flip: dir < 0 });
+          x += dir * w;
+          turned = false;
+        } else {
+          out.push({ x: dir > 0 ? x : x - 1, y, v: true, flip: false });
+          x += dir;
+          y += 2;
+          dir = -dir;
+          turned = true;
+        }
+      });
+      // จัดกลาง
+      const top = Math.min(...out.map((p) => p.y)), left = Math.min(...out.map((p) => p.x));
+      const shift = (COLS - Math.max(...out.map((p) => p.x + (p.v ? 1 : 2))) - left) / 2 - left;
+      out.forEach((p) => { p.x += shift; p.y -= top; });
+      return { out, h: Math.max(...out.map((p) => p.y + (p.v ? 2 : 1))) };
+    }
+
     // choosing: ปลายที่แตะต่อได้ fresh: ตำแหน่งตัวที่เพิ่งลง
     function lineHtml(line, choosing, fresh) {
       if (!line.length) return `<div class="line"><p class="empty">ลงตัวไหนก็ได้</p></div>`;
-      const rows = [[]];
-      let used = 0;
-      line.forEach((t, i) => {
-        const w = t[0] === t[1] ? 1 : 2;
-        if (used + w > 10) { rows.push([]); used = 0; }
-        rows[rows.length - 1].push(i);
-        used += w;
-      });
+      const { out, h } = snake(line);
       const endAttr = (e) => `class="half end" data-end="${e}" tabindex="0" role="button" aria-label="ต่อปลาย ${e === "L" ? line[0][0] : line[line.length - 1][1]}"`;
-      return `<div class="line" aria-label="แถวโดมิโน ปลาย ${line[0][0]} กับ ${line[line.length - 1][1]}">${rows.map((row, r) => `
-        <div class="lrow${r % 2 ? " rev" : ""}${rows.length === 1 ? " solo" : ""}">${row.map((i) => {
+      return `<div class="line" aria-label="แถวโดมิโน ปลาย ${line[0][0]} กับ ${line[line.length - 1][1]}">
+        <div class="chain" style="height: calc(var(--u) * ${h})">${out.map((p, i) => {
           const t = line[i];
           const halves = [i === 0 && choosing ? endAttr("L") : "", i === line.length - 1 && choosing ? endAttr("R") : ""];
-          return tileHtml(t, { cls: `${t[0] === t[1] ? "v" : ""}${i === fresh ? " new" : ""}`, halves });
-        }).join("")}</div>`).join("")}
+          // เดินซ้าย: ปลายต้นของตัวอยู่ทางขวา
+          return tileHtml(p.flip ? [t[1], t[0]] : t, {
+            cls: `${p.v ? "v" : ""}${i === fresh ? " new" : ""}`,
+            attrs: `style="--x: ${p.x}; --y: ${p.y}"`,
+            halves: p.flip ? [halves[1], halves[0]] : halves,
+          });
+        }).join("")}</div>
       </div>`;
     }
 
@@ -365,7 +388,8 @@
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       const logKey = JSON.stringify(v.log || null);
       const freshLog = lastLog !== undefined && logKey !== lastLog && v.log;
-      if (freshLog && v.screen === "play" && v.log.by !== v.me) playSfx(v.log.t === "draw" ? "roll" : "confirm");
+      if (freshLog && v.screen === "play" && (v.log.t === "play" || v.log.t === "set")) playSfx("place");
+      if (freshLog && v.screen === "play" && v.log.t === "draw" && v.log.by !== v.me) playSfx("roll");
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
       lastLog = logKey;
@@ -453,7 +477,7 @@
           <div class="hand" aria-label="ตัวในมือ">${hand.map((t) => {
             const ok = v.myTurn && ends(t, v.line).length > 0;
             const key = t.join(":");
-            return tileHtml(t, { tag: "button", cls: `v${ok ? " ok" : ""}${key === choosing ? " sel" : ""}`, attrs: `data-t="${key}" data-sfx="confirm" ${ok ? "" : "disabled"}` });
+            return tileHtml(t, { tag: "button", cls: `v${ok ? " ok" : ""}${key === choosing ? " sel" : ""}`, attrs: `data-t="${key}" ${ok ? "" : "disabled"}` });
           }).join("")}</div>
           ${v.canDraw ? `<button id="draw" data-sfx="roll">Draw</button>` : ""}
           <p id="log">${logText(v)}</p>` : `

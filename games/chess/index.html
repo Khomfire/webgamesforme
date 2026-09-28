@@ -559,7 +559,11 @@
       // เดินใหม่: เสียงกินหรือเดิน (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard) {
         const count = (b) => b.replace(/\./g, "").length;
-        if (v.screen === "play") playSfx(count(v.board) < count(lastBoard) ? "confirm" : "click");
+        if (v.screen === "play") {
+          const at = still.matches ? 0 : 220; // ตอนหมากเลื่อนไปถึงช่อง
+          setTimeout(() => playSfx("place"), at);
+          if (count(v.board) < count(lastBoard)) setTimeout(() => playSfx("place"), at + 90); // กิน: กระทบสองที
+        }
         animateMove(v, lastBoard);
       }
       lastBoard = v.board;
