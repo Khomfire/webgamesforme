@@ -109,7 +109,7 @@
     .guesses button { padding: 10px 4px; font-size: 0.95rem; }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
-    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
     .copy { --c: var(--cyan); position: relative; }
@@ -316,16 +316,16 @@
       if (v.screen === "lobby") {
         const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 1, max: 20 }, { key: "minutes", label: "รอบละ", value: v.minutes, unit: "นาที", min: 1, max: 15 }];
         app.innerHTML = `
-          <h2>ห้อง</h2>
           <div class="room-row">
+            <span class="hint">ห้อง</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length} คน</h2>
-          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length} คน</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `<p class="hint">ส่งรหัสให้เพื่อน (3 คนขึ้นไป)</p>
                <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`

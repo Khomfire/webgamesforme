@@ -102,7 +102,7 @@
     .alt { --c: var(--cyan); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
-    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
     .copy { --c: var(--cyan); position: relative; }
@@ -705,16 +705,16 @@
         lastShuffles = undefined;
         const set = [{ key: "target", label: "ตกรอบที่", value: v.target, unit: "แต้ม", min: 50, max: 1000, step: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
-          <h2>ห้อง</h2>
           <div class="room-row">
+            <span class="hint">ห้อง</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
             <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
           <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/10</h2>
-          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/10</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${v.players.length >= 2 ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
                <button id="start" data-sfx="start" ${v.players.length >= 2 ? "" : "disabled"}>เริ่ม</button>`

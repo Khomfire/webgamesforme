@@ -2,6 +2,7 @@
 // แต่ละค่าคือ { key, label, value, unit, min, max, step } หรือ { key, label, value, options: [...] }
 // ค่าเปิด/ปิดคือ { label, on, toggle } กดแล้วเรียก toggle()
 // หน้าเกมใส่ setupHtml(items, isHost) ในหน้าห้องรอ แล้วเรียก setupBind(app, items, send)
+// รายชื่อในห้องรอใช้ <ul class="chips"> เรียงชื่อต่อกันเป็นป้าย
 const setupStyle = document.createElement("style");
 setupStyle.textContent = `
   .setup { margin: 0 0 8px; }
@@ -18,6 +19,8 @@ setupStyle.textContent = `
   .switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; background: var(--dim); }
   .switch.on { border-color: var(--cyan); }
   .switch.on::after { left: 32px; background: var(--cyan); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips li { padding: 2px 10px; border: 2px solid #2c2950; }
 `;
 document.head.append(setupStyle);
 
