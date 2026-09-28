@@ -144,6 +144,7 @@
       { id: "chess", name: "CHESS", desc: "Checkmate ก่อนชนะ", players: "2 คน" },
       { id: "go", name: "GO", desc: "วางหมากล้อมพื้นที่ ได้มากกว่าชนะ", players: "2 คน" },
       { id: "ludo", name: "LUDO", desc: "ทอยเต๋าเดินหมาก เข้าเส้นชัยครบ 4 ตัวก่อนชนะ", players: "2-4 คน" },
+      { id: "dominoes", name: "DOMINOES", desc: "ต่อแต้มให้ตรงปลายแถว หมดมือก่อนชนะ", players: "2-4 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -199,6 +200,9 @@
       ludo: `${[[3, 3, "#ff4d4d"], [27, 3, "#3ec46d"], [27, 27, "#ffd23f"], [3, 27, "#3e8ee0"]].map(([x, y, c]) =>
         `<rect x="${x}" y="${y}" width="18" height="18" fill="${c}"/><circle cx="${x + 9}" cy="${y + 9}" r="4" fill="${face}" stroke="${ink}" stroke-width="2"/>`).join("")}
         <path d="M21 3h6v42h-6zM3 21h42v6H3z" fill="currentColor"/>`,
+      // โดมิโนสองตัว ตัวหนึ่งตั้งเอียง อีกตัวนอน
+      dominoes: `<g transform="rotate(-15 13 16)"><rect x="5" y="2" width="16" height="28" rx="3" fill="${face}" stroke="currentColor" stroke-width="2.5"/><path d="M8 16h10" stroke="${ink}" stroke-width="2"/>${pip(13, 9)}${pip(9.5, 20)}${pip(13, 23)}${pip(16.5, 26)}</g>
+        <g transform="rotate(6 31 38)"><rect x="16" y="31" width="30" height="15" rx="3" fill="${face}" stroke="currentColor" stroke-width="2.5"/><path d="M31 34v9" stroke="${ink}" stroke-width="2"/>${pip(21, 35)}${pip(26, 42)}${pip(36, 35)}${pip(41, 35)}${pip(36, 42)}${pip(41, 42)}</g>`,
     };
 
     const list = document.getElementById("games");
