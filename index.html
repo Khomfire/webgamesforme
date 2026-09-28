@@ -139,6 +139,7 @@
       { id: "holdem", name: "TEXAS HOLD'EM", desc: "ไพ่กลาง 5 ใบ กวาดชิปทั้งโต๊ะ", players: "2-10 คน" },
       { id: "president", name: "PRESIDENT", desc: "ไพ่สลาฟ หมดมือก่อนได้เป็นคิง", players: "3-8 คน" },
       { id: "connect4", name: "CONNECT FOUR", desc: "หยอดเหรียญ เรียง 4 ก่อนชนะ", players: "2 คน" },
+      { id: "draw", name: "DRAW & GUESS", desc: "วาดให้เพื่อนทาย", players: "2-10 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -173,6 +174,9 @@
       // กระดานมีเหรียญเรียงทแยง
       connect4: `<rect x="3" y="7" width="42" height="34" rx="4" fill="currentColor"/>${[[9, 35, red], [19, 35, face], [29, 35, face], [39, 35, red], [9, 25], [19, 25, red], [29, 25, face], [39, 25], [9, 15], [19, 15], [29, 15, red], [39, 15]]
         .map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="4" fill="${c || "#0d0b1f"}"/>`).join("")}`,
+      // กระดาษมีเส้นขยุกขยิกกับดินสอ
+      draw: `<rect x="3" y="8" width="32" height="34" rx="2" fill="${face}"/><path d="M8 31c3-8 6-13 9-8s5 7 9 10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        <path d="M47 7.9 41.1 4.1 27.1 26.1 33 29.9z" fill="currentColor" stroke="${ink}" stroke-width="1.5"/><path d="M33 29.9 27.1 26.1 26.2 33.9z" fill="#e8c28e" stroke="${ink}" stroke-width="1.5"/><path d="M28.9 32.3 26.5 30.7 26.2 33.9z" fill="${ink}"/>`,
       // มงกุฎคิง
       president: `<path d="M7 36 5 13l10 9 9-13 9 13 10-9-2 23z" fill="currentColor"/><rect x="7" y="38" width="34" height="5" fill="currentColor"/>
         <circle cx="5" cy="12" r="3" fill="${face}"/><circle cx="24" cy="8" r="3" fill="${face}"/><circle cx="43" cy="12" r="3" fill="${face}"/>`,

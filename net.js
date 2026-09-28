@@ -1,6 +1,7 @@
 // ต่อห้องเกมที่ server (Supabase Edge Function "game" เป็นตัวคุมเกม)
 // ส่งคำสั่งด้วย fetch แล้วรับสถานะของตัวเองทางช่อง Realtime "p:<token>" ที่รู้แค่เครื่องนี้
 // ช่อง "r:<code>" ใช้ presence ดูว่าใครยังอยู่ ใครไม่อยู่นานเกิน GRACE ก็แจ้ง server ให้เอาออก
+// และใช้ส่งข้อมูลถี่ๆ ระหว่างเครื่องในห้องโดยไม่ผ่าน server (ink) เช่นเส้นที่วาดใน DRAW & GUESS
 const SUPABASE_URL = "https://btbgeqlsbtdofucjajfv.supabase.co";
 const sb = supabase.createClient(SUPABASE_URL, "sb_publishable_ThWhcYubEIjJ0qsz6utF7w_rQP-6ftx");
 const GAME_FN = SUPABASE_URL + "/functions/v1/game";
@@ -14,7 +15,8 @@ function savedRoom(game) {
 
 // onView(view) ทุกครั้งที่สถานะเปลี่ยน, onError(ข้อความ) เมื่อเข้าห้องไม่ได้หรือไม่ได้อยู่ในห้องแล้ว
 // saved = { code, token } จาก savedRoom() เพื่อกลับเข้าห้องเดิมหลังรีเฟรช
-function openRoom(game, onView, onError, saved) {
+// onInk(ข้อมูล) เมื่อเครื่องอื่นในห้องส่ง ink มา (ไม่ได้รับของที่ตัวเองส่ง)
+function openRoom(game, onView, onError, saved, onInk) {
   const token = saved ? saved.token : [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
   let code = saved ? saved.code : null, seq = -1, last = "", closed = false, inRoom = false, watch = null, ids = [];
   const timers = new Map();
@@ -68,7 +70,7 @@ function openRoom(game, onView, onError, saved) {
   setTimeout(() => first && close("เชื่อมต่อไม่สำเร็จ"), 15000);
 
   // ผู้เล่นในห้องที่ไม่อยู่ใน presence (หลุด ปิดแท็บ หรือหายไปก่อนเราเข้าห้อง) เกิน GRACE ก็แจ้ง server
-  let me = null, synced = false;
+  let me = null, synced = false, watchReady;
   function checkAbsent() {
     if (!synced) return;
     const here = watch.presenceState();
@@ -85,11 +87,14 @@ function openRoom(game, onView, onError, saved) {
   function watchRoom(id) {
     me = id;
     watch = sb.channel("r:" + code, { config: { presence: { key: me } } });
-    let joined = false;
+    if (onInk) watch.on("broadcast", { event: "ink" }, ({ payload }) => !closed && onInk(payload));
+    let joined = false, subscribed;
+    watchReady = new Promise((resolve) => (subscribed = resolve));
     watch
       .on("presence", { event: "sync" }, () => { synced = true; checkAbsent(); })
       .subscribe((status) => {
         if (status !== "SUBSCRIBED") return;
+        subscribed();
         watch.track({});
         if (joined) call({ t: "sync" });
         joined = true;
@@ -102,6 +107,8 @@ function openRoom(game, onView, onError, saved) {
     join: (roomCode, name) => { code = roomCode; return ready.then(() => call({ t: "join", name })); },
     resume: () => ready.then(() => call({ t: "sync" })),
     send: (msg) => call(msg),
+    // ส่งถึงทุกเครื่องในห้องทันที ไม่ผ่าน server (รอช่องห้องพร้อมก่อน)
+    ink: (data) => watchReady && watchReady.then(() => !closed && watch.send({ type: "broadcast", event: "ink", payload: data })),
     // ออกจากห้อง: sendBeacon ส่งได้แม้หน้ากำลังเปลี่ยน
     leave() {
       if (closed) return;

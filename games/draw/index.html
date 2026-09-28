@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DRAW &amp; GUESS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* หลอดเวลาของตานี้ */
+    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .error { color: var(--red); }
+    .round { margin: 0 0 4px; text-align: center; font-size: 0.85rem; color: var(--dim); }
+    /* ใบ้: ช่องละตัวอักษร ยังไม่เปิดเป็นขีดว่าง */
+    .clue { display: inline-flex; align-items: flex-end; gap: 6px; line-height: 1.3; }
+    .clue i { min-width: 1em; border-bottom: 3px solid var(--dim); font-style: normal; color: var(--yellow); text-align: center; }
+    .clue i.gap { border: 0; }
+    .clue small { margin-left: 4px; font-size: 0.8rem; font-weight: 400; color: var(--dim); }
+    /* กระดาษวาด: พิกัดในเกมเป็น 0-1000 ทั้งสองแกน เครื่องไหนก็สัดส่วนเท่ากัน */
+    .pad-wrap { position: relative; z-index: 1; margin-top: 12px; border: 3px solid var(--dim); } /* อยู่เหนือเส้นลายจอ ภาพวาดจะได้ชัด */
+    #pad { display: block; width: 100%; aspect-ratio: 1; background: #fff; touch-action: none; }
+    #pad.can { cursor: crosshair; }
+    .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 20px; background: rgba(13, 11, 31, 0.88); text-align: center; }
+    .overlay[hidden] { display: none; }
+    .overlay .big { margin: 4px 0 12px; font-size: 1.8rem; font-weight: 700; color: var(--yellow); }
+    .overlay ul { max-height: 45%; overflow: auto; }
+    .overlay li { padding: 4px 0; }
+    .options button { margin-top: 12px; }
+    /* เครื่องมือคนวาด: สี ขนาด ย้อน ล้าง */
+    .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+    .tools[hidden] { display: none; }
+    .tools button { width: 36px; height: 36px; margin: 0; padding: 0; box-shadow: none; border-width: 3px; }
+    .tools button:active:not(:disabled) { transform: none; }
+    .swatch { border-color: #2c2950 !important; background: var(--sw) !important; }
+    .swatch[aria-pressed="true"] { border-color: var(--yellow) !important; box-shadow: 3px 3px 0 var(--yellow) !important; }
+    .size { --c: var(--dim); position: relative; }
+    .size::after { content: ""; position: absolute; left: 50%; top: 50%; width: var(--d); height: var(--d); border-radius: 50%; background: currentColor; transform: translate(-50%, -50%); }
+    .size[aria-pressed="true"] { --c: var(--yellow); }
+    .tools .act { --c: var(--cyan); width: auto; padding: 0 10px; font-size: 0.95rem; }
+    .tools .undo { font: 400 1.2rem system-ui, sans-serif; }
+    /* คำทาย */
+    .guess-form { display: flex; gap: 8px; margin-top: 12px; }
+    .guess-form[hidden] { display: none; }
+    .guess-form button { width: auto; margin: 0; padding: 0 16px; flex: none; }
+    .log { max-height: 180px; margin-top: 12px; overflow: auto; }
+    .log li { padding: 4px 0; border-bottom: 1px dotted #2c2950; overflow-wrap: anywhere; }
+    .log b { margin-right: 8px; color: var(--dim); font-weight: 400; }
+    /* คะแนน: การ์ดละคน คนวาดขอบเหลือง คนที่ทายถูกชื่อฟ้า */
+    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; margin-top: 20px; }
+    .board li { min-width: 0; padding: 6px 8px 8px; background: #15122c; border: 2px solid #2c2950; }
+    .board li.now { border-color: var(--yellow); box-shadow: 3px 3px 0 #6b5510; }
+    .board .name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; color: var(--dim); }
+    .board .now .name { color: var(--text); }
+    .board .name.good { color: var(--cyan); }
+    .board .name.hl { color: var(--yellow); }
+    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", monospace; color: var(--yellow); white-space: nowrap; }
+    .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>DRAW &amp; GUESS</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กฎ</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>ผลัดกันวาด รอบละคนละตา</li>
+        <li>คนวาดเลือก 1 ใน 3 คำ ใน 15 วิ หมดเวลาสุ่มให้</li>
+        <li>ห้ามเขียนตัวหนังสือหรือตัวเลข</li>
+        <li>คนอื่นพิมพ์ทาย ถูกเร็วได้มาก 50-500</li>
+        <li>คนวาดได้ครึ่งหนึ่งของแต้มทุกคนที่ทายถูก</li>
+        <li>ผ่านครึ่งเวลาและ 3/4 เวลา เปิดใบ้ทีละตัว</li>
+        <li>ทายถูกครบหรือหมดเวลา <span id="rule-time">80</span> วิ เฉลย</li>
+      </ol>
+      <p class="hint">ครบรอบ แต้มมากสุดชนะ</p>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
+  <script>
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับเวลาที่เหลือของตา
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด เส้นที่วาดมาทาง onInk
+    function enter(name, code, saved) {
+      room = openRoom("draw", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved, onInk);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
+      else room.create(name);
+    }
+
+    // ---------- กระดาษวาด ----------
+    // เส้น = { id, c: ลำดับสี, w: ความหนา, p: [x, y, x, y, ...] } พิกัด 0-1000
+    const COLORS = [["#1b1b1b", "ดำ"], ["#ffffff", "ขาว (ลบ)"], ["#9e9e9e", "เทา"], ["#e53935", "แดง"], ["#fb8c00", "ส้ม"], ["#fdd835", "เหลือง"],
+      ["#43a047", "เขียว"], ["#00acc1", "ฟ้า"], ["#1e88e5", "น้ำเงิน"], ["#8e24aa", "ม่วง"], ["#f06292", "ชมพู"], ["#6d4c41", "น้ำตาล"]];
+    const SIZES = [[6, "เล็ก", 6], [16, "กลาง", 12], [40, "ใหญ่", 20]]; // ความหนา, ชื่อ, ขนาดจุดบนปุ่ม (px)
+    let strokes = [], inkTurn = null, color = 0, size = 16;
+
+    const play = document.createElement("div");
+    play.innerHTML = `
+      <div id="head"></div>
+      <div class="pad-wrap">
+        <canvas id="pad" aria-label="ภาพวาด"></canvas>
+        <div class="overlay" id="overlay" hidden></div>
+      </div>
+      <div class="tools" id="tools" hidden>
+        ${COLORS.map(([c, name], i) => `<button class="swatch" style="--sw: ${c}" data-color="${i}" aria-label="${name}" aria-pressed="${i === color}"></button>`).join("")}
+        ${SIZES.map(([w, name, d]) => `<button class="size" style="--d: ${d}px" data-size="${w}" aria-label="เส้น${name}" aria-pressed="${w === size}"></button>`).join("")}
+        <button class="act undo" id="undo" aria-label="ย้อน">&#8630;</button>
+        <button class="act" id="clear">ล้าง</button>
+      </div>
+      <form class="guess-form" id="guess-form" hidden>
+        <input id="guess" maxlength="40" autocomplete="off" aria-label="คำทาย" placeholder="ทาย">
+        <button data-sfx="confirm">ส่ง</button>
+      </form>
+      <ul class="log" id="log" aria-live="polite"></ul>
+      <div id="foot"></div>`;
+    const pad = play.querySelector("#pad");
+    const ctx = pad.getContext("2d");
+
+    function segs(st, from) {
+      const p = st.p;
+      ctx.strokeStyle = COLORS[st.c][0];
+      ctx.lineWidth = st.w;
+      ctx.beginPath();
+      const i = Math.max(0, from - 2);
+      ctx.moveTo(p[i], p[i + 1]);
+      if (p.length === 2) ctx.lineTo(p[0] + 0.1, p[1]); // จุดเดียว: ลากสั้นๆ ให้หัวกลมเป็นจุด
+      for (let k = i + 2; k < p.length; k += 2) ctx.lineTo(p[k], p[k + 1]);
+      ctx.stroke();
+    }
+    function redraw() {
+      const k = pad.width / 1000;
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      ctx.lineCap = ctx.lineJoin = "round";
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, 1000, 1000);
+      for (const st of strokes) segs(st, 0);
+    }
+    // ความละเอียดตามขนาดจริงบนจอ
+    new ResizeObserver(() => {
+      const px = Math.round(pad.clientWidth * devicePixelRatio);
+      if (px && px !== pad.width) { pad.width = pad.height = px; redraw(); }
+    }).observe(pad);
+
+    // คนวาดเก็บเส้นไว้ในแท็บ รีเฟรชแล้วยังอยู่
+    const INK_KEY = "wgfm-draw-ink";
+    const keepInk = () => { try { sessionStorage.setItem(INK_KEY, JSON.stringify({ code: view.code, n: inkTurn, s: strokes })); } catch {} };
+    function keptInk(v) {
+      try {
+        const k = JSON.parse(sessionStorage.getItem(INK_KEY));
+        return k && k.code === v.code && k.n === v.turnNo ? k.s : null;
+      } catch { return null; }
+    }
+    const plain = () => strokes.map(({ id, c, w, p }) => ({ id, c, w, p }));
+
+    // วาด: ส่งจุดใหม่ของเส้นที่กำลังลากทุก 100ms
+    const canDraw = () => view.screen === "draw" && view.iDraw && !view.paused;
+    let cur = null, sent = 0, flushTimer;
+    function flush() {
+      if (!cur || cur.p.length <= sent) return;
+      room.ink({ k: "line", n: inkTurn, id: cur.id, c: cur.c, w: cur.w, p: cur.p.slice(sent) });
+      sent = cur.p.length;
+    }
+    function addPoint(e) {
+      const r = pad.getBoundingClientRect();
+      const x = Math.round(Math.min(1000, Math.max(0, ((e.clientX - r.left) / r.width) * 1000)));
+      const y = Math.round(Math.min(1000, Math.max(0, ((e.clientY - r.top) / r.height) * 1000)));
+      const p = cur.p, n = p.length;
+      if (n && Math.hypot(p[n - 2] - x, p[n - 1] - y) < 3) return;
+      p.push(x, y);
+      segs(cur, n);
+    }
+    pad.addEventListener("pointerdown", (e) => {
+      if (!canDraw() || cur) return;
+      pad.setPointerCapture(e.pointerId);
+      cur = { id: Math.random().toString(36).slice(2, 8), c: color, w: size, p: [] };
+      sent = 0;
+      strokes.push(cur);
+      addPoint(e);
+      flushTimer = setInterval(flush, 100);
+    });
+    pad.addEventListener("pointermove", (e) => {
+      if (!cur) return;
+      for (const ev of e.getCoalescedEvents ? e.getCoalescedEvents() : [e]) addPoint(ev);
+    });
+    const endStroke = () => {
+      if (!cur) return;
+      flush();
+      clearInterval(flushTimer);
+      cur = null;
+      keepInk();
+    };
+    pad.addEventListener("pointerup", endStroke);
+    pad.addEventListener("pointercancel", endStroke);
+
+    play.querySelectorAll("[data-color]").forEach((b) => (b.onclick = () => {
+      color = Number(b.dataset.color);
+      play.querySelectorAll("[data-color]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    }));
+    play.querySelectorAll("[data-size]").forEach((b) => (b.onclick = () => {
+      size = Number(b.dataset.size);
+      play.querySelectorAll("[data-size]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    }));
+    play.querySelector("#undo").onclick = () => {
+      if (!canDraw() || cur || !strokes.length) return;
+      room.ink({ k: "undo", n: inkTurn, id: strokes.pop().id });
+      redraw();
+      keepInk();
+    };
+    play.querySelector("#clear").onclick = () => {
+      if (!canDraw() || cur || !strokes.length) return;
+      strokes = [];
+      room.ink({ k: "clear", n: inkTurn });
+      redraw();
+      keepInk();
+    };
+    play.querySelector("#guess-form").onsubmit = (e) => {
+      e.preventDefault();
+      const input = play.querySelector("#guess");
+      const text = input.value.trim();
+      if (text) send({ t: "guess", text });
+      input.value = "";
+    };
+
+    // เส้นจากเครื่องคนวาด (need: เครื่องที่เพิ่งเข้ามากลางตาขอเส้นทั้งหมด คนวาดตอบด้วย all)
+    function onInk(d) {
+      if (d.n !== inkTurn) return;
+      if (d.k === "line") {
+        let st = strokes.find((x) => x.id === d.id);
+        if (!st) strokes.push((st = { id: d.id, c: d.c, w: d.w, p: [] }));
+        const from = st.p.length;
+        st.p.push(...d.p);
+        segs(st, from);
+      } else if (d.k === "undo") {
+        strokes = strokes.filter((x) => x.id !== d.id);
+        redraw();
+      } else if (d.k === "clear") {
+        strokes = [];
+        redraw();
+      } else if (d.k === "need" && view.iDraw) {
+        room.ink({ k: "all", n: inkTurn, s: plain() });
+      } else if (d.k === "all" && !view.iDraw) {
+        strokes = d.s;
+        redraw();
+      }
+    }
+
+    // ---------- หน้าจอ ----------
+    const scoreboard = (v) => `
+      <h2>คะแนน</h2>
+      <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+      </ul>`;
+
+    const scorebar = (v) => `
+      <ul class="board" aria-label="คะแนน">${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li${p.now ? ' class="now"' : ""}><span class="name${(v.winners || []).includes(p.name) ? " hl" : p.guessed ? " good" : ""}"${p.guessed ? ' aria-label="' + esc(p.name) + ' ทายถูก"' : ""}>${esc(p.name)}</span><b>${p.score}${p.gain ? `<small>+${p.gain}</small>` : ""}</b></li>`).join("")}
+      </ul>`;
+
+    // ใบ้: ช่องละตัว ยังไม่เปิดเป็นขีดว่าง ต่อท้ายด้วยจำนวนตัว
+    const clue = (hint) => `<span class="clue" aria-label="ใบ้ ${hint.filter((c) => c !== " ").length} ตัว">${hint.map((c) => c === " " ? `<i class="gap"></i>` : `<i>${c ? esc(c) : "&nbsp;"}</i>`).join("")}<small>${hint.filter((c) => c !== " ").length}</small></span>`;
+
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
+    // หมดแล้วแจ้ง server คนวาดแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
+    let timeoutTimer, hintTimers = [];
+    function runTimer(v) {
+      const bar = play.querySelector(".timer i");
+      if (!bar) return;
+      const left = Math.max(0, v.turnLeft - (performance.now() - viewAt)), total = v.limit;
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > 5000
+        ? [
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${5000 / total})`, background: yellow, offset: 1 - 5000 / left },
+          { transform: `scaleX(${5000 / total})`, background: red, offset: 1 - 5000 / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (v.paused) return anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้ ไม่แจ้งหมดเวลา
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.iDraw ? 200 : 1500));
+      // ใบ้เปิดเพิ่มตอนผ่านครึ่งเวลาและ 3/4 เวลา ขอสถานะใหม่ตอนนั้น
+      if (v.screen === "draw" && v.hint) for (const rest of [total / 2, total / 4]) {
+        if (left > rest) hintTimers.push(setTimeout(() => send({ t: "sync" }), left - rest + 300));
+      }
+    }
+
+    let lastScreen, lastTurn, lastOk = 0;
+    function render() {
+      const v = view;
+      pauseUi(v, send);
+      clearTimeout(timeoutTimer);
+      hintTimers.forEach(clearTimeout);
+      hintTimers = [];
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (v.screen !== "over" && winner.open) winner.close();
+
+      if (v.screen === "home") {
+        lastScreen = v.screen;
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">ชื่อ</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          enter(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          enter(name, code);
+        };
+        return;
+      }
+
+      if (v.screen === "lobby") {
+        lastScreen = v.screen;
+        const enough = v.players.length >= 2;
+        app.innerHTML = `
+          <h2>ห้อง</h2>
+          <div class="room-row">
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+          </div>
+          <h2>ตั้งค่า</h2>
+          ${v.isHost
+            ? `<label for="rounds">รอบ (1-10)</label>
+               <input id="rounds" type="number" min="1" max="10" value="${v.rounds}">
+               <label for="time">วิต่อตา (30-180)</label>
+               <input id="time" type="number" min="30" max="180" step="10" value="${v.time / 1000}">`
+            : `<p>รอบ : <span class="hl">${v.rounds}</span></p>
+               <p>ตาละ : <span class="hl">${v.time / 1000}</span> วิ</p>`}
+          <h2 style="margin-top: 24px">ผู้เล่น ${v.players.length}/10</h2>
+          <ul>${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `${enough ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        if (v.isHost) {
+          app.querySelector("#rounds").onchange = (e) => send({ t: "rounds", value: e.target.value });
+          app.querySelector("#time").onchange = (e) => send({ t: "time", value: e.target.value });
+          app.querySelector("#start").onclick = () => send({ t: "start" });
+        }
+        return;
+      }
+
+      // choose / draw / reveal / over: กระดาษวาดกับช่องทายเป็นชิ้นเดิม ไม่สร้างใหม่ (กำลังลากเส้นหรือพิมพ์อยู่ไม่หลุด)
+      if (!app.contains(play)) app.replaceChildren(play);
+      if (v.turnNo !== inkTurn) {
+        // ตาใหม่: เริ่มกระดาษเปล่า ถ้าเข้ามากลางตา (ไม่ได้เห็นตอนเลือกคำ) ขอเส้นจากคนวาด
+        endStroke();
+        inkTurn = v.turnNo;
+        strokes = (v.iDraw && keptInk(v)) || [];
+        redraw();
+        if (!v.iDraw && v.screen !== "choose") room.ink({ k: "need", n: inkTurn });
+        lastOk = v.chat.filter((c) => c.ok).length;
+      }
+      if (v.screen !== "draw") endStroke();
+
+      // เสียง: ถึงตาเราวาด มีคนทายถูก เฉลย
+      const ok = v.chat.filter((c) => c.ok).length;
+      if (v.screen === "choose" && v.iDraw && (lastScreen !== "choose" || lastTurn !== v.turnNo)) playSfx("next");
+      else if (ok > lastOk) playSfx("confirm");
+      else if (v.screen === "reveal" && lastScreen === "draw") playSfx("next");
+      lastOk = ok;
+      lastScreen = v.screen;
+      lastTurn = v.turnNo;
+
+      const status = v.screen === "choose" ? (v.iDraw ? `<span class="hl">ตาคุณวาด</span>` : `ตา ${esc(v.drawerName)} วาด`)
+        : v.screen === "draw" ? (v.iDraw ? `วาด <span class="hl">${esc(v.word)}</span>` : v.word ? `<span class="good">ถูก</span> ${esc(v.word)}` : clue(v.hint))
+        : v.screen === "reveal" ? `เฉลย`
+        : `คำสุดท้าย <span class="hl">${esc(v.word)}</span>`;
+      play.querySelector("#head").innerHTML = `
+        <p class="round">${v.screen === "over" ? "" : `รอบ ${v.round}/${v.rounds}`}</p>
+        <p class="status">${status}</p>
+        ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}`;
+
+      const overlay = play.querySelector("#overlay");
+      overlay.hidden = v.screen === "draw" || v.screen === "over"; // จบเกมแล้วให้เห็นภาพสุดท้าย
+      overlay.innerHTML = v.screen === "choose"
+        ? v.iDraw
+          ? `<p class="hint">เลือกคำ</p><div class="options">${v.options.map((w) => `<button data-word="${esc(w)}" data-sfx="confirm">${esc(w)}</button>`).join("")}</div>`
+          : `<p>${esc(v.drawerName)} กำลังเลือกคำ</p>`
+        : v.screen === "reveal"
+        ? `<p class="hint">คำคือ</p><p class="big">${esc(v.word)}</p>
+           ${v.gains.length ? `<ul>${v.gains.map((g) => `<li>${esc(g.name)} <span class="good">+${g.n}</span></li>`).join("")}</ul>` : `<p class="bad">ไม่มีใครทายถูก</p>`}`
+        : "";
+      overlay.querySelectorAll("[data-word]").forEach((b) => (b.onclick = () => send({ t: "choose", word: b.dataset.word })));
+
+      pad.classList.toggle("can", v.screen === "draw" && v.iDraw);
+      play.querySelector("#tools").hidden = !(v.screen === "draw" && v.iDraw);
+      const form = play.querySelector("#guess-form");
+      const guessing = v.screen === "draw" && !v.iDraw && !v.guessed;
+      if (form.hidden && guessing) form.querySelector("#guess").value = "";
+      form.hidden = !guessing;
+
+      const log = play.querySelector("#log");
+      const atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 8;
+      log.innerHTML = v.screen === "over" ? "" : v.chat.map((c) => c.ok
+        ? `<li class="good">${esc(c.name)} ทายถูก</li>`
+        : `<li><b>${esc(c.name)}</b>${esc(c.text)}</li>`).join("");
+      if (atEnd) log.scrollTop = log.scrollHeight;
+
+      play.querySelector("#foot").innerHTML = `
+        ${scorebar(v)}
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+      if (play.querySelector("#newgame")) play.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+
+      runTimer(v);
+      if (gameOver) {
+        playSfx("win");
+        setTimeout(() => {
+          if (view.screen !== "over") return;
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${view.winners.map(esc).join(", ")}</p>${scoreboard(view)}`;
+          winner.showModal();
+          fireworks();
+        }, still.matches ? 0 : 900);
+      }
+    }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
+
+    const saved = savedRoom("draw");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
+  </script>
+</body>
+</html>
