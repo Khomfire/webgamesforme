@@ -14,8 +14,9 @@ import draw from "./draw.js";
 import dots from "./dots.js";
 import chess from "./chess.js";
 import go from "./go.js";
+import ludo from "./ludo.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots, chess, go };
+export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots, chess, go, ludo };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 
