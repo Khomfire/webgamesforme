@@ -61,6 +61,8 @@ export function act(state, token, msg, now = Date.now()) {
     return bump(state);
   }
   if (state.paused) return { changed: false };
+  // ยอมแพ้: เกมที่มี canResign(state, id) ตรวจว่ายอมแพ้ได้ไหม แล้วให้ handle ของเกมจัดการต่อ
+  if (msg.t === "resign" && !(g.canResign && g.canResign(state, id))) return { changed: false };
   g.handle(state, id, msg, now);
   return bump(state);
 }
@@ -78,7 +80,10 @@ export function views(state, now = Date.now()) {
   if (state.paused) now = state.paused.at; // หยุดเกมอยู่ เวลาที่เหลือค้างไว้ที่ตอนกดหยุด
   return Object.entries(state.tokens).map(([token, id]) => ({
     token,
-    view: { ...g.view(state, id, now), code: state.code, me: id, ids: state.players.map((p) => p.id), isHost: id === state.owner, seq: state.seq, paused: state.paused ? state.paused.by : null },
+    view: {
+      ...g.view(state, id, now), code: state.code, me: id, ids: state.players.map((p) => p.id), isHost: id === state.owner, seq: state.seq,
+      paused: state.paused ? state.paused.by : null, canResign: !!g.canResign && g.canResign(state, id),
+    },
   }));
 }
 

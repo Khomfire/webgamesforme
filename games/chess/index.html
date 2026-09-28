@@ -170,9 +170,6 @@
     .moves span { white-space: nowrap; }
     .moves .no { color: var(--dim); }
     .moves .cur { color: var(--yellow); }
-    .actions { display: flex; gap: 16px; }
-    .actions button { --c: var(--cyan); }
-    .actions .armed { --c: var(--red); }
     /* เลือกหมากตอน Promotion */
     .promo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .promo button { margin: 0; padding: 6px; }
@@ -205,7 +202,7 @@
         <li>Castling: King เดิน 2 ช่องไปทาง Rook แล้ว Rook ข้ามมาอยู่ข้าง King ทำได้ถ้าทั้งคู่ยังไม่เคยเดิน ช่องระหว่างว่าง และ King ไม่โดนรุกหรือเดินผ่านช่องที่โดนโจมตี</li>
         <li>En passant: Pawn ศัตรูเดิน 2 ช่องมาหยุดข้าง Pawn เรา กินเฉียงไปข้างหลังมันได้ในตาถัดไปเท่านั้น</li>
         <li>Promotion: Pawn ถึงแถวสุดท้าย เปลี่ยนเป็น Queen, Rook, Bishop หรือ Knight</li>
-        <li>Draw: Stalemate, หมากไม่พอ Checkmate, ตำแหน่งซ้ำ 3 ครั้ง, 50 ตาไม่มีกินและไม่มีเดิน Pawn หรือตกลงเสมอกัน</li>
+        <li>Draw: Stalemate, หมากไม่พอ Checkmate, ตำแหน่งซ้ำ 3 ครั้ง, 50 ตาไม่มีกินและไม่มีเดิน Pawn</li>
         <li>เวลาฝ่ายละ <span id="rule-time">10</span> min หมดเวลาแพ้ ถ้าอีกฝ่ายหมากไม่พอ Checkmate เสมอ</li>
         <li>ชนะได้ 1 pts เสมอได้คนละ 0.5 pts เกมต่อไปสลับสี</li>
         <li>แตะหมากแล้วแตะช่องที่จะไป</li>
@@ -234,6 +231,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -320,7 +318,7 @@
     }
     const REASON = {
       checkmate: "Checkmate", resign: "Resign", time: "หมดเวลา", stalemate: "Stalemate",
-      material: "หมากไม่พอ Checkmate", repetition: "ตำแหน่งซ้ำ 3 ครั้ง", fifty: "50 ตาไม่มีกินและไม่มีเดิน Pawn", agreement: "ตกลงเสมอกัน",
+      material: "หมากไม่พอ Checkmate", repetition: "ตำแหน่งซ้ำ 3 ครั้ง", fifty: "50 ตาไม่มีกินและไม่มีเดิน Pawn",
     };
     const scoreboard = (v) => `
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
@@ -406,10 +404,11 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
     }
 
-    let lastScreen, lastMyTurn, lastBoard = null, sel = null, resignArmed = false, seenTaken = {};
+    let lastScreen, lastMyTurn, lastBoard = null, sel = null, seenTaken = {};
     function render() {
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       clearInterval(tick);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 60000;
@@ -419,7 +418,6 @@
       const iWon = v.result && v.result.winner === meP.name;
       if (gameOver && lastScreen === "play") playSfx(iWon ? "win" : "vote");
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx(v.check !== null ? "vote" : "next");
-      if (v.screen !== "play" || lastScreen !== "play") resignArmed = false;
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
 
@@ -503,18 +501,13 @@
       if (v.screen === "over") {
         const who = v.result.winner ? (iWon ? `<span class="good">You win</span>` : `<span class="hl">${esc(v.result.winner)}</span> wins`) : `<span class="hl">Draw</span>`;
         status = `${who} <span class="hint">${REASON[v.result.reason]}</span>`;
-      } else if (v.offer === "them") status = `<span class="hl">${esc(them.name)}</span> ขอ Draw`;
-      else if (v.myTurn) status = v.check !== null ? `<span class="bad">Check</span>` : `<span class="hl">Your turn</span>`;
+      } else if (v.myTurn) status = v.check !== null ? `<span class="bad">Check</span>` : `<span class="hl">Your turn</span>`;
       else status = `${turnP ? esc(turnP.name) : ""}'s turn${v.check !== null ? ` <span class="bad">Check</span>` : ""}`;
       app.innerHTML = `
         <ul>${them ? seat(v, them) : ""}</ul>
         ${board(v, sel)}
         <ul>${seat(v, meP)}</ul>
         <p class="status">${status}</p>
-        ${v.screen === "play" ? `<div class="actions">
-          <button id="draw" data-sfx="confirm" ${v.offer === "me" ? "disabled" : ""}>${v.offer === "them" ? "Accept draw" : "Draw"}</button>
-          <button id="resign" class="${resignArmed ? "armed" : ""}" data-sfx="vote">${resignArmed ? "Resign?" : "Resign"}</button>
-        </div>` : ""}
         ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
         ${moveList(v)}`;
       // หมากที่กินได้: วาดครั้งแรก (รีเฟรช) ไม่เด้ง จำจำนวนไว้เทียบรอบหน้า
@@ -547,14 +540,6 @@
           choose(i);
         };
       });
-      if (app.querySelector("#draw")) app.querySelector("#draw").onclick = () => send({ t: "draw" });
-      // Resign กดสองครั้งกันกดพลาด
-      if (app.querySelector("#resign")) app.querySelector("#resign").onclick = () => {
-        if (resignArmed) return send({ t: "resign" });
-        resignArmed = true;
-        render();
-        setTimeout(() => { if (resignArmed) { resignArmed = false; render(); } }, 3000);
-      };
       runClock(v);
       // เดินใหม่: เสียงกินหรือเดิน (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard) {

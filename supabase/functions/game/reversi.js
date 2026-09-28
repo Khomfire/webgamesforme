@@ -71,9 +71,15 @@ export default {
   max: 2,
   init: () => ({ time: TURN, phase: "lobby" }),
   player: () => ({ score: 0 }),
+  canResign: (s) => s.phase === "play",
 
   handle(s, id, msg, now) {
     const key = turnKey(s);
+    // ยอมแพ้: อีกคนชนะ
+    if (msg.t === "resign") {
+      Object.assign(s, { phase: "over", winner: other(s, id) });
+      pl(s, s.winner).score++;
+    }
     if (s.phase === "play") {
       // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
       if (msg.t === "timeout" && now >= s.turnEnds) {

@@ -77,21 +77,43 @@ function timeUp(s) {
 // ตาเปลี่ยนหรือทอยใหม่ เริ่มนับเวลาใหม่
 const turnKey = (s) => [s.phase, s.order && s.order[s.turn], s.rolls].join();
 
+// ชนะ: แต้มมากสุดในคนที่ยังเล่นอยู่ (คนยอมแพ้ไม่นับ)
 function finish(s) {
-  const top = Math.max(...s.players.map((p) => p.score));
+  const ps = s.players.filter((p) => s.order.includes(p.id));
+  const top = Math.max(...ps.map((p) => p.score));
   s.phase = "over";
-  s.winners = s.players.filter((p) => p.score === top).map((p) => p.name);
+  s.winners = ps.filter((p) => p.score === top).map((p) => p.name);
+}
+
+// เอาออกจากลำดับเล่น (ออกจากห้องหรือยอมแพ้) ถ้าถึงตาเขาส่งตาต่อ เหลือไม่ถึง 2 คนให้คนเรียกจัดการต่อ
+function drop(s, id) {
+  const i = s.order.indexOf(id);
+  s.order.splice(i, 1);
+  if (s.final) s.final = s.final.filter((x) => x !== id);
+  if (s.order.length < 2) return;
+  if (s.final && s.final.length === 0) finish(s);
+  else if (i < s.turn) s.turn--;
+  else if (i === s.turn) {
+    s.turn--;
+    nextTurn(s);
+  }
 }
 
 export default {
   init: () => ({ target: 5000, time: TURN, phase: "lobby" }),
   player: () => ({ score: 0 }),
+  canResign: (s, id) => s.phase === "play" && s.order.includes(id),
 
   handle(s, id, msg, now) {
     const key = turnKey(s);
     // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
     if (msg.t === "timeout" && s.phase === "play" && now >= s.turnEnds) timeUp(s);
     if (msg.t === "first-roll") rollOpening(s, id);
+    // ยอมแพ้: ออกจากเกมนี้ (ยังดูอยู่ในห้องได้) เหลือคนเดียวชนะ
+    if (msg.t === "resign") {
+      drop(s, id);
+      if (s.order.length < 2) finish(s);
+    }
     if (s.phase === "play" && s.order[s.turn] === id && (msg.t === "roll" || msg.t === "bank")) {
       // เต๋าที่เลือกเก็บต้องได้แต้มทุกลูก ยกเว้นตอนเริ่มตาที่ยังไม่มีเต๋า
       const keep = [...new Set(msg.keep)].filter((i) => Number.isInteger(i) && i >= 0 && i < s.dice.length);
@@ -130,19 +152,10 @@ export default {
       else leaveOpening(s, id);
     }
     if (s.phase !== "play") return;
-    const i = s.order.indexOf(id);
-    s.order.splice(i, 1);
-    if (s.final) s.final = s.final.filter((x) => x !== id);
+    drop(s, id);
     if (s.order.length < 2) {
       for (const p of s.players) p.score = 0;
       s.phase = "lobby";
-    } else if (s.final && s.final.length === 0) {
-      finish(s);
-    } else if (i < s.turn) {
-      s.turn--;
-    } else if (i === s.turn) {
-      s.turn--;
-      nextTurn(s);
     }
     if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },

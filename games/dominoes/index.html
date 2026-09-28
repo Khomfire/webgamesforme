@@ -230,6 +230,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -377,6 +378,7 @@
     function render() {
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       if (v.target) document.getElementById("rule-target").textContent = v.target;
@@ -487,7 +489,7 @@
           <div style="margin-top: 16px">${scoreboard(v)}</div>
           ${v.screen === "over"
             ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`
-            : `${v.ready ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">Next round</button>`}
+            : `${v.ready || !v.seats.some((p) => p.id === v.me) ? `<p class="good">รอคนอื่น</p>` : `<button id="next" data-sfx="next">Next round</button>`}
                <p class="hint">Ready ${v.readyCount}/${v.activeCount}</p>`}`}`;
 
       // แตะตัวในมือ: ต่อได้ปลายเดียวลงเลย ต่อได้สองปลายรอแตะปลาย แตะตัวเดิมอีกครั้งยกเลิก

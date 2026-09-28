@@ -86,12 +86,26 @@ const turnKey = (s) => [s.phase, s.turn, s.round, s.bid && `${s.bid.n}-${s.bid.f
 export default {
   init: () => ({ start: 5, palifico: false, pal: false, time: TURN, phase: "lobby" }),
   player: () => ({ count: 0, hand: [] }),
+  canResign: (s, id) => (s.phase === "play" || s.phase === "reveal") && pl(s, id).count > 0,
 
   handle(s, id, msg, now) {
     const key = turnKey(s);
     // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
     if (msg.t === "timeout" && s.phase === "play" && now >= s.turnEnds) timeUp(s);
     if (msg.t === "first-roll") rollOpening(s, id);
+    // ยอมแพ้: ทิ้งเต๋าทั้งหมด ออกจากเกมนี้ (ยังดูอยู่ในห้องได้) กลางรอบทอยใหม่ทั้งวง เหลือคนเดียวชนะ
+    if (msg.t === "resign") {
+      const next = nextAlive(s, id);
+      Object.assign(pl(s, id), { count: 0, hand: [] });
+      s.ready = s.ready.filter((x) => x !== id);
+      if (s.first === id) s.first = next;
+      const left = alive(s);
+      if (left.length === 1) {
+        s.phase = "over";
+        s.winner = pl(s, left[0]).name;
+      } else if (s.phase === "play") startRound(s, s.turn === id ? next : s.turn);
+      else if (s.ready.length >= left.length) startRound(s, s.first);
+    }
     if (s.phase === "play" && s.turn === id) {
       const bid = { n: Number(msg.n), face: Number(msg.face) };
       if (msg.t === "bid" && Number.isInteger(bid.n) && Number.isInteger(bid.face) && bid.n >= 1 && bid.n <= total(s) && bid.face >= 1 && bid.face <= 6 && higher(bid, s.bid, mode(s))) placeBid(s, id, bid);

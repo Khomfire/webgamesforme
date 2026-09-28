@@ -227,6 +227,24 @@ function finish(s) {
   s.winner = s.players.find((p) => p.chips === top).name;
 }
 
+// เอาออกจากเกม (ออกจากห้องหรือยอมแพ้) กลางมือนับเป็นหมอบ ชิปที่ลงไว้อยู่ในกองกลาง ถ้าเป็นตาเขาก็ไปคนถัดไป
+function drop(s, id, gone) {
+  const prev = before(s, id);
+  s.order.splice(s.order.indexOf(id), 1);
+  if (s.button === id) s.button = prev; // D มือต่อไปไปที่คนถัดจากคนที่ออก
+  if (s.phase === "play") {
+    if (gone.total) s.left.push(gone.total);
+    proceed(s, s.turn === id ? prev : before(s, s.turn));
+  } else if (s.phase === "show") {
+    if (gone.total) s.left.push(gone.total);
+    nextShow(s, s.turn === id ? prev : before(s, s.turn));
+  } else if (s.phase === "end") {
+    s.ready = s.ready.filter((x) => x !== id);
+    if (s.order.filter((x) => pl(s, x).chips > 0).length < 2) finish(s);
+    else if (s.order.every((x) => !pl(s, x).chips || s.ready.includes(x))) nextHand(s);
+  }
+}
+
 function toLobby(s) {
   for (const p of s.players) Object.assign(p, { chips: 0, cards: [], bet: 0, total: 0, folded: false, acted: false, last: null, out: false });
   s.order = [];
@@ -275,11 +293,18 @@ export default {
   max: 10,
   init: () => ({ time: TURN, phase: "lobby" }),
   player: () => ({ chips: 0, cards: [], bet: 0, total: 0, folded: false, acted: false, last: null, out: false }),
+  canResign: (s, id) => (s.phase === "play" || s.phase === "show" || s.phase === "end") && s.order.includes(id) && pl(s, id).chips > 0,
 
   handle(s, id, msg, now) {
     const p = pl(s, id);
     const key = turnKey(s);
     // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
+    if (msg.t === "resign") {
+      // ยอมแพ้: หมอบ ชิปที่เหลือหมด ตกรอบ (ยังดูอยู่ในห้องได้)
+      const gone = { ...p };
+      Object.assign(p, { chips: 0, out: true, folded: true, cards: [] });
+      drop(s, id, gone);
+    }
     if (msg.t === "timeout" && (s.phase === "play" || s.phase === "show") && now >= s.turnEnds) timeUp(s);
     else if (s.phase === "play" && s.turn === id) act(s, p, msg);
     // เปิดไพ่: หงายให้ทุกคนเห็น หรือหมอบ (ไม่เอากองกลาง ไม่ต้องเปิด)
@@ -314,25 +339,12 @@ export default {
     if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
-  // คนออกกลางมือ: นับเป็นหมอบ ชิปที่ลงไว้อยู่ในกองกลาง ถ้าเป็นตาเขาก็ไปคนถัดไป
+  // คนออก
   leave(s, id, gone) {
     if (!s.order || !s.order.includes(id)) return;
     if (s.players.length < 2) return toLobby(s);
     const key = turnKey(s);
-    const prev = before(s, id);
-    s.order.splice(s.order.indexOf(id), 1);
-    if (s.button === id) s.button = prev; // D มือต่อไปไปที่คนถัดจากคนที่ออก
-    if (s.phase === "play") {
-      if (gone.total) s.left.push(gone.total);
-      proceed(s, s.turn === id ? prev : before(s, s.turn));
-    } else if (s.phase === "show") {
-      if (gone.total) s.left.push(gone.total);
-      nextShow(s, s.turn === id ? prev : before(s, s.turn));
-    } else if (s.phase === "end") {
-      s.ready = s.ready.filter((x) => x !== id);
-      if (s.order.filter((x) => pl(s, x).chips > 0).length < 2) finish(s);
-      else if (s.order.every((x) => !pl(s, x).chips || s.ready.includes(x))) nextHand(s);
-    }
+    drop(s, id, gone);
     if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 

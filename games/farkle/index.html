@@ -253,6 +253,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -446,6 +447,7 @@
       clearInterval(rollTimer); // วาดใหม่ระหว่างเต๋ากำลังหมุน ให้หยุดหมุนแล้วโชว์หน้าจริง
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       if (v.rolls !== lastRolls && v.last && v.last.farkle && v.last.n === v.rolls && (v.screen === "play" || v.screen === "over")) {

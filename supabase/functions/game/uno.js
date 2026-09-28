@@ -184,6 +184,30 @@ function finish(s, p) {
   s.winner = p.name;
 }
 
+// เอาออกจากเกม (ออกจากห้องหรือยอมแพ้): ไพ่ในมือกลับเข้ากองจั่ว ถ้าเป็นตาเขา ไปคนถัดไป
+function drop(s, id, hand) {
+  const next = step(s, id);
+  const dealerNext = step(s, s.dealer);
+  s.order.splice(s.order.indexOf(id), 1);
+  if (s.dealer === id) s.dealer = s.order.includes(dealerNext) ? dealerNext : s.order[0];
+  if (s.phase === "lobby" || s.phase === "over") return;
+  // เหลือคนเดียวที่ยังไม่ตกรอบ ชนะ
+  if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
+  s.deck.unshift(...hand);
+  if (s.unoOpen === id) s.unoOpen = null;
+  // คนลง +4 ออกไปแล้ว ชาเลนจ์ไม่ได้
+  if (s.w4 && s.w4.by === id) s.w4 = null;
+  if (s.turn === id) {
+    s.turn = next;
+    s.drawn = null;
+    s.turnEnds = Date.now() + s.time;
+  }
+  if (s.phase === "end") {
+    s.ready = s.ready.filter((x) => x !== id);
+    if (s.ready.length >= s.order.length) startRound(s);
+  }
+}
+
 function toLobby(s) {
   for (const p of s.players) Object.assign(p, { hand: [], score: 0, uno: false, out: false });
   s.phase = "lobby";
@@ -193,12 +217,19 @@ export default {
   max: 10,
   init: () => ({ target: 500, time: 15000, phase: "lobby" }),
   player: () => ({ hand: [], score: 0, uno: false, out: false }),
+  canResign: (s, id) => (s.phase === "play" || s.phase === "end") && s.order.includes(id),
 
   handle(s, id, msg, now) {
     const p = pl(s, id);
     // ตาเปลี่ยนหรือคนเดิมเล่นต่อ เริ่มนับเวลาใหม่
     const turnKey = () => [s.phase, s.turn, s.drawn, s.pile && s.pile.length, s.pending && s.pending.n].join();
     const before = turnKey();
+    // ยอมแพ้: ตกรอบ (ยังดูอยู่ในห้องได้) ไพ่ในมือกลับเข้ากองจั่ว
+    if (msg.t === "resign") {
+      const hand = p.hand;
+      Object.assign(p, { out: true, hand: [] });
+      drop(s, id, hand);
+    }
     if (s.phase === "play") {
       // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
       if (msg.t === "timeout" && now >= s.turnEnds) timeUp(s, s.turn);
@@ -247,33 +278,14 @@ export default {
     if (s.phase === "play" && turnKey() !== before) s.turnEnds = now + s.time;
   },
 
-  // คนออก: ไพ่ในมือกลับเข้ากองจั่ว ถ้าเป็นตาเขา ไปคนถัดไป
+  // คนออก
   leave(s, id, gone) {
     if (!s.order || !s.order.includes(id)) return;
     if (s.players.length < 2) {
       s.order = [];
       return toLobby(s);
     }
-    const next = step(s, id);
-    const dealerNext = step(s, s.dealer);
-    s.order.splice(s.order.indexOf(id), 1);
-    if (s.dealer === id) s.dealer = s.order.includes(dealerNext) ? dealerNext : s.order[0];
-    if (s.phase === "lobby" || s.phase === "over") return;
-    // เหลือคนเดียวที่ยังไม่ตกรอบ ชนะ
-    if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
-    s.deck.unshift(...gone.hand);
-    if (s.unoOpen === id) s.unoOpen = null;
-    // คนลง +4 ออกไปแล้ว ชาเลนจ์ไม่ได้
-    if (s.w4 && s.w4.by === id) s.w4 = null;
-    if (s.turn === id) {
-      s.turn = next;
-      s.drawn = null;
-      s.turnEnds = Date.now() + s.time;
-    }
-    if (s.phase === "end") {
-      s.ready = s.ready.filter((x) => x !== id);
-      if (s.ready.length >= s.order.length) startRound(s);
-    }
+    drop(s, id, gone.hand);
   },
 
   view(s, id, now) {

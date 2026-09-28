@@ -126,7 +126,6 @@ function finish(s, winner, reason) {
   s.result = { winner, reason };
   if (winner) pl(s, winner).score += 1;
   else for (const p of s.players) p.score += 0.5;
-  s.offer = null;
 }
 
 // ชื่อตาเดินแบบ SAN เช่น e4, Nbd7, exd5, O-O, e8=Q (ยังไม่มี + หรือ #) moves คือตาเดินที่ถูกกติกาทั้งหมดของตำแหน่งนี้
@@ -163,7 +162,6 @@ function move(s, m, now) {
   const n = play(g, m);
   s.pos = n;
   s.last = [m[0], m[1]];
-  if (s.offer && s.offer !== idOf(s, mover)) s.offer = null; // เดินแทนการตอบรับ = ไม่เสมอ
   s.moves = legal(n);
   const key = posKey(n, s.moves);
   s.seen[key] = (s.seen[key] || 0) + 1;
@@ -182,7 +180,7 @@ function start(s, now) {
   const g = { board: START, turn: "w", castle: "KQkq", ep: null, half: 0 };
   Object.assign(s, {
     phase: "play", pos: g, moves: legal(g), seen: { [posKey(g, [])]: 1 }, check: false, last: null,
-    clock: { w: s.time, b: s.time }, turnEnds: now + s.time, offer: null, result: null, history: [], taken: { w: [], b: [] },
+    clock: { w: s.time, b: s.time }, turnEnds: now + s.time, result: null, history: [], taken: { w: [], b: [] },
   });
 }
 
@@ -190,6 +188,7 @@ export default {
   max: 2,
   init: () => ({ time: TIME, phase: "lobby" }),
   player: () => ({ score: 0 }),
+  canResign: (s) => s.phase === "play",
 
   handle(s, id, msg, now) {
     const mine = s.phase === "play" && idOf(s, s.pos.turn) === id;
@@ -204,14 +203,7 @@ export default {
       const m = s.moves.find(([f, t, q]) => f === msg.from && t === msg.to && (q || null) === (msg.promo || null));
       if (m) move(s, m, now);
     }
-    if (s.phase === "play") {
-      if (msg.t === "resign") finish(s, other(s, id), "resign");
-      // ขอเสมอ: อีกฝ่ายขออยู่แล้วก็เสมอเลย
-      if (msg.t === "draw") {
-        if (s.offer && s.offer !== id) finish(s, null, "agreement");
-        else s.offer = id;
-      }
-    }
+    if (msg.t === "resign") finish(s, other(s, id), "resign");
     if (id === s.owner) {
       if (msg.t === "time" && s.phase === "lobby" && TIMES.includes(Number(msg.value))) s.time = Number(msg.value) * 60000;
       if (msg.t === "start" && s.phase === "lobby" && s.players.length === 2) start(s, now);
@@ -238,7 +230,6 @@ export default {
         check: s.check ? kingAt(g.board, g.turn) : null,
         moves: myTurn ? s.moves : [],
         history: s.history, taken: s.taken,
-        offer: s.offer ? (s.offer === id ? "me" : "them") : null,
         result: s.result && { ...s.result, winner: s.result.winner && pl(s, s.result.winner).name },
         // เวลาที่เหลือของแต่ละฝ่าย (ส่งเป็นระยะเวลา ไม่ใช่เวลานาฬิกา เผื่อนาฬิกาเครื่องไม่ตรงกัน)
         clock: s.phase === "play" ? { ...s.clock, [g.turn]: Math.max(0, s.turnEnds - now) } : s.clock,

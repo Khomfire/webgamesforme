@@ -297,6 +297,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -448,6 +449,7 @@
     function render() {
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;

@@ -118,6 +118,23 @@ function timeUp(s) {
   s.log.late = p.id;
 }
 
+// เอาออกจากเกม (ออกจากห้องหรือยอมแพ้): ตัวในมือกลับเข้ากองจั่ว ถ้าเป็นตาเขาไปคนถัดไป เหลือคนเดียวชนะ
+function drop(s, id, hand) {
+  const next = step(s, id);
+  s.order = s.order.filter((x) => x !== id);
+  if (s.leader === id) s.leader = null;
+  if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
+  if (s.phase === "play") {
+    s.boneyard.push(...hand);
+    shuffle(s.boneyard);
+    if (s.turn === id) s.turn = next;
+  }
+  if (s.phase === "end") {
+    s.ready = s.ready.filter((x) => x !== id);
+    if (s.ready.length >= s.order.length) startHand(s);
+  }
+}
+
 function toLobby(s) {
   for (const p of s.players) Object.assign(p, { hand: [], score: 0 });
   s.phase = "lobby";
@@ -130,10 +147,17 @@ export default {
   max: 4,
   init: () => ({ target: 100, time: 15000, phase: "lobby" }),
   player: () => ({ hand: [], score: 0 }),
+  canResign: (s, id) => (s.phase === "play" || s.phase === "end") && s.order.includes(id),
 
   handle(s, id, msg, now) {
     const key = turnKey(s);
     const p = pl(s, id);
+    // ยอมแพ้: ออกจากเกมนี้ (ยังดูอยู่ในห้องได้) ตัวในมือกลับเข้ากองจั่ว
+    if (msg.t === "resign") {
+      const hand = p.hand;
+      p.hand = [];
+      drop(s, id, hand);
+    }
     if (s.phase === "play") {
       // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
       if (msg.t === "timeout" && now >= s.turnEnds) timeUp(s);
@@ -161,23 +185,11 @@ export default {
     if (turnKey(s) !== key) s.turnEnds = now + s.time;
   },
 
-  // คนออก: ตัวในมือกลับเข้ากองจั่ว ถ้าเป็นตาเขาไปคนถัดไป เหลือคนเดียวชนะ
+  // คนออก
   leave(s, id, gone) {
     if (s.phase === "lobby" || s.phase === "over" || !s.order.includes(id)) return;
     const key = turnKey(s);
-    const next = step(s, id);
-    s.order = s.order.filter((x) => x !== id);
-    if (s.leader === id) s.leader = null;
-    if (s.order.length < 2) return finish(s, pl(s, s.order[0]));
-    if (s.phase === "play") {
-      s.boneyard.push(...gone.hand);
-      shuffle(s.boneyard);
-      if (s.turn === id) s.turn = next;
-    }
-    if (s.phase === "end") {
-      s.ready = s.ready.filter((x) => x !== id);
-      if (s.ready.length >= s.order.length) startHand(s);
-    }
+    drop(s, id, gone.hand);
     if (turnKey(s) !== key) s.turnEnds = Date.now() + s.time;
   },
 
