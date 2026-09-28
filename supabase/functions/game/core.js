@@ -12,8 +12,9 @@ import president from "./president.js";
 import connect4 from "./connect4.js";
 import draw from "./draw.js";
 import dots from "./dots.js";
+import chess from "./chess.js";
 
-export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots };
+export const GAMES = { spy, xo, farkle, liar, uno, blackjack, holdem, president, connect4, draw, dots, chess };
 
 export const newCode = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
 

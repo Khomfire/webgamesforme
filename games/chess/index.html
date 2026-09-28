@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHESS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* ผู้เล่นบนกับล่างกระดาน: สีหมาก ชื่อ คะแนน นาฬิกา */
+    .seat { display: flex; align-items: center; gap: 10px; padding: 6px 0; border: 0; }
+    .seat .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seat .pts { color: var(--dim); font-size: 0.9rem; }
+    .clock { min-width: 5.5em; padding: 4px 8px; border: 3px solid #2c2950; text-align: right; font: 400 0.95rem "Press Start 2P", monospace; color: var(--dim); }
+    .clock.run { border-color: var(--yellow); color: var(--yellow); }
+    .clock.low { border-color: var(--red); color: var(--red); }
+    .side { display: inline-block; flex: none; width: 16px; height: 16px; border: 3px solid var(--dim); }
+    .side.w { background: var(--text); }
+    .side.b { background: var(--screen); }
+    /* กระดาน: SVG เม็ดคม ช่องละ 14 หน่วย หมากเป็นภาพ pixel 12x12 เว้นขอบ 1 หน่วย */
+    .board { display: block; width: 100%; margin: 4px 0; touch-action: manipulation; }
+    .board .lt { fill: #b9b4e0; }
+    .board .dk { fill: #6c67a3; }
+    .board .last { fill: var(--yellow); opacity: 0.45; }
+    .board .chk { fill: var(--red); opacity: 0.8; }
+    .board .sel { fill: var(--cyan); opacity: 0.6; }
+    .board .to { fill: var(--screen); opacity: 0.55; }
+    .board .coord { font: 400 2.2px "Press Start 2P", monospace; fill: var(--screen); }
+    .board .coord.on-dk { fill: #e3e0f7; }
+    .board .sq { cursor: default; }
+    .board .sq[tabindex] { cursor: pointer; }
+    .board .sq:focus { outline: none; }
+    .board .sq:focus-visible .hit { stroke: var(--text); stroke-width: 0.8; stroke-dasharray: 1 1; }
+    .board .hit { fill: transparent; }
+    .pw { fill: var(--text); }
+    .pb { fill: #16132e; }
+    .ow { fill: #0d0b1f; }
+    .ob { fill: #e3e0f7; }
+    .actions { display: flex; gap: 16px; }
+    .actions button { --c: var(--cyan); }
+    .actions .armed { --c: var(--red); }
+    /* เลือกหมากตอน Promotion */
+    .promo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .promo button { margin: 0; padding: 6px; }
+    .promo svg { display: block; width: 100%; }
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 8px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .error { color: var(--red); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>CHESS</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">Rules</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>White เดินก่อน ผลัดกันเดินตาละ 1 ครั้ง ห้ามเดินจนให้ King ตัวเองโดนรุก</li>
+        <li>Checkmate: King โดนรุกแล้วไม่มีทางหนี ฝ่ายนั้นแพ้</li>
+        <li>Castling: King เดิน 2 ช่องไปทาง Rook แล้ว Rook ข้ามมาอยู่ข้าง King ทำได้ถ้าทั้งคู่ยังไม่เคยเดิน ช่องระหว่างว่าง และ King ไม่โดนรุกหรือเดินผ่านช่องที่โดนโจมตี</li>
+        <li>En passant: Pawn ศัตรูเดิน 2 ช่องมาหยุดข้าง Pawn เรา กินเฉียงไปข้างหลังมันได้ในตาถัดไปเท่านั้น</li>
+        <li>Promotion: Pawn ถึงแถวสุดท้าย เปลี่ยนเป็น Queen, Rook, Bishop หรือ Knight</li>
+        <li>Draw: Stalemate, หมากไม่พอ Checkmate, ตำแหน่งซ้ำ 3 ครั้ง, 50 ตาไม่มีกินและไม่มีเดิน Pawn หรือตกลงเสมอกัน</li>
+        <li>เวลาฝ่ายละ <span id="rule-time">10</span> min หมดเวลาแพ้ ถ้าอีกฝ่ายหมากไม่พอ Checkmate เสมอ</li>
+        <li>ชนะได้ 1 pts เสมอได้คนละ 0.5 pts เกมต่อไปสลับสี</li>
+        <li>แตะหมากแล้วแตะช่องที่จะไป</li>
+      </ol>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">Winner</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <dialog id="promote" aria-labelledby="promote-title">
+      <div class="dialog-top">
+        <h2 id="promote-title">Promotion</h2>
+        <button class="icon-btn" id="promote-close" aria-label="ยกเลิก">&times;</button>
+      </div>
+      <div class="promo" id="promo"></div>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
+  <script src="../../setup.js"></script>
+  <script>
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับนาฬิกา
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code, saved) {
+      room = openRoom("chess", (v) => { view = v; viewAt = performance.now(); render(); }, (error) => show({ screen: "home", error }), saved);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
+      else room.create(name);
+    }
+
+    // ---------- หมาก ----------
+    // ภาพ pixel 12x12: # คือตัวหมาก ขอบรอบตัวหมากวาดให้เอง
+    const SPRITES = {
+      P: ["", "", ".....##", "....####", "....####", ".....##", "....####", ".....##", ".....##", "....####", "...######"],
+      R: ["", "..##.##.##", "..########", "...######", "....####", "....####", "....####", "....####", "...######", "..########", "..########"],
+      N: ["", "......##", ".....####", "....##.###", "...#######", "..########", "..###.####", ".....#####", "....######", "...#######", "..########"],
+      B: ["", ".....##", "....####", "....#.##", "...######", "...######", "....####", ".....##", "....####", "...######", "..########"],
+      Q: ["", "..#..##..#", "..##.##.##", "..########", "...######", "....####", "....####", "...######", "....####", "...######", "..########"],
+      K: ["", ".....##", "....####", ".....##", "..########", "...######", "....####", "....####", "...######", "..########", "..########"],
+    };
+    const NAMES = { P: "Pawn", N: "Knight", B: "Bishop", R: "Rook", Q: "Queen", K: "King" };
+    const cells = (rows) => rows.flatMap((row, y) => [...row].map((ch, x) => (ch === "#" ? [x, y] : null)).filter(Boolean));
+    const rects = (list) => list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("");
+    // symbol ละตัวต่อสี อยู่ใน <defs> ของกระดาน ใช้ซ้ำด้วย <use> (ปุ่ม Promotion ก็ใช้)
+    const DEFS = Object.entries(SPRITES).map(([k, rows]) => {
+      const body = cells(rows), has = new Set(body.map(([x, y]) => x + "," + y)), edge = new Set();
+      for (const [x, y] of body) for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (!has.has(x + dx + "," + (y + dy))) edge.add(x + dx + "," + (y + dy));
+      const outline = rects([...edge].map((s) => s.split(",").map(Number)));
+      return ["w", "b"].map((c) => `<symbol id="${c}${k}" viewBox="0 0 12 12"><path class="o${c}" d="${outline}"/><path class="p${c}" d="${rects(body)}"/></symbol>`).join("");
+    }).join("");
+
+    // ---------- หน้าจอ ----------
+    const colorName = { w: "White", b: "Black" };
+    const clockText = (ms) => {
+      const s = Math.ceil(ms / 1000);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    };
+    const seat = (v, p) => {
+      const run = v.screen === "play" && v.turn === p.color;
+      return `<li class="seat">
+        <span class="side ${p.color}" aria-label="${colorName[p.color]}"></span>
+        <span class="who">${esc(p.name)} <span class="pts">${p.score} pts</span></span>
+        <span class="clock${run ? " run" : ""}" data-c="${p.color}" aria-label="เวลาที่เหลือ">${clockText(v.clock[p.color])}</span>
+      </li>`;
+    };
+    const REASON = {
+      checkmate: "Checkmate", resign: "Resign", time: "หมดเวลา", stalemate: "Stalemate",
+      material: "หมากไม่พอ Checkmate", repetition: "ตำแหน่งซ้ำ 3 ครั้ง", fifty: "50 ตาไม่มีกินและไม่มีเดิน Pawn", agreement: "ตกลงเสมอกัน",
+    };
+    const scoreboard = (v) => `
+      <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
+        <li class="row"><span>${p.name === v.result.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
+      </ul>`;
+
+    // กระดาน: ช่อง i ของ server (แถว 0 = rank 8) ฝั่ง Black หมุนกลับหัวให้หมากเราอยู่ล่าง
+    const FILES = "abcdefgh";
+    const sqName = (i) => FILES[i & 7] + (8 - (i >> 3));
+    function board(v, sel) {
+      const flip = v.mine === "b", targets = sel === null ? [] : v.moves.filter((m) => m[0] === sel).map((m) => m[1]);
+      const movable = new Set(v.moves.map((m) => m[0]));
+      let out = "";
+      for (let i = 0; i < 64; i++) {
+        const d = flip ? 63 - i : i, x = (d & 7) * 14, y = (d >> 3) * 14, dark = ((i >> 3) + (i & 7)) % 2 === 1, p = v.board[i];
+        const fill = (cls) => `<rect class="${cls}" x="${x}" y="${y}" width="14" height="14"/>`;
+        const mark = [v.last && v.last.includes(i) ? fill("last") : "", i === v.check ? fill("chk") : "", i === sel ? fill("sel") : ""].join("");
+        // ช่องที่ไปได้: จุดกลางช่อง ถ้ามีหมากให้กิน (รวม En passant) เป็นสามเหลี่ยมสี่มุม
+        const to = !targets.includes(i) ? "" : p === "." && !(v.board[sel].toUpperCase() === "P" && (i & 7) !== (sel & 7))
+          ? `<rect class="to" x="${x + 5}" y="${y + 5}" width="4" height="4"/>`
+          : `<path class="to" d="M${x} ${y}h4l-4 4zM${x + 14} ${y}v4l-4-4zM${x} ${y + 14}v-4l4 4zM${x + 14} ${y + 14}h-4l4-4z"/>`;
+        const piece = p === "." ? "" : `<use href="#${p === p.toUpperCase() ? "w" : "b"}${p.toUpperCase()}" x="${x + 1}" y="${y + 1}" width="12" height="12"/>`;
+        const coord = [
+          (d & 7) === 0 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 0.5}" y="${y + 2.7}">${8 - (i >> 3)}</text>` : "",
+          d >> 3 === 7 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 11.3}" y="${y + 13.5}">${FILES[i & 7]}</text>` : "",
+        ].join("");
+        const live = v.myTurn && (movable.has(i) || targets.includes(i));
+        const label = `${sqName(i)}${p === "." ? "" : ` ${colorName[p === p.toUpperCase() ? "w" : "b"]} ${NAMES[p.toUpperCase()]}`}`;
+        out += `<g class="sq" data-i="${i}"${live ? ` tabindex="0" role="button"` : ""} aria-label="${label}">
+          ${fill(dark ? "dk" : "lt")}${mark}${piece}${to}${coord}
+          <rect class="hit" x="${x}" y="${y}" width="14" height="14"/></g>`;
+      }
+      return `<svg class="board" viewBox="0 0 112 112" shape-rendering="crispEdges" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
+    }
+
+    // นาฬิกา: ฝ่ายที่ถึงตานับถอยหลังจากตอนได้สถานะ เหลือต่ำกว่า 20 วิเป็นสีแดง
+    // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน อีกคนรอเผื่อเขาหลุด
+    let tick, timeoutTimer;
+    function runClock(v) {
+      const run = app.querySelector(".clock.run");
+      for (const el of app.querySelectorAll(".clock")) el.classList.toggle("low", v.clock[el.dataset.c] < 20000);
+      if (!run || v.paused) return;
+      const left = () => Math.max(0, v.clock[v.turn] - (performance.now() - viewAt));
+      tick = setInterval(() => {
+        run.textContent = clockText(left());
+        run.classList.toggle("low", left() < 20000);
+      }, 200);
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
+    }
+
+    let lastScreen, lastMyTurn, lastBoard = null, sel = null, resignArmed = false;
+    function render() {
+      const v = view;
+      pauseUi(v, send);
+      clearInterval(tick);
+      clearTimeout(timeoutTimer);
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 60000;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (v.screen !== "over" && winner.open) winner.close();
+      const meP = (v.players || []).find((p) => p.id === v.me) || {};
+      const iWon = v.result && v.result.winner === meP.name;
+      if (gameOver && lastScreen === "play") playSfx(iWon ? "win" : "vote");
+      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx(v.check !== null ? "vote" : "next");
+      if (v.screen !== "play" || lastScreen !== "play") resignArmed = false;
+      lastScreen = v.screen;
+      lastMyTurn = v.myTurn;
+
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">Name</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          enter(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          enter(name, code);
+        };
+        return;
+      }
+
+      if (v.screen === "lobby") {
+        lastBoard = null;
+        sel = null;
+        const ok = v.players.length === 2;
+        const set = [{ key: "time", label: "เวลาฝ่ายละ", value: v.time / 60000, unit: "min", options: [1, 3, 5, 10, 15, 30, 60] }];
+        app.innerHTML = `
+          <div class="room-row">
+            <span class="hint">Room</span>
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>Copied</span>
+          </div>
+          <h2>Settings</h2>
+          ${setupHtml(set, v.isHost)}
+          <h2 style="margin-top: 16px">Players ${v.players.length}/2</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}${p.score ? ` <span class="hint">${p.score} pts</span>` : ""}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `${ok ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>Start</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        setupBind(app, set, send);
+        if (v.isHost) app.querySelector("#start").onclick = () => send({ t: "start" });
+        return;
+      }
+
+      // play / over
+      if (!v.myTurn || (sel !== null && !v.moves.some((m) => m[0] === sel))) sel = null;
+      const them = v.players.find((p) => p.id !== v.me);
+      const turnP = v.players.find((p) => p.color === v.turn);
+      let status;
+      if (v.screen === "over") {
+        const who = v.result.winner ? (iWon ? `<span class="good">You win</span>` : `<span class="hl">${esc(v.result.winner)}</span> wins`) : `<span class="hl">Draw</span>`;
+        status = `${who} <span class="hint">${REASON[v.result.reason]}</span>`;
+      } else if (v.offer === "them") status = `<span class="hl">${esc(them.name)}</span> ขอ Draw`;
+      else if (v.myTurn) status = v.check !== null ? `<span class="bad">Check</span>` : `<span class="hl">Your turn</span>`;
+      else status = `${turnP ? esc(turnP.name) : ""}'s turn${v.check !== null ? ` <span class="bad">Check</span>` : ""}`;
+      app.innerHTML = `
+        <ul>${them ? seat(v, them) : ""}</ul>
+        ${board(v, sel)}
+        <ul>${seat(v, meP)}</ul>
+        <p class="status">${status}</p>
+        ${v.screen === "play" ? `<div class="actions">
+          <button id="draw" data-sfx="confirm" ${v.offer === "me" ? "disabled" : ""}>${v.offer === "them" ? "Accept draw" : "Draw"}</button>
+          <button id="resign" class="${resignArmed ? "armed" : ""}" data-sfx="vote">${resignArmed ? "Resign?" : "Resign"}</button>
+        </div>` : ""}
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+
+      // แตะหมากตัวเองเพื่อเลือก แตะช่องที่ไปได้เพื่อเดิน Pawn ถึงแถวสุดท้ายเลือกหมากก่อน
+      const choose = (i) => {
+        const promos = sel === null ? [] : v.moves.filter((m) => m[0] === sel && m[1] === i && m[2]);
+        if (promos.length) return askPromo(sel, i);
+        if (sel !== null && v.moves.some((m) => m[0] === sel && m[1] === i)) {
+          send({ t: "move", from: sel, to: i });
+          sel = null;
+        } else {
+          sel = sel === i || !v.moves.some((m) => m[0] === i) ? null : i;
+          if (sel !== null) playSfx("click");
+        }
+        render();
+        const again = app.querySelector(`.sq[data-i="${i}"]`);
+        if (again && again.hasAttribute("tabindex")) again.focus({ preventScroll: true });
+      };
+      if (v.myTurn) app.querySelectorAll(".sq[tabindex]").forEach((g) => {
+        const i = Number(g.dataset.i);
+        g.onclick = () => choose(i);
+        g.onkeydown = (ev) => {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          ev.preventDefault();
+          choose(i);
+        };
+      });
+      if (app.querySelector("#draw")) app.querySelector("#draw").onclick = () => send({ t: "draw" });
+      // Resign กดสองครั้งกันกดพลาด
+      if (app.querySelector("#resign")) app.querySelector("#resign").onclick = () => {
+        if (resignArmed) return send({ t: "resign" });
+        resignArmed = true;
+        render();
+        setTimeout(() => { if (resignArmed) { resignArmed = false; render(); } }, 3000);
+      };
+      runClock(v);
+      // เดินใหม่: เสียงกินหรือเดิน (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
+      if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {
+        const count = (b) => b.replace(/\./g, "").length;
+        playSfx(count(v.board) < count(lastBoard) ? "confirm" : "click");
+      }
+      lastBoard = v.board;
+      if (gameOver) {
+        setTimeout(() => {
+          if (view.screen !== "over") return;
+          const r = view.result;
+          document.getElementById("winner-title").textContent = r.winner ? "Winner" : "Draw";
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${r.winner ? esc(r.winner) : "Draw"}</p><p class="hint">${REASON[r.reason]}</p>${scoreboard(view)}`;
+          winner.showModal();
+          if (r.winner) fireworks();
+        }, 600);
+      }
+      if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+    }
+
+    // Promotion: เลือก Queen, Rook, Bishop หรือ Knight
+    const promote = document.getElementById("promote");
+    function askPromo(from, to) {
+      const c = view.mine;
+      const box = document.getElementById("promo");
+      box.innerHTML = "QRBN".split("").map((q) => `<button data-q="${q}" aria-label="${NAMES[q]}"><svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true"><use href="#${c + q}"/></svg></button>`).join("");
+      box.querySelectorAll("button").forEach((b) => (b.onclick = () => {
+        promote.close();
+        sel = null;
+        send({ t: "move", from, to, promo: b.dataset.q });
+      }));
+      promote.showModal();
+    }
+    document.getElementById("promote-close").onclick = () => promote.close();
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
+
+    const saved = savedRoom("chess");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
+  </script>
+</body>
+</html>

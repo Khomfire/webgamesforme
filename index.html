@@ -141,6 +141,7 @@
       { id: "connect4", name: "CONNECT FOUR", desc: "หยอดเหรียญ เรียง 4 ก่อนชนะ", players: "2 คน" },
       { id: "draw", name: "DRAW & GUESS", desc: "วาดให้เพื่อนทาย", players: "2-10 คน" },
       { id: "dots", name: "DOTS AND BOXES", desc: "ลากเส้นปิดช่อง ได้ช่องมากสุดชนะ", players: "2-4 คน" },
+      { id: "chess", name: "CHESS", desc: "Checkmate ก่อนชนะ", players: "2 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -185,6 +186,10 @@
       dots: `<rect x="8" y="8" width="16" height="16" fill="${red}"/>
         <path d="M8 8h32M8 8v16M24 8v32M8 24h16M24 40h16" stroke="currentColor" stroke-width="4"/>
         ${[8, 24, 40].map((y) => [8, 24, 40].map((x) => `<rect x="${x - 4}" y="${y - 4}" width="8" height="8" fill="${face}"/>`).join("")).join("")}`,
+      // Knight แบบ pixel มีตาสีขาว
+      chess: `${["......##", ".....####", "....##.###", "...#######", "..########", "..###.####", ".....#####", "....######", "...#######", "..########"]
+        .flatMap((row, y) => [...row].map((ch, x) => (ch === "#" ? `<rect x="${x * 4}" y="${y * 4 + 4}" width="4" height="4" fill="currentColor"/>` : ""))).join("")}
+        <rect x="24" y="12" width="4" height="4" fill="${face}"/>`,
     };
 
     const list = document.getElementById("games");
