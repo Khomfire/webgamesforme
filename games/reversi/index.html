@@ -145,7 +145,7 @@
     .board .cell:focus-visible .hit { stroke: var(--yellow); stroke-width: 0.6; stroke-dasharray: 1 1; }
     .board .hit { fill: transparent; }
     /* หมากที่เพิ่งพลิก: หดแล้วกางออกเป็นสีใหม่ */
-    .board .flip { transform-box: fill-box; transform-origin: center; animation: flip 0.4s ease-out; }
+    .board .flip { transform-origin: 5px 5px; animation: flip 0.4s ease-out; }
     @keyframes flip { 0% { transform: scaleX(1); } 50% { transform: scaleX(0); } }
     .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
@@ -173,7 +173,7 @@
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
-        <li>กระดาน 8x8 เริ่มด้วยหมากตรงกลาง 4 ตัว Black เดินก่อน</li>
+        <li>กระดาน <span id="rule-size">8x8</span> เริ่มด้วยหมากตรงกลาง 4 ตัว Black เดินก่อน</li>
         <li>วางหมากให้หนีบหมากอีกฝ่ายเป็นเส้นตรง แนวนอน ตั้ง หรือทแยง หมากที่โดนหนีบพลิกเป็นสีเรา</li>
         <li>ต้องพลิกได้อย่างน้อย 1 ตัวถึงวางได้ ไม่มีที่วาง Pass ให้อัตโนมัติ</li>
         <li>ทั้งคู่วางไม่ได้จบเกม หมากมากกว่าชนะ</li>
@@ -241,26 +241,29 @@
         <li class="row"><span>${p.name === v.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
       </ul>`;
 
-    // กระดาน: ช่อง i = แถว * 8 + คอลัมน์ ชื่อช่อง a1-h8 (แถว 1 อยู่บน) ฝั่ง White หมุนกลับหัวให้เหมือนนั่งตรงข้ามกัน
+    // กระดาน n x n: ช่อง i = แถว * n + คอลัมน์ ชื่อช่อง a1-h8 (แถว 1 อยู่บน) ฝั่ง White หมุนกลับหัวให้เหมือนนั่งตรงข้ามกัน
     // fresh: วาดหลังมีคนเพิ่งวาง ให้หมากที่พลิกเล่นแอนิเมชัน
     function board(v, ghost, fresh) {
       const flip = v.mine === "w", can = new Set(v.moves), turned = new Set(fresh ? v.flipped : []);
-      const xy = (i) => { const d = flip ? 63 - i : i; return [(d % 8) * 10, Math.floor(d / 8) * 10]; };
-      let out = `<rect class="rim" x="-1" y="-1" width="82" height="82" rx="1.5"/><rect class="felt" width="80" height="80"/>`;
-      for (let k = 0; k <= 8; k++) out += `<path class="grid" d="M0 ${k * 10}H80M${k * 10} 0V80"/>`;
-      for (const [x, y] of [[20, 20], [60, 20], [20, 60], [60, 60]]) out += `<circle class="dot" cx="${x}" cy="${y}" r="0.9"/>`;
-      for (let i = 0; i < 64; i++) {
+      const n = Math.sqrt(v.board.length), S = n * 10;
+      const xy = (i) => { const d = flip ? n * n - 1 - i : i; return [(d % n) * 10, Math.floor(d / n) * 10]; };
+      let out = `<rect class="rim" x="-1" y="-1" width="${S + 2}" height="${S + 2}" rx="1.5"/><rect class="felt" width="${S}" height="${S}"/>`;
+      for (let k = 0; k <= n; k++) out += `<path class="grid" d="M0 ${k * 10}H${S}M${k * 10} 0V${S}"/>`;
+      // จุดบนกระดาน: มุมของช่องที่ห่างขอบ 2 ช่อง
+      for (const x of [20, S - 20]) for (const y of [20, S - 20]) out += `<circle class="dot" cx="${x}" cy="${y}" r="0.9"/>`;
+      for (let i = 0; i < n * n; i++) {
         const [x, y] = xy(i), p = v.board[i];
         let mark = "";
-        if (p !== ".") mark = `<use href="#${p}" class="${turned.has(i) ? "flip" : ""}" x="${x}" y="${y}" width="10" height="10"/>`;
+        // หมากที่พลิก: ย้ายไปที่ช่องด้วย g แล้วหมุนรอบจุดกลางหมากเอง จะได้หมุนอยู่กับที่
+        if (p !== ".") mark = `<g transform="translate(${x} ${y})"><use href="#${p}" class="${turned.has(i) ? "flip" : ""}" width="10" height="10"/></g>`;
         else if (i === ghost) mark = `<use href="#${v.mine}" x="${x}" y="${y}" width="10" height="10" opacity="0.5"/>`;
         else if (can.has(i)) mark = `<circle class="can" cx="${x + 5}" cy="${y + 5}" r="1.4"/>`;
         if (i === v.last && p !== ".") mark += `<circle class="last" cx="${x + 5}" cy="${y + 5}" r="1.1"/>`;
-        const label = `${"abcdefgh"[i % 8]}${Math.floor(i / 8) + 1}${p === "." ? "" : ` ${colorName[p]}`}`;
+        const label = `${"abcdefghij"[i % n]}${Math.floor(i / n) + 1}${p === "." ? "" : ` ${colorName[p]}`}`;
         out += `<g class="cell" data-i="${i}"${can.has(i) ? ` tabindex="0" role="button"` : ""} aria-label="${label}">${mark}
           <rect class="hit" x="${x}" y="${y}" width="10" height="10"/></g>`;
       }
-      return `<svg class="board" viewBox="-1 -1 82 82" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
+      return `<svg class="board" viewBox="-1 -1 ${S + 2} ${S + 2}" aria-label="กระดาน"><defs>${DEFS}</defs>${out}</svg>`;
     }
 
     // หลอดเวลา: นับจากตอนได้สถานะ ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
@@ -291,6 +294,7 @@
       resignUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
+      if (v.size) document.getElementById("rule-size").textContent = `${v.size}x${v.size}`;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       const meP = (v.players || []).find((p) => p.id === v.me) || {};
@@ -342,7 +346,10 @@
         lastBoard = null;
         ghost = null;
         const ok = v.players.length === 2;
-        const set = [{ key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 }];
+        const set = [
+          { key: "size", label: "ขนาดกระดาน", value: v.size, options: [6, 8, 10] },
+          { key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 5, max: 60, step: 5 },
+        ];
         app.innerHTML = `
           <div class="room-row">
             <span class="hint">Room</span>
