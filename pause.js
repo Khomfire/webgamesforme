@@ -22,7 +22,7 @@ document.getElementById("rules-open").before(pauseBtn);
 const pauseDialog = document.createElement("dialog");
 pauseDialog.id = "paused";
 pauseDialog.setAttribute("aria-labelledby", "paused-title");
-pauseDialog.innerHTML = `<h2 id="paused-title">Paused</h2><p class="hint" id="paused-by"></p><button id="resume" data-sfx="start">Resume</button>`;
+pauseDialog.innerHTML = `<h2 id="paused-title">หยุดเกม</h2><p class="hint" id="paused-by"></p><button id="resume" data-sfx="start">เล่นต่อ</button>`;
 document.body.append(pauseDialog);
 pauseDialog.addEventListener("cancel", (e) => e.preventDefault()); // ปิดด้วย Esc ไม่ได้ ต้องกดเล่นต่อ
 

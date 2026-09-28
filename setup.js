@@ -12,7 +12,7 @@ setupStyle.textContent = `
   .set small { margin-left: 6px; color: var(--dim); font-size: 0.85rem; }
   .step { display: flex; align-items: center; gap: 8px; }
   .step output { min-width: 7em; text-align: center; }
-  .step button { --c: var(--cyan); width: 36px; height: 36px; margin: 0; padding: 0; box-shadow: 3px 3px 0 var(--c); font: 400 0.9rem "Press Start 2P", monospace; }
+  .step button { --c: var(--cyan); width: 36px; height: 36px; margin: 0; padding: 0; box-shadow: 3px 3px 0 var(--c); font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; }
   .step button:active:not(:disabled) { transform: translate(3px, 3px); }
   /* สวิตช์เปิด/ปิด: กล่องยาวมีก้อนสี่เหลี่ยม ปิดอยู่ซ้าย เปิดอยู่ขวา */
   .switch { position: relative; display: block; width: 60px; height: 32px; margin: 0; padding: 0; border: 3px solid var(--dim); box-shadow: none; background: var(--screen); }

@@ -25,10 +25,10 @@ resignDialog.id = "resign-ask";
 resignDialog.setAttribute("aria-labelledby", "resign-title");
 resignDialog.innerHTML = `
   <div class="dialog-top">
-    <h2 id="resign-title">Resign?</h2>
+    <h2 id="resign-title">ยอมแพ้?</h2>
     <button class="icon-btn" id="resign-close" aria-label="ยกเลิก">&times;</button>
   </div>
-  <button id="resign-yes" data-sfx="vote">Resign</button>`;
+  <button id="resign-yes" data-sfx="vote">ยอมแพ้</button>`;
 document.body.append(resignDialog);
 resignBtn.onclick = () => resignDialog.showModal();
 resignDialog.querySelector("#resign-close").onclick = () => resignDialog.close();

@@ -48,7 +48,7 @@
       height: 44px;
       margin: 0;
       padding: 0;
-      font: 400 1rem "Press Start 2P", monospace;
+      font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
       box-shadow: 4px 4px 0 var(--c, var(--yellow));
     }
     .help { --c: var(--cyan); }
@@ -66,7 +66,7 @@
     dialog li { padding: 4px 0; border: 0; }
     .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", monospace; color: var(--yellow); }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
     label { display: block; margin: 16px 0 6px; color: var(--dim); }
     input {
@@ -101,7 +101,7 @@
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
     .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
-    .room { font: 400 1.6rem "Press Start 2P", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
     .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
@@ -126,7 +126,7 @@
     .seat { display: flex; align-items: center; gap: 10px; padding: 6px 0; border: 0; }
     .seat .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .seat .pts { color: var(--dim); font-size: 0.9rem; }
-    .clock { min-width: 5.5em; padding: 4px 8px; border: 3px solid #2c2950; text-align: right; font: 400 0.95rem "Press Start 2P", monospace; color: var(--dim); }
+    .clock { min-width: 5.5em; padding: 4px 8px; border: 3px solid #2c2950; text-align: right; font: 400 0.95rem "Press Start 2P", "Chakra Petch", monospace; color: var(--dim); }
     .clock.run { border-color: var(--yellow); color: var(--yellow); }
     .clock.low { border-color: var(--red); color: var(--red); }
     .side { display: inline-block; flex: none; width: 16px; height: 16px; border: 3px solid var(--dim); }
@@ -140,7 +140,7 @@
     .board .chk { fill: var(--red); opacity: 0.8; }
     .board .sel { fill: var(--cyan); opacity: 0.6; }
     .board .to { fill: var(--screen); opacity: 0.55; }
-    .board .coord { font: 400 2.2px "Press Start 2P", monospace; fill: var(--screen); }
+    .board .coord { font: 400 2.2px "Press Start 2P", "Chakra Petch", monospace; fill: var(--screen); }
     .board .coord.on-dk { fill: #e3e0f7; }
     .board .sq { cursor: default; }
     .board .sq[tabindex] { cursor: pointer; }
@@ -163,10 +163,10 @@
     .tray svg + svg.same { margin-left: -12px; }
     .tray svg.new { animation: pop 0.4s ease-out; }
     @keyframes pop { from { transform: scale(2.2); opacity: 0; } }
-    .tray .adv { margin-left: 6px; color: var(--dim); font: 400 0.7rem "Press Start 2P", monospace; }
+    .tray .adv { margin-left: 6px; color: var(--dim); font: 400 0.7rem "Press Start 2P", "Chakra Petch", monospace; }
     /* ประวัติการเดิน: เลขตา White Black */
     .moves-box { margin-top: 20px; }
-    .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; max-height: 136px; overflow-y: auto; margin: 0; padding: 4px 8px; border: 3px solid #2c2950; font: 400 0.75rem/2 "Press Start 2P", monospace; }
+    .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; max-height: 136px; overflow-y: auto; margin: 0; padding: 4px 8px; border: 3px solid #2c2950; font: 400 0.75rem/2 "Press Start 2P", "Chakra Petch", monospace; }
     .moves span { white-space: nowrap; }
     .moves .no { color: var(--dim); }
     .moves .cur { color: var(--yellow); }
@@ -193,24 +193,24 @@
     <h1>CHESS</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">Rules</h2>
+        <h2 id="rules-title">กติกา</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
-        <li>White เดินก่อน ผลัดกันเดินตาละ 1 ครั้ง ห้ามเดินจนให้ King ตัวเองโดนรุก</li>
-        <li>Checkmate: King โดนรุกแล้วไม่มีทางหนี ฝ่ายนั้นแพ้</li>
-        <li>Castling: King เดิน 2 ช่องไปทาง Rook แล้ว Rook ข้ามมาอยู่ข้าง King ทำได้ถ้าทั้งคู่ยังไม่เคยเดิน ช่องระหว่างว่าง และ King ไม่โดนรุกหรือเดินผ่านช่องที่โดนโจมตี</li>
-        <li>En passant: Pawn ศัตรูเดิน 2 ช่องมาหยุดข้าง Pawn เรา กินเฉียงไปข้างหลังมันได้ในตาถัดไปเท่านั้น</li>
-        <li>Promotion: Pawn ถึงแถวสุดท้าย เปลี่ยนเป็น Queen, Rook, Bishop หรือ Knight</li>
-        <li>Draw: Stalemate, หมากไม่พอ Checkmate, ตำแหน่งซ้ำ 3 ครั้ง, 50 ตาไม่มีกินและไม่มีเดิน Pawn</li>
-        <li>เวลาฝ่ายละ <span id="rule-time">10</span> min หมดเวลาแพ้ ถ้าอีกฝ่ายหมากไม่พอ Checkmate เสมอ</li>
-        <li>ชนะได้ 1 pts เสมอได้คนละ 0.5 pts เกมต่อไปสลับสี</li>
+        <li>ขาวเดินก่อน ผลัดกันเดินตาละ 1 ครั้ง ห้ามเดินจนคิงตัวเองโดนรุก</li>
+        <li>รุกจน: คิงโดนรุกแล้วไม่มีทางหนี ฝ่ายนั้นแพ้</li>
+        <li>เข้าป้อม: คิงเดิน 2 ช่องไปทางเรือ แล้วเรือข้ามมาอยู่ข้างคิง ทำได้ถ้าทั้งคู่ยังไม่เคยเดิน ช่องระหว่างว่าง และคิงไม่โดนรุกหรือเดินผ่านช่องที่โดนโจมตี</li>
+        <li>อองปาซอง: เบี้ยศัตรูเดิน 2 ช่องมาหยุดข้างเบี้ยเรา กินเฉียงไปข้างหลังมันได้ในตาถัดไปเท่านั้น</li>
+        <li>เลื่อนขั้น: เบี้ยถึงแถวสุดท้าย เปลี่ยนเป็นควีน เรือ บิชอป หรือม้า</li>
+        <li>เสมอ: อับ (ไม่โดนรุกแต่ไม่มีตาเดิน), หมากไม่พอรุกจน, ตำแหน่งซ้ำ 3 ครั้ง, 50 ตาไม่มีกินและไม่มีเดินเบี้ย</li>
+        <li>เวลาฝ่ายละ <span id="rule-time">10</span> min หมดเวลาแพ้ ถ้าอีกฝ่ายหมากไม่พอรุกจน เสมอ</li>
+        <li>ชนะได้ 1 แต้ม เสมอได้คนละ 0.5 แต้ม เกมต่อไปสลับสี</li>
         <li>แตะหมากแล้วแตะช่องที่จะไป</li>
       </ol>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">Winner</h2>
+        <h2 id="winner-title">ผู้ชนะ</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -218,7 +218,7 @@
     </dialog>
     <dialog id="promote" aria-labelledby="promote-title">
       <div class="dialog-top">
-        <h2 id="promote-title">Promotion</h2>
+        <h2 id="promote-title">เลื่อนขั้น</h2>
         <button class="icon-btn" id="promote-close" aria-label="ยกเลิก">&times;</button>
       </div>
       <div class="promo" id="promo"></div>
@@ -263,7 +263,7 @@
       Q: [".......##", "..#....##....#", "..##..####..##", "..###.####.###", "...##########", "...##########", "....++++++++", ".....######", ".....######", "......####", ".....######", "....++++++++", "...##########", "..############", "..############"],
       K: ["", ".......##", "......####", ".......##", "...###.##.###", "..############", "..############", "...##########", "....########", ".....######", ".....######", "....++++++++", "...##########", "..############", "..############"],
     };
-    const NAMES = { P: "Pawn", N: "Knight", B: "Bishop", R: "Rook", Q: "Queen", K: "King" };
+    const NAMES = { P: "เบี้ย", N: "ม้า", B: "บิชอป", R: "เรือ", Q: "ควีน", K: "คิง" };
     const VALUE = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 0 };
     const cells = (rows, chars) => rows.flatMap((row, y) => [...row].map((ch, x) => (chars.includes(ch) ? [x, y] : null)).filter(Boolean));
     const rects = (list) => list.map(([x, y]) => `M${x} ${y}h1v1h-1z`).join("");
@@ -278,7 +278,7 @@
     const pieceSvg = (c, k, cls = "") => `<svg class="${cls}" viewBox="-1 -1 18 18" shape-rendering="crispEdges" aria-hidden="true"><use href="#${c}${k}"/></svg>`;
 
     // ---------- หน้าจอ ----------
-    const colorName = { w: "White", b: "Black" };
+    const colorName = { w: "ขาว", b: "ดำ" };
     const clockText = (ms) => {
       const s = Math.ceil(ms / 1000);
       return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -287,7 +287,7 @@
       const run = v.screen === "play" && v.turn === p.color;
       return `<li class="seat">
         <span class="side ${p.color}" aria-label="${colorName[p.color]}"></span>
-        <span class="who">${esc(p.name)} <span class="pts">${p.score} pts</span></span>
+        <span class="who">${esc(p.name)} <span class="pts">${p.score} แต้ม</span></span>
         <span class="clock${run ? " run" : ""}" data-c="${p.color}" aria-label="เวลาที่เหลือ">${clockText(v.clock[p.color])}</span>
       </li>${tray(v, p.color)}`;
     };
@@ -314,15 +314,15 @@
         const cell = (j) => (j < v.history.length ? `<span${j === v.history.length - 1 ? ' class="cur"' : ""}>${v.history[j]}</span>` : "<span></span>");
         out += `<span class="no">${k / 2 + 1}.</span>${cell(k)}${cell(k + 1)}`;
       }
-      return `<div class="moves-box"><h2>Moves</h2><div class="moves" aria-label="ประวัติการเดิน">${out}</div></div>`;
+      return `<div class="moves-box"><h2>ตาเดิน</h2><div class="moves" aria-label="ประวัติการเดิน">${out}</div></div>`;
     }
     const REASON = {
-      checkmate: "Checkmate", resign: "Resign", time: "หมดเวลา", stalemate: "Stalemate",
-      material: "หมากไม่พอ Checkmate", repetition: "ตำแหน่งซ้ำ 3 ครั้ง", fifty: "50 ตาไม่มีกินและไม่มีเดิน Pawn",
+      checkmate: "รุกจน", resign: "ยอมแพ้", time: "หมดเวลา", stalemate: "อับ",
+      material: "หมากไม่พอรุกจน", repetition: "ตำแหน่งซ้ำ 3 ครั้ง", fifty: "50 ตาไม่มีกินและไม่มีเดินเบี้ย",
     };
     const scoreboard = (v) => `
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${p.name === v.result.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} pts</span></li>`).join("")}
+        <li class="row"><span>${p.name === v.result.winner ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} แต้ม</span></li>`).join("")}
       </ul>`;
 
     // กระดาน: ช่อง i ของ server (แถว 0 = rank 8) ฝั่ง Black หมุนกลับหัวให้หมากเราอยู่ล่าง
@@ -424,16 +424,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">Name</label>
+          <label for="name">ชื่อ</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">Create room</button>
-          <p class="or">or</p>
-          <label for="code">Room code</label>
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">Join</button>`;
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -468,18 +468,18 @@
         const set = [{ key: "time", label: "เวลาฝ่ายละ", value: v.time / 60000, unit: "min", options: [1, 3, 5, 10, 15, 30, 60] }];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">Room</span>
+            <span class="hint">ห้อง</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>Copied</span>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
           </div>
-          <h2>Settings</h2>
+          <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">Players ${v.players.length}/2</h2>
-          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}${p.score ? ` <span class="hint">${p.score} pts</span>` : ""}</li>`).join("")}</ul>
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/2</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}${p.score ? ` <span class="hint">${p.score} แต้ม</span>` : ""}</li>`).join("")}</ul>
           ${v.isHost
             ? `${ok ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>Start</button>`
+               <button id="start" data-sfx="start" ${ok ? "" : "disabled"}>เริ่ม</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -499,16 +499,16 @@
       const turnP = v.players.find((p) => p.color === v.turn);
       let status;
       if (v.screen === "over") {
-        const who = v.result.winner ? (iWon ? `<span class="good">You win</span>` : `<span class="hl">${esc(v.result.winner)}</span> wins`) : `<span class="hl">Draw</span>`;
+        const who = v.result.winner ? (iWon ? `<span class="good">คุณชนะ</span>` : `<span class="hl">${esc(v.result.winner)}</span> ชนะ`) : `<span class="hl">เสมอ</span>`;
         status = `${who} <span class="hint">${REASON[v.result.reason]}</span>`;
-      } else if (v.myTurn) status = v.check !== null ? `<span class="bad">Check</span>` : `<span class="hl">Your turn</span>`;
-      else status = `${turnP ? esc(turnP.name) : ""}'s turn${v.check !== null ? ` <span class="bad">Check</span>` : ""}`;
+      } else if (v.myTurn) status = v.check !== null ? `<span class="bad">รุก</span>` : `<span class="hl">ตาคุณ</span>`;
+      else status = `ตา ${turnP ? esc(turnP.name) : ""}${v.check !== null ? ` <span class="bad">รุก</span>` : ""}`;
       app.innerHTML = `
         <ul>${them ? seat(v, them) : ""}</ul>
         ${board(v, sel)}
         <ul>${seat(v, meP)}</ul>
         <p class="status">${status}</p>
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}
         ${moveList(v)}`;
       // หมากที่กินได้: วาดครั้งแรก (รีเฟรช) ไม่เด้ง จำจำนวนไว้เทียบรอบหน้า
       if (lastBoard === null) app.querySelectorAll(".tray .new").forEach((el) => el.classList.remove("new"));
@@ -556,8 +556,8 @@
         setTimeout(() => {
           if (view.screen !== "over") return;
           const r = view.result;
-          document.getElementById("winner-title").textContent = r.winner ? "Winner" : "Draw";
-          document.getElementById("winner-body").innerHTML = `<p class="word hl">${r.winner ? esc(r.winner) : "Draw"}</p><p class="hint">${REASON[r.reason]}</p>${scoreboard(view)}`;
+          document.getElementById("winner-title").textContent = r.winner ? "ผู้ชนะ" : "เสมอ";
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${r.winner ? esc(r.winner) : "เสมอ"}</p><p class="hint">${REASON[r.reason]}</p>${scoreboard(view)}`;
           winner.showModal();
           if (r.winner) fireworks();
         }, 600);
