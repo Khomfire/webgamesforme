@@ -151,7 +151,6 @@
     .board .hit { fill: transparent; }
     .actions { display: flex; gap: 16px; }
     .actions button { --c: var(--cyan); }
-    .actions .armed { --c: var(--red); }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
@@ -199,6 +198,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -301,10 +301,11 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
     }
 
-    let lastScreen, lastMyTurn, lastBoard = null, ghost = null, resignArmed = false;
+    let lastScreen, lastMyTurn, lastBoard = null, ghost = null;
     function render() {
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       clearInterval(tick);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 60000;
@@ -316,7 +317,6 @@
       if (gameOver && (lastScreen === "play" || lastScreen === "score")) playSfx(iWon ? "win" : "vote");
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       if (v.screen === "score" && lastScreen === "play") playSfx("confirm");
-      if (v.screen === "lobby" || v.screen !== lastScreen) resignArmed = false;
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
 
@@ -406,9 +406,8 @@
         status = v.myTurn ? `<span class="hl">Your turn</span>` : `${turnP ? esc(turnP.name) : ""}'s turn`;
         if (v.last === -1 && passer) status = `${passer.id === v.me ? "You" : esc(passer.name)} Pass <span class="hint">|</span> ${status}`;
       }
-      const armed = `<button id="resign" class="${resignArmed ? "armed" : ""}" data-sfx="vote">${resignArmed ? "Resign?" : "Resign"}</button>`;
       let actions = "";
-      if (v.screen === "play") actions = `<div class="actions"><button id="pass" data-sfx="confirm" ${v.myTurn ? "" : "disabled"}>Pass</button>${armed}</div>`;
+      if (v.screen === "play") actions = `<div class="actions"><button id="pass" data-sfx="confirm" ${v.myTurn ? "" : "disabled"}>Pass</button></div>`;
       if (v.screen === "score") {
         const waiting = v.done.length && !v.done.includes(v.mine);
         actions = `<p class="hint">แตะกลุ่มที่ตายแล้ว${waiting ? ` <span class="hl">${esc(them.name)}</span> กด Done แล้ว` : ""}</p>
@@ -449,13 +448,6 @@
       if (app.querySelector("#pass")) app.querySelector("#pass").onclick = () => send({ t: "pass" });
       if (app.querySelector("#done")) app.querySelector("#done").onclick = () => send({ t: "done" });
       if (app.querySelector("#resume-play")) app.querySelector("#resume-play").onclick = () => send({ t: "play" });
-      // Resign กดสองครั้งกันกดพลาด
-      if (app.querySelector("#resign")) app.querySelector("#resign").onclick = () => {
-        if (resignArmed) return send({ t: "resign" });
-        resignArmed = true;
-        render();
-        setTimeout(() => { if (resignArmed) { resignArmed = false; render(); } }, 3000);
-      };
       runClock(v);
       // วางหมากใหม่: เสียงกินหรือวาง (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {

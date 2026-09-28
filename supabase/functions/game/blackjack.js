@@ -177,6 +177,17 @@ function can(s, p, h) {
 const turnKey = (s) => [s.phase, s.round, s.turn && s.turn.id, s.turn && s.turn.h].join();
 const timed = (s) => s.phase === "bet" || s.phase === "insurance" || s.phase === "play";
 
+// เอาออกจากเกม (ออกจากห้องหรือยอมแพ้): เล่นต่อกับคนที่เหลือ ไม่ต้องรอเขาลงเงิน เลือก insurance หรือเล่นมือของเขาแล้ว
+function drop(s, id) {
+  s.order = s.order.filter((x) => x !== id);
+  if (s.inHand) s.inHand = s.inHand.filter((x) => x !== id);
+  if (s.phase === "lobby" || s.phase === "over") return;
+  if (!s.order.length) return finish(s);
+  if (s.phase === "bet" && s.order.every((x) => pl(s, x).bet !== null)) deal(s);
+  else if (s.phase === "insurance" && s.order.every((x) => pl(s, x).ins !== null)) peek(s);
+  else if (s.phase === "play" && s.turn.id === id) nextTurn(s);
+}
+
 function toLobby(s) {
   for (const p of s.players) Object.assign(p, { chips: 0, bet: null, ins: null, hands: [], won: null, out: false });
   s.order = [];
@@ -187,6 +198,8 @@ export default {
   max: 7,
   init: () => ({ rounds: 20, time: TURN, phase: "lobby" }),
   player: () => ({ chips: 0, bet: null, ins: null, hands: [], won: null, out: false }),
+  // เล่นคนเดียวไม่มีใครให้ยอมแพ้ ออกจากห้องได้เลย
+  canResign: (s, id) => timed(s) && s.order.includes(id) && s.order.length > 1,
 
   handle(s, id, msg, now) {
     const p = pl(s, id);
@@ -194,6 +207,12 @@ export default {
     const key = turnKey(s);
     // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
     if (msg.t === "timeout" && timed(s) && now >= s.turnEnds) timeUp(s);
+    // ยอมแพ้: ชิปหมด ตกรอบ (ยังดูอยู่ในห้องได้) เหลือคนเดียวชนะ
+    if (msg.t === "resign") {
+      Object.assign(p, { chips: 0, out: true });
+      drop(s, id);
+      if (s.order.length === 1 && s.phase !== "over") finish(s);
+    }
     const n = msg.n;
     if (s.phase === "bet" && msg.t === "bet" && inRound && p.bet === null && Number.isInteger(n) && n >= MIN && n <= p.chips && n % MIN === 0) {
       p.bet = n;
@@ -246,17 +265,11 @@ export default {
     if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
-  // คนออก: เล่นต่อกับคนที่เหลือ ไม่ต้องรอเขาลงเงิน เลือก insurance หรือเล่นมือของเขาแล้ว
+  // คนออก
   leave(s, id) {
     if (!s.order || !s.order.includes(id)) return;
     const key = turnKey(s);
-    s.order = s.order.filter((x) => x !== id);
-    if (s.inHand) s.inHand = s.inHand.filter((x) => x !== id);
-    if (s.phase === "lobby" || s.phase === "over") return;
-    if (!s.order.length) return finish(s);
-    if (s.phase === "bet" && s.order.every((x) => pl(s, x).bet !== null)) deal(s);
-    else if (s.phase === "insurance" && s.order.every((x) => pl(s, x).ins !== null)) peek(s);
-    else if (s.phase === "play" && s.turn.id === id) nextTurn(s);
+    drop(s, id);
     if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 

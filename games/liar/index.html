@@ -312,6 +312,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -490,11 +491,12 @@
       clearInterval(rollTimer);
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       clearTimeout(timeoutTimer);
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       // เพิ่งจับโกหก: ป้ายโกหก เสียงพลิกเต๋าทีละคน
-      if ((v.screen === "reveal" || v.screen === "over") && lastScreen === "play") {
+      if ((v.screen === "reveal" || v.screen === "over") && lastScreen === "play" && v.reveal) {
         revealAt = Date.now();
         stamp();
         playSfx("vote");
@@ -623,12 +625,12 @@
         return;
       }
 
-      // reveal / over (ยังเปิดเต๋าไม่จบ วาดต่อจากจุดเดิม)
-      const end = revealEnd(v.reveal);
+      // reveal / over (ยังเปิดเต๋าไม่จบ วาดต่อจากจุดเดิม) จบเพราะคนอื่นยอมแพ้ไม่มีการเปิดเต๋า
+      const end = v.reveal ? revealEnd(v.reveal) : 0;
       const elapsed = Date.now() - revealAt;
       app.innerHTML = `
         <div${elapsed < end + 300 ? ` class="revealing" style="--end: ${end}ms; --shift: -${elapsed}ms"` : ""}>
-          ${revealBox(v.reveal)}
+          ${v.reveal ? revealBox(v.reveal) : ""}
           <div class="later">
             ${v.screen === "reveal" && v.pal ? `<p class="status hl">รอบหน้า PALIFICO</p>` : ""}
             ${v.screen === "over"

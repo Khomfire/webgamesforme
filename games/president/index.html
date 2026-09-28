@@ -286,6 +286,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -388,6 +389,7 @@
     function render() {
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
@@ -520,7 +522,7 @@
         ${v.result && (v.screen === "end" || v.screen === "over") ? `
           <h2 style="margin-top: 24px">This round</h2>
           <ul>${v.result.map((r) => `<li class="row"><span>${esc(r.name)}${titleTag(r.title)}</span><span>+${r.pts}</span></li>`).join("")}</ul>` : ""}
-        ${v.screen === "end" ? `<button id="ready" data-sfx="next" ${v.ready ? "disabled" : ""}>Next ${v.readyCount}/${v.seats.length}</button>` : ""}
+        ${v.screen === "end" && v.seats.some((p) => p.id === v.me) ? `<button id="ready" data-sfx="next" ${v.ready ? "disabled" : ""}>Next ${v.readyCount}/${v.seats.length}</button>` : ""}
         ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // ปุ่มลงเปิดเมื่อไพ่ที่เลือกลงทับกองได้ ปุ่มให้เปิดเมื่อเลือกครบ

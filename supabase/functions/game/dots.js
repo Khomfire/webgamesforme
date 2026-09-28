@@ -35,11 +35,13 @@ function draw(s, id, e) {
   else if (!got.length) nextTurn(s);
 }
 
+// ชนะ: ได้ช่องมากสุดในคนที่ยังเล่นอยู่ (คนยอมแพ้ไม่นับ)
 function finish(s) {
   s.phase = "over";
+  const ps = s.players.filter((p) => s.order.includes(p.id));
   const count = (p) => s.boxes.filter((x) => x === p.id).length;
-  const top = Math.max(...s.players.map(count));
-  s.winners = s.players.filter((p) => count(p) === top).map((p) => p.name);
+  const top = Math.max(...ps.map(count));
+  s.winners = ps.filter((p) => count(p) === top).map((p) => p.name);
 }
 
 // ตาเปลี่ยน หรือลากเส้นใหม่ (ได้ช่องแล้วลากต่อ) เริ่มนับเวลาใหม่
@@ -49,6 +51,7 @@ export default {
   max: 4,
   init: () => ({ size: 5, time: TURN, phase: "lobby" }),
   // สีที่ยังไม่มีใครใช้
+  canResign: (s, id) => s.phase === "play" && s.order.includes(id),
   player: (s) => ({ color: [...Array(COLORS).keys()].find((c) => !s.players.some((p) => p.color === c)) }),
 
   handle(s, id, msg, now) {
@@ -58,6 +61,12 @@ export default {
     if (msg.t === "timeout" && s.phase === "play" && now >= s.turnEnds) {
       const open = [...s.lines.keys()].filter((x) => !s.lines[x]);
       draw(s, s.turn, open[Math.floor(Math.random() * open.length)]);
+    }
+    // ยอมแพ้: ออกจากเกมนี้ ช่องที่ได้ไว้ยังอยู่แต่ไม่นับ เหลือคนเดียวชนะ
+    if (msg.t === "resign") {
+      if (s.turn === id) nextTurn(s);
+      s.order = s.order.filter((x) => x !== id);
+      if (s.order.length < 2) finish(s);
     }
     if (msg.t === "line" && s.phase === "play" && s.turn === id && Number.isInteger(e) && e >= 0 && e < s.lines.length && !s.lines[e]) draw(s, id, e);
     if (id === s.owner) {

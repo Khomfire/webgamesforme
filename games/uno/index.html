@@ -366,6 +366,7 @@
   <script src="../../sfx.js"></script>
   <script src="../../fireworks.js"></script>
   <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
   <script src="../../setup.js"></script>
   <script>
     const app = document.getElementById("app");
@@ -650,6 +651,7 @@
     function render() {
       const v = view;
       pauseUi(v, send);
+      resignUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen !== "play" || !v.myTurn) { picking = null; if (pick.open) pick.close(); }
@@ -748,7 +750,7 @@
       const status = v.out && v.screen === "play" ? `<span class="bad">Out</span>`
         : v.screen === "play"
         ? v.myTurn ? `<span class="hl">${v.drawn !== null ? "ลงใบที่จั่ว หรือ Pass" : v.pending ? `ลงทับหรือจั่ว +${v.pending.n}` : "Your turn"}</span>` : `${esc(v.turnName)}'s turn`
-        : `<span class="${v.result.name === myName ? "good" : "hint"}">${esc(v.result.name)} หมดมือ</span>`;
+        : v.result ? `<span class="${v.result.name === myName ? "good" : "hint"}">${esc(v.result.name)} หมดมือ</span>` : ""; // จบเพราะคนอื่นออกหรือยอมแพ้ ไม่มีผลรอบ
       app.innerHTML = `
         <div class="seats" aria-label="${v.dir < 0 ? "เล่นทวนเข็ม" : "เล่นตามเข็ม"}">${others.map((s) => `
           <div class="seat${s.now ? " now" : ""}" data-seat="${s.id}">
@@ -780,9 +782,9 @@
             ${v.canChallenge ? `<button id="challenge" data-sfx="vote" aria-label="Challenge +4">Challenge</button>` : ""}
             ${v.canUno ? `<button id="uno-btn" data-sfx="create">UNO</button>` : ""}
           </div>` : `
-          ${v.result.hands.length ? `<ul class="hands">${v.result.hands.map((h) => `
+          ${v.result && v.result.hands.length ? `<ul class="hands">${v.result.hands.map((h) => `
             <li><span class="who">${esc(h.name)} <span class="bad">+${h.pts}</span></span>${h.cards.map((c) => cardHtml(c, { cls: "small" })).join("")}</li>`).join("")}</ul>` : ""}
-          ${v.result.out.length ? `<p class="bad">Out: ${v.result.out.map(esc).join(", ")}</p>` : ""}
+          ${v.result && v.result.out.length ? `<p class="bad">Out: ${v.result.out.map(esc).join(", ")}</p>` : ""}
           <div style="margin-top: 16px">${scorebar(v)}</div>
           ${v.screen === "over"
             ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`

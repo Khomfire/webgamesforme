@@ -101,6 +101,7 @@ export default {
   max: 2,
   init: () => ({ size: 9, time: 600000, phase: "lobby" }),
   player: () => ({ score: 0 }),
+  canResign: (s) => s.phase === "play" || s.phase === "score",
 
   handle(s, id, msg, now) {
     // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
@@ -145,7 +146,7 @@ export default {
       // ตกลงหมากตายกันไม่ได้ เล่นต่อ ฝ่ายที่ถึงตาเดินต่อ (คำสั่ง "resume" เป็นของการหยุดเกม จึงใช้ "play")
       if (msg.t === "play") Object.assign(s, { phase: "play", passes: 0, turnEnds: now + s.clock[s.turn], dead: [], done: [] });
     }
-    if ((s.phase === "play" || s.phase === "score") && msg.t === "resign") {
+    if (msg.t === "resign") {
       if (s.phase === "play") s.clock[s.turn] = Math.max(0, s.turnEnds - now);
       finish(s, other(s, id), "resign");
     }

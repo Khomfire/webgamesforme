@@ -140,14 +140,42 @@ function endRound(s) {
   s.swap = n >= 4 ? 2 : 1; // มีควีน คิงกับสลาฟแลก 2 ใบ ไม่มีแลกใบเดียว
   Object.assign(s, { pile: null, stack: [], lastBy: null, turn: null, ready: [] });
   s.round++;
-  if (s.players.some((p) => p.score >= s.target) || s.order.length < 2) finish(s);
+  if (s.order.some((x) => pl(s, x).score >= s.target) || s.order.length < 2) finish(s);
   else s.phase = "end";
 }
 
+// ชนะ: แต้มมากสุดในคนที่ยังเล่นอยู่ (คนยอมแพ้ไม่นับ)
 function finish(s) {
-  const top = Math.max(...s.players.map((p) => p.score));
+  const ps = s.players.filter((p) => s.order.includes(p.id));
+  const top = Math.max(...ps.map((p) => p.score));
   s.phase = "over";
-  s.winners = s.players.filter((p) => p.score === top).map((p) => p.name);
+  s.winners = ps.filter((p) => p.score === top).map((p) => p.name);
+}
+
+// เอาออกจากเกม (ออกจากห้องหรือยอมแพ้): เล่นต่อกับคนที่เหลือ ไพ่ของเขาไม่ใช้แล้ว
+// ช่วงแลกไพ่ คนรับออกก่อนคืนไพ่ คนให้ได้ไพ่ของตัวเองคืน
+function drop(s, id) {
+  if (s.phase === "trade") {
+    for (const t of s.trades) if (t.hi === id && !t.back) {
+      pl(s, t.lo).hand.push(...t.got);
+      sortHand(pl(s, t.lo));
+    }
+    s.trades = s.trades.filter((t) => t.hi !== id && t.lo !== id);
+  }
+  if (s.phase === "play") {
+    s.done = s.done.filter((x) => x !== id);
+    s.passed = s.passed.filter((x) => x !== id);
+    if (s.turn === id) advance(s, id);
+  }
+  s.order.splice(s.order.indexOf(id), 1);
+  if (s.phase === "lobby" || s.phase === "over") return;
+  if (s.order.length < 2) return finish(s);
+  if (s.phase === "trade" && s.trades.every((t) => t.back)) startPlay(s);
+  else if (s.phase === "play" && s.order.filter((x) => has(s, x)).length < 2) endRound(s);
+  else if (s.phase === "end") {
+    s.ready = s.ready.filter((x) => x !== id);
+    if (s.ready.length >= s.order.length) startRound(s);
+  }
 }
 
 // หมดเวลา: แลกไพ่คืนใบเล็กสุด ตาเล่นผ่าน (เริ่มกองใหม่ผ่านไม่ได้ ลงใบเล็กสุด)
@@ -175,12 +203,15 @@ export default {
   max: 8,
   init: () => ({ target: 10, time: TURN, phase: "lobby" }),
   player: () => ({ hand: [], score: 0, title: null }),
+  canResign: (s, id) => (s.phase === "trade" || s.phase === "play" || s.phase === "end") && s.order.includes(id),
 
   handle(s, id, msg, now) {
     const p = pl(s, id);
     const key = turnKey(s);
     // ใครก็แจ้งได้ว่าหมดเวลา server เช็กเวลาเอง
     if (msg.t === "timeout" && timed(s) && now >= s.turnEnds) timeUp(s);
+    // ยอมแพ้: ออกจากเกมนี้ (ยังดูอยู่ในห้องได้) เหลือคนเดียวชนะ
+    if (msg.t === "resign") drop(s, id);
     if (s.phase === "trade" && msg.t === "give" && Array.isArray(msg.ids)) {
       const t = s.trades.find((x) => x.hi === id && !x.back);
       if (t) give(s, t, msg.ids);
@@ -211,8 +242,7 @@ export default {
     if (turnKey(s) !== key) s.turnEnds = now + (s.time || TURN);
   },
 
-  // คนออก: เล่นต่อกับคนที่เหลือ ไพ่ของเขาไม่ใช้แล้ว
-  // ช่วงแลกไพ่ คนรับออกก่อนคืนไพ่ คนให้ได้ไพ่ของตัวเองคืน
+  // คนออก
   leave(s, id) {
     if (!s.order || !s.order.includes(id)) return;
     if (s.players.length < 2) {
@@ -220,27 +250,7 @@ export default {
       return toLobby(s);
     }
     const key = turnKey(s);
-    if (s.phase === "trade") {
-      for (const t of s.trades) if (t.hi === id && !t.back) {
-        pl(s, t.lo).hand.push(...t.got);
-        sortHand(pl(s, t.lo));
-      }
-      s.trades = s.trades.filter((t) => t.hi !== id && t.lo !== id);
-    }
-    if (s.phase === "play") {
-      s.done = s.done.filter((x) => x !== id);
-      s.passed = s.passed.filter((x) => x !== id);
-      if (s.turn === id) advance(s, id);
-    }
-    s.order.splice(s.order.indexOf(id), 1);
-    if (s.phase === "lobby" || s.phase === "over") return;
-    if (s.order.length < 2) return finish(s);
-    if (s.phase === "trade" && s.trades.every((t) => t.back)) startPlay(s);
-    else if (s.phase === "play" && s.order.filter((x) => has(s, x)).length < 2) endRound(s);
-    else if (s.phase === "end") {
-      s.ready = s.ready.filter((x) => x !== id);
-      if (s.ready.length >= s.order.length) startRound(s);
-    }
+    drop(s, id);
     if (turnKey(s) !== key) s.turnEnds = Date.now() + (s.time || TURN);
   },
 
