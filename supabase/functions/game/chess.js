@@ -154,6 +154,8 @@ function move(s, m, now) {
   const g = s.pos, mover = g.turn;
   s.clock[mover] = s.turnEnds - now;
   const name = san(g, s.moves, m);
+  s.history ||= []; // ห้องที่เริ่มเล่นก่อนมีประวัติการเดิน
+  s.taken ||= { w: [], b: [] };
   // หมากที่โดนกิน (En passant กิน Pawn ที่อยู่ข้างๆ) เก็บไว้ที่ฝ่ายที่กิน
   const ep = g.board[m[0]].toUpperCase() === "P" && m[1] === g.ep;
   const taken = ep ? (mover === "w" ? "p" : "P") : g.board[m[1]];
