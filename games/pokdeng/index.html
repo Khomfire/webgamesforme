@@ -233,10 +233,10 @@
     <h1>POK DENG</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">กฎ</h2>
+        <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
-      <h2>เล่น</h2>
+      <h2>Play</h2>
       <ol>
         <li>ลงเงิน แล้วแจกคนละ 2 ใบ ทุกคนเทียบกับเจ้ามือ</li>
         <li>แต้ม = หลักหน่วยของผลรวม <span data-card="7:0"></span> <span data-card="8:1"></span> = 5</li>
@@ -257,12 +257,12 @@
       <p class="hint">3 ใบ ชนะแต้มธรรมดา แพ้ป๊อก</p>
       <ol>
         <li>ตอง <span data-card="7:0"></span> <span data-card="7:1"></span> <span data-card="7:3"></span> = 5 เด้ง</li>
-        <li>สเตรทฟลัช <span data-card="4:1"></span> <span data-card="5:1"></span> <span data-card="6:1"></span> = 5 เด้ง</li>
+        <li>Straight Flush <span data-card="4:1"></span> <span data-card="5:1"></span> <span data-card="6:1"></span> = 5 เด้ง</li>
         <li>เรียง <span data-card="4:0"></span> <span data-card="5:2"></span> <span data-card="6:3"></span> = 3 เด้ง (A 2 3 กับ Q K A ก็ได้)</li>
         <li>เซียน <span data-card="11:0"></span> <span data-card="12:1"></span> <span data-card="11:2"></span> (J Q K ล้วน) = 3 เด้ง</li>
         <li>สูงไปต่ำตามลำดับนี้ ชนิดเดียวกันเสมอ</li>
       </ol>
-      <h2>เงิน</h2>
+      <h2>Money</h2>
       <ol>
         <li>ลงได้ไม่เกินเงินที่มี</li>
         <li>เจ้ามือเก็บเงินคนแพ้ก่อน แล้วค่อยจ่ายคนชนะ</li>
@@ -273,7 +273,7 @@
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">ผู้ชนะ</h2>
+        <h2 id="winner-title">Winner</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -313,7 +313,7 @@
     const cardHtml = (c, cls = "") =>
       `<div class="card${c.s === 1 || c.s === 2 ? " red" : ""} ${cls}" aria-label="${RANK[c.r]} ${SUIT[c.s]}"><span class="rank">${RANK[c.r]}</span><svg aria-hidden="true"><use href="#suit${c.s}"/></svg></div>`;
     const back = (cls = "") => `<div class="card back ${cls}" aria-hidden="true"></div>`;
-    const KIND = { pok: "ป๊อก", tong: "ตอง", sf: "สเตรทฟลัช", run: "เรียง", sian: "เซียน" };
+    const KIND = { pok: "ป๊อก", tong: "ตอง", sf: "Straight Flush", run: "เรียง", sian: "เซียน" };
     const rateText = (r) => `${r.kind === "pts" ? `${r.pts} แต้ม` : r.kind === "pok" ? `ป๊อก ${r.pts}` : KIND[r.kind]}${r.deng > 1 ? ` <span class="hl">${r.deng} เด้ง</span>` : ""}`;
     const fmt = (n) => (n > 0 ? "+" + n : String(n));
     // เงินได้เสีย: res 0 = เสมอ (ชนะแต่เจ้ามือหมดตัวได้ +0)
@@ -439,9 +439,9 @@
 
     // ---------- หน้าจอ ----------
     const scoreboard = (v) => `
-      <h2>เงิน</h2>
+      <h2>Money</h2>
       <ul>${[...v.players].sort((a, b) => b.money - a.money).map((p) => `
-        <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">หมดตัว</span>` : ""}</span><span>${p.money}</span></li>`).join("")}
+        <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${p.out ? `<span class="tag bad">Out</span>` : ""}</span><span>${p.money}</span></li>`).join("")}
       </ul>`;
 
     let timeoutTimer, lastScreen, lastLog = "", lastSeen = {}, lastWon = {}, lastStakes = new Set(), overTimer;
@@ -457,16 +457,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">ชื่อ</label>
+          <label for="name">Name</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">สร้างห้อง</button>
-          <p class="or">หรือ</p>
-          <label for="code">รหัสห้อง</label>
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -502,18 +502,18 @@
         const set = [{ key: "money", label: "เงินเริ่มต้น", value: v.money, options: MONEY }, { key: "laps", label: "เจ้ามือคนละ", value: v.laps, unit: "ครั้ง", min: 1, max: 5 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">ห้อง</span>
+            <span class="hint">Room</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+            <span class="good" id="copied" hidden>Copied</span>
           </div>
-          <h2>ตั้งค่า</h2>
+          <h2>Settings</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/10</h2>
+          <h2 style="margin-top: 16px">Players ${v.players.length}/10</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${v.players.length >= 2 ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${v.players.length >= 2 ? "" : "disabled"}>เริ่ม</button>`
+               <button id="start" data-sfx="start" ${v.players.length >= 2 ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -534,8 +534,8 @@
       const acting = (s) => !s.out && (s.id === v.dealer ? v.screen === "dealer" : v.screen === "bet" ? s.bet === null : v.screen === "draw" && !s.done);
       const canBet = !!me && v.screen === "bet" && !iDeal && acting(me);
       const canDraw = !!me && acting(me) && (v.screen === "draw" || v.screen === "dealer");
-      const status = v.screen === "over" ? `<span class="hl">จบเกม</span>`
-        : !me || me.out ? `<span class="bad">หมดตัว</span>`
+      const status = v.screen === "over" ? `<span class="hl">Game over</span>`
+        : !me || me.out ? `<span class="bad">Out</span>`
         : canBet ? `<span class="hl">ลงเงิน</span>`
         : canDraw ? `<span class="hl">จั่วหรืออยู่</span>`
         : v.screen === "bet" ? "รอลงเงิน"
@@ -543,7 +543,7 @@
         : iDeal ? "รอผู้เล่น" : "รอคนอื่น";
       const seatHtml = (s) => `
         <div class="seat${s.id === v.me ? " mine" : ""}${acting(s) && v.screen !== "over" ? " now" : ""}" data-seat="${s.id}">
-          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.out ? `<span class="tag bad">หมดตัว</span>` : s.id === v.dealer && v.screen !== "over" ? `<span class="tag hl">เจ้ามือ</span>` : ""} <span class="money">${s.money}</span></span></div>
+          <div class="who"><span class="name">${esc(s.name)}</span><span>${s.out ? `<span class="tag bad">Out</span>` : s.id === v.dealer && v.screen !== "over" ? `<span class="tag hl">เจ้ามือ</span>` : ""} <span class="money">${s.money}</span></span></div>
           <div class="cards">${s.cards ? s.cards.map((c) => cardHtml(c)).join("") : back().repeat(s.n)}</div>
           <div class="info"><span>${s.rate ? rateText(s.rate) : ""}</span>${s.won !== null ? wonHtml(s) : ""}</div>
           ${acting(s) && v.screen !== "over" ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
@@ -553,7 +553,7 @@
       // ยอดลงเงิน: ทีละ step ไม่เกินเงินที่มี
       if (canBet) betAmt = Math.min(me.money, Math.max(v.step, betAmt || v.step * 2));
       app.innerHTML = `
-        <p class="hint round">รอบ ${Math.min(v.round + 1, v.rounds)}/${v.rounds}</p>
+        <p class="hint round">Round ${Math.min(v.round + 1, v.rounds)}/${v.rounds}</p>
         <div class="seats">${v.seats.filter((s) => s.id !== v.me).map(seatHtml).join("")}</div>
         <div class="table">
           <div class="card back" id="deck" aria-hidden="true"></div>
@@ -571,7 +571,7 @@
           </div>
           <button id="bet" data-sfx="confirm">ลง</button>` : ""}
         ${canDraw ? `<div class="actions"><button id="draw" data-sfx="roll">จั่ว</button><button id="stay" class="alt">อยู่</button></div>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // แผนแอนิเมชันจากสถานะใหม่
       const log = JSON.stringify(v.log);

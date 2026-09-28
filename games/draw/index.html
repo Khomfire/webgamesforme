@@ -186,7 +186,7 @@
     <h1>DRAW &amp; GUESS</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">กฎ</h2>
+        <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
@@ -202,7 +202,7 @@
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">ผู้ชนะ</h2>
+        <h2 id="winner-title">Winner</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -255,11 +255,11 @@
         ${COLORS.map(([c, name], i) => `<button class="swatch" style="--sw: ${c}" data-color="${i}" aria-label="${name}" aria-pressed="${i === color}"></button>`).join("")}
         ${SIZES.map(([w, name, d]) => `<button class="size" style="--d: ${d}px" data-size="${w}" aria-label="เส้น${name}" aria-pressed="${w === size}"></button>`).join("")}
         <button class="act undo" id="undo" aria-label="ย้อน">&#8630;</button>
-        <button class="act" id="clear">ล้าง</button>
+        <button class="act" id="clear">Clear</button>
       </div>
       <form class="guess-form" id="guess-form" hidden>
-        <input id="guess" maxlength="40" autocomplete="off" aria-label="คำทาย" placeholder="ทาย">
-        <button data-sfx="confirm">ส่ง</button>
+        <input id="guess" maxlength="40" autocomplete="off" aria-label="คำทาย" placeholder="Guess">
+        <button data-sfx="confirm">Send</button>
       </form>
       <ul class="log" id="log" aria-live="polite"></ul>
       <div id="foot"></div>`;
@@ -396,9 +396,9 @@
 
     // ---------- หน้าจอ ----------
     const scoreboard = (v) => `
-      <h2>คะแนน</h2>
+      <h2>Score</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span>${(v.winners || []).includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
     const scorebar = (v) => `
@@ -450,16 +450,16 @@
         lastScreen = v.screen;
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">ชื่อ</label>
+          <label for="name">Name</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">สร้างห้อง</button>
-          <p class="or">หรือ</p>
-          <label for="code">รหัสห้อง</label>
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -492,18 +492,18 @@
         const set = [{ key: "rounds", label: "รอบ", value: v.rounds, min: 1, max: 10 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 30, max: 180, step: 10 }];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">ห้อง</span>
+            <span class="hint">Room</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+            <span class="good" id="copied" hidden>Copied</span>
           </div>
-          <h2>ตั้งค่า</h2>
+          <h2>Settings</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/10</h2>
+          <h2 style="margin-top: 16px">Players ${v.players.length}/10</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${enough ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -539,12 +539,12 @@
       lastScreen = v.screen;
       lastTurn = v.turnNo;
 
-      const status = v.screen === "choose" ? (v.iDraw ? `<span class="hl">ตาคุณวาด</span>` : `ตา ${esc(v.drawerName)} วาด`)
+      const status = v.screen === "choose" ? (v.iDraw ? `<span class="hl">Your turn</span>` : `${esc(v.drawerName)}'s turn`)
         : v.screen === "draw" ? (v.iDraw ? `วาด <span class="hl">${esc(v.word)}</span>` : v.word ? `<span class="good">ถูก</span> ${esc(v.word)}` : clue(v.hint))
         : v.screen === "reveal" ? `เฉลย`
         : `คำสุดท้าย <span class="hl">${esc(v.word)}</span>`;
       play.querySelector("#head").innerHTML = `
-        <p class="round">${v.screen === "over" ? "" : `รอบ ${v.round}/${v.rounds}`}</p>
+        <p class="round">${v.screen === "over" ? "" : `Round ${v.round}/${v.rounds}`}</p>
         <p class="status">${status}</p>
         ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}`;
 
@@ -576,7 +576,7 @@
 
       play.querySelector("#foot").innerHTML = `
         ${scorebar(v)}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
       if (play.querySelector("#newgame")) play.querySelector("#newgame").onclick = () => send({ t: "newgame" });
 
       runTimer(v);

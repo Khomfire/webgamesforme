@@ -222,24 +222,24 @@
     <h1>FARKLE</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">กฎ</h2>
+        <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
       <ol>
         <li>ทอย <span class="die inline" data-face=""></span> x2 แต้มรวมมากสุดเริ่มก่อน เสมอทอยใหม่</li>
         <li>ผลัดกันทอย <span class="die inline" data-face=""></span> x6</li>
-        <li>เลือกเต๋าที่มีแต้ม แล้วทอยต่อหรือเก็บแต้ม</li>
-        <li>ทอยแล้วไม่มีแต้ม (ฟาร์เคิล) เสียแต้มตานั้นหมด</li>
-        <li>มีแต้มครบ <span class="die inline" data-face=""></span> x6 ทอยใหม่ได้ <span class="die inline" data-face=""></span> x6</li>
-        <li>ทอยละ <span id="rule-time">20</span> วิ หมดเวลา: เก็บเต๋าที่ได้แต้มมากสุดแล้วเก็บแต้ม</li>
+        <li>เลือกเต๋าที่มีแต้ม แล้ว Roll ต่อ หรือ Bank เก็บแต้ม</li>
+        <li>ทอยแล้วไม่มีแต้ม = Farkle เสียแต้มตานั้นหมด</li>
+        <li>Hot dice: มีแต้มครบ <span class="die inline" data-face=""></span> x6 ทอยใหม่ได้ <span class="die inline" data-face=""></span> x6</li>
+        <li>ทอยละ <span id="rule-time">20</span> วิ หมดเวลา: เก็บเต๋าที่ได้แต้มมากสุดแล้ว Bank</li>
       </ol>
-      <h2>แต้ม</h2>
+      <h2>Scoring</h2>
       <ul id="score-rules"></ul>
-      <p class="hint">มีคนถึงเป้าหมาย คนอื่นได้อีกคนละตา แต้มสูงสุดชนะ</p>
+      <p class="hint">มีคนถึงเป้าหมาย = Final round คนอื่นได้อีกคนละตา แต้มสูงสุดชนะ</p>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">ผู้ชนะ</h2>
+        <h2 id="winner-title">Winner</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -304,14 +304,14 @@
     const smallDice = (dice, cls = "") => `<div class="dice small ${cls}">${dice.map((v) => `<div class="die" role="img" aria-label="${v}">${pips(v)}</div>`).join("")}</div>`;
 
     const scoreboard = (v) => `
-      <h2>คะแนน (เป้าหมาย ${v.target})</h2>
+      <h2>Score (target ${v.target})</h2>
       <ul>${v.players.map((p) => `
-        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
+        <li class="row"><span${p.now ? ' class="now"' : ""}>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}</span><span>${p.score} คะแนน</span></li>`).join("")}
       </ul>`;
 
     const meter = (n, max) => `<span class="meter" aria-hidden="true"><i style="--p: ${Math.round((100 * n) / max)}%"></i></span>`;
     const scorebar = (v) => `
-      <p class="board-goal">เป้า ${v.target}</p>
+      <p class="board-goal">Target ${v.target}</p>
       <ul class="board" aria-label="คะแนน">${v.players.map((p) => `
         <li${p.now ? ' class="now"' : ""}><span class="name${v.screen === "over" && v.winners.includes(p.name) ? " hl" : ""}">${esc(p.name)}</span><b>${p.score}</b>${meter(p.score, v.target)}</li>`).join("")}
       </ul>`;
@@ -349,8 +349,8 @@
       const shown = { ...v, players: v.players.map((p) => ({ ...p, now: p.name === v.last.name })) };
       app.innerHTML = `
         ${scorebar(shown)}
-        ${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}
-        <p class="status">${lastMyTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.last.name)}`}</p>
+        ${v.final ? `<p class="status bad">Final round</p>` : ""}
+        <p class="status">${lastMyTurn ? `<span class="hl">Your turn</span>` : `${esc(v.last.name)}'s turn`}</p>
         <p class="turn" aria-label="แต้มตานี้">${v.last.lost}</p>
         ${v.last.kept.length ? smallDice(v.last.kept) : ""}
         <div class="dice">${v.last.dice.map((d) => `<div class="die" role="img" aria-label="เต๋า ${d}">${pips(d)}</div>`).join("")}</div>`;
@@ -387,10 +387,10 @@
       if (status !== seenStatus) statusAt = now + Math.max(...o.players.map(left));
       seenStatus = status;
       app.innerHTML = `
-        <h2>ทอยหาคนเริ่ม</h2>
+        <h2>Roll for first</h2>
         <div class="pair${me.out ? " dim" : ""}${me.dice ? spin(me) : ""}" style="--left: ${left(me)}ms">${me.dice ? me.dice.map(face).join("") : blank + blank}</div>
         <p class="status landing" style="--left: ${Math.max(0, statusAt - now)}ms">${status}</p>
-        ${o.mine ? `<button id="first-roll">ทอย</button>` : o.starter ? "" : `<p class="hint center">รอคนอื่นทอย</p>`}
+        ${o.mine ? `<button id="first-roll">Roll</button>` : o.starter ? "" : `<p class="hint center">รอคนอื่นทอย</p>`}
         <ul style="margin-top: 24px">${others.map((p) => `
           <li class="row${p.out ? " dim" : ""}"><span${p.name === o.starter ? ' class="hl"' : ""}>${esc(p.name)}</span>${p.dice
             ? `<span class="roll-sum" style="--left: ${left(p)}ms"><span class="dice${spin(p)}">${p.dice.map(face).join("")}</span><span class="landing">${sum(p.dice)}</span></span>`
@@ -467,16 +467,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">ชื่อ</label>
+          <label for="name">Name</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">สร้างห้อง</button>
-          <p class="or">หรือ</p>
-          <label for="code">รหัสห้อง</label>
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -508,18 +508,18 @@
         const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "คะแนน", min: 500, max: 20000, step: 500 }, { key: "time", label: "ทอยละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">ห้อง</span>
+            <span class="hint">Room</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+            <span class="good" id="copied" hidden>Copied</span>
           </div>
-          <h2>ตั้งค่า</h2>
+          <h2>Settings</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length} คน</h2>
+          <h2 style="margin-top: 16px">Players ${v.players.length}</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `<p class="hint">ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</p>
-               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -538,14 +538,14 @@
       // play / over
       const pickedPts = score([...picked].map((i) => v.dice[i]));
       const last = !v.last ? "" : v.last.farkle
-        ? `<p class="bad">${esc(v.last.name)} ฟาร์เคิล${v.last.lost ? ` เสีย ${v.last.lost}` : ""}</p>${smallDice(v.last.dice, "bad")}`
-        : `<p class="good">${esc(v.last.name)} เก็บ +${v.last.pts}</p>`;
+        ? `<p class="bad">${esc(v.last.name)} Farkle${v.last.lost ? ` -${v.last.lost}` : ""}</p>${smallDice(v.last.dice, "bad")}`
+        : `<p class="good">${esc(v.last.name)} Bank +${v.last.pts}</p>`;
       app.innerHTML = `
         ${scorebar(v)}
         ${v.screen === "over"
-          ? v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`
-          : `${v.final ? `<p class="status bad">รอบสุดท้าย</p>` : ""}
-             <p class="status">${v.myTurn ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.turnName)}`}</p>
+          ? v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`
+          : `${v.final ? `<p class="status bad">Final round</p>` : ""}
+             <p class="status">${v.myTurn ? `<span class="hl">Your turn</span>` : `${esc(v.turnName)}'s turn`}</p>
              ${v.turnLeft != null ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
              <p class="turn" aria-label="แต้มตานี้">${v.turnPts}${picked.size ? ` <span class="${pickedPts ? "good" : "bad"}">+${pickedPts}</span>` : ""}</p>
              ${v.kept.length ? smallDice(v.kept) : ""}
@@ -553,11 +553,11 @@
              ${v.myTurn
                ? v.dice.length
                  ? `<div class="buttons">
-                      <button id="roll" data-sfx="next" ${pickedPts ? "" : "disabled"}>ทอยต่อ</button>
-                      <button id="bank" class="alt" data-sfx="confirm" ${pickedPts ? "" : "disabled"}>เก็บแต้ม</button>
+                      <button id="roll" data-sfx="next" ${pickedPts ? "" : "disabled"}>Roll</button>
+                      <button id="bank" class="alt" data-sfx="confirm" ${pickedPts ? "" : "disabled"}>Bank</button>
                     </div>
                     <p class="hint">เลือกเต๋าที่มีแต้ม</p>`
-                 : `<button id="roll" data-sfx="next">ทอย</button>`
+                 : `<button id="roll" data-sfx="next">Roll</button>`
                : ""}
              <div id="last" style="margin-top: 24px">${last}</div>`}`;
       app.querySelectorAll("button.die").forEach((b) => (b.onclick = () => {
@@ -581,10 +581,10 @@
 
     // ตารางแต้มในกฎ: แต้มคำนวณจาก score() จึงตรงกับเกมเสมอ
     const SCORE_RULES = [
-      [[1], ""], [[5], ""], [[1, 1, 1], "ตอง 1"],
-      [[2, 2, 2], "หน้า x 100"], [[3, 3, 3], "หน้า x 100"], [[4, 4, 4], "หน้า x 100"], [[5, 5, 5], "หน้า x 100"], [[6, 6, 6], "หน้า x 100"],
-      [[4, 4, 4, 4], "ตอง x2"], [[4, 4, 4, 4, 4], "ตอง x3"], [[4, 4, 4, 4, 4, 4], "ตอง x4"],
-      [[1, 2, 3, 4, 5, 6], "เรียง"], [[2, 2, 4, 4, 6, 6], "3 คู่"], [[3, 3, 3, 3, 6, 6], "4 ลูก + คู่"], [[2, 2, 2, 4, 4, 4], "ตอง 2 ชุด"],
+      [[1], ""], [[5], ""], [[1, 1, 1], "Three 1s"],
+      [[2, 2, 2], "face x 100"], [[3, 3, 3], "face x 100"], [[4, 4, 4], "face x 100"], [[5, 5, 5], "face x 100"], [[6, 6, 6], "face x 100"],
+      [[4, 4, 4, 4], "4 of a kind"], [[4, 4, 4, 4, 4], "5 of a kind"], [[4, 4, 4, 4, 4, 4], "6 of a kind"],
+      [[1, 2, 3, 4, 5, 6], "Straight"], [[2, 2, 4, 4, 6, 6], "3 pairs"], [[3, 3, 3, 3, 6, 6], "4 of a kind + pair"], [[2, 2, 2, 4, 4, 4], "2 triplets"],
     ];
     document.getElementById("score-rules").innerHTML = SCORE_RULES.map(([d, note]) =>
       `<li class="rule-row">${smallDice(d)}<span class="note">${note}</span><span class="pts">${score(d)}</span></li>`).join("");

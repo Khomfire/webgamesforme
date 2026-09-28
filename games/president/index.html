@@ -234,45 +234,45 @@
     <h1>PRESIDENT</h1>
     <dialog id="rules" aria-labelledby="rules-title">
       <div class="dialog-top">
-        <h2 id="rules-title">กฎ</h2>
+        <h2 id="rules-title">Rules</h2>
         <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
       </div>
-      <h2>เล่น</h2>
+      <h2>Play</h2>
       <ol>
         <li>แจกไพ่จนหมดสำรับ หมดมือก่อนได้ตำแหน่งสูง</li>
-        <li>รอบแรกคนมี <span data-card="3:3"></span> เริ่ม รอบต่อไปสลาฟเริ่ม</li>
+        <li>รอบแรกคนมี <span data-card="3:3"></span> เริ่ม รอบต่อไป Slave เริ่ม</li>
         <li>ลงเดี่ยว คู่ ตอง หรือโฟร์ (เลขเดียวกัน)</li>
         <li>ลงทับด้วยจำนวนใบเท่ากันที่ใหญ่กว่า</li>
         <li>ตองทับเดี่ยวได้ โฟร์ทับคู่ได้</li>
-        <li>ผ่านแล้วลงกองนั้นไม่ได้อีก</li>
-        <li>ทุกคนผ่าน คนลงล่าสุดเริ่มกองใหม่ ลงอะไรก็ได้</li>
-        <li>ตาละ <span id="rule-time">20</span> วิ หมดเวลา: ผ่าน (เริ่มกองลงใบเล็กสุด)</li>
+        <li>Pass แล้วลงกองนั้นไม่ได้อีก</li>
+        <li>ทุกคน Pass คนลงล่าสุดเริ่มกองใหม่ ลงอะไรก็ได้</li>
+        <li>ตาละ <span id="rule-time">20</span> วิ หมดเวลา: Pass (เริ่มกองลงใบเล็กสุด)</li>
       </ol>
-      <h2>ไพ่</h2>
+      <h2>Cards</h2>
       <ol>
         <li>เล็กไปใหญ่ <span data-card="3:0"></span> <span data-card="4:0"></span> ... <span data-card="13:0"></span> <span data-card="1:0"></span> <span data-card="2:0"></span></li>
         <li>เลขเท่ากันดูดอก <span data-card="9:0"></span> &gt; <span data-card="9:1"></span> &gt; <span data-card="9:2"></span> &gt; <span data-card="9:3"></span></li>
         <li>คู่หรือตองเลขเท่ากัน เทียบใบที่ดอกใหญ่สุด</li>
       </ol>
-      <h2>ตำแหน่ง</h2>
+      <h2>Titles</h2>
       <ol>
-        <li>หมดมือคนแรก คิง คนสุดท้าย สลาฟ</li>
-        <li>คนที่ 2 ควีน คนรองสุดท้าย รองสลาฟ (เป็นคนเดียวกัน = ไพร่)</li>
-        <li>ที่เหลือ ไพร่</li>
-        <li>แต้ม: สลาฟ 0 สูงขึ้นทีละ 1</li>
+        <li>หมดมือคนแรก King คนสุดท้าย Slave</li>
+        <li>คนที่ 2 Queen คนรองสุดท้าย Vice Slave (เป็นคนเดียวกัน = Commoner)</li>
+        <li>ที่เหลือ Commoner</li>
+        <li>แต้ม: Slave 0 สูงขึ้นทีละ 1</li>
       </ol>
-      <h2>แลกไพ่</h2>
+      <h2>Trade</h2>
       <p class="hint">ก่อนเล่นรอบต่อไป</p>
       <ol>
-        <li>สลาฟให้ไพ่ใหญ่สุด 2 ใบกับคิง คิงเลือกคืน 2 ใบ</li>
-        <li>รองสลาฟให้ใบใหญ่สุดกับควีน ควีนเลือกคืน 1 ใบ</li>
-        <li>ไม่มีควีน คิงกับสลาฟแลกใบเดียว</li>
+        <li>Slave ให้ไพ่ใหญ่สุด 2 ใบกับ King แล้ว King เลือกคืน 2 ใบ</li>
+        <li>Vice Slave ให้ใบใหญ่สุดกับ Queen แล้ว Queen เลือกคืน 1 ใบ</li>
+        <li>ไม่มี Queen ให้ King กับ Slave แลกใบเดียว</li>
       </ol>
       <p class="hint">จบรอบที่มีคนถึงแต้มเป้าหมาย แต้มมากสุดชนะ</p>
     </dialog>
     <dialog id="winner" aria-labelledby="winner-title">
       <div class="dialog-top">
-        <h2 id="winner-title">ผู้ชนะ</h2>
+        <h2 id="winner-title">Winner</h2>
         <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
       </div>
       <div id="winner-body"></div>
@@ -322,7 +322,7 @@
       if ((cards.length === 3 && pile.length === 1) || (cards.length === 4 && pile.length === 2)) return true;
       return cards.length === pile.length && high(cards) > high(pile);
     }
-    const TITLE = { king: "คิง", queen: "ควีน", people: "ไพร่", vice: "รองสลาฟ", slave: "สลาฟ" };
+    const TITLE = { king: "King", queen: "Queen", people: "Commoner", vice: "Vice Slave", slave: "Slave" };
     const titleTag = (t) => (t ? `<span class="tag ${t === "slave" || t === "vice" ? "bad" : t === "people" ? "hint" : "hl"}">${TITLE[t]}</span>` : "");
     let sel = new Set(); // ไพ่ที่เลือกไว้ในมือ
 
@@ -379,9 +379,9 @@
 
     // ---------- หน้าจอ ----------
     const scoreboard = (v) => `
-      <h2 style="margin-top: 24px">แต้ม</h2>
+      <h2 style="margin-top: 24px">Score</h2>
       <ul>${[...v.players].sort((a, b) => b.score - a.score).map((p) => `
-        <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${titleTag(p.title)}</span><span>${p.score}</span></li>`).join("")}
+        <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">Winner</span>` : esc(p.name)}${titleTag(p.title)}</span><span>${p.score}</span></li>`).join("")}
       </ul>`;
 
     let timeoutTimer, lastScreen, lastLog = "", lastTurn, lastTitle, overTimer;
@@ -396,16 +396,16 @@
       if (v.screen === "home") {
         app.innerHTML = `
           ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
-          <label for="name">ชื่อ</label>
+          <label for="name">Name</label>
           <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
-          <button id="host" data-sfx="create">สร้างห้อง</button>
-          <p class="or">หรือ</p>
-          <label for="code">รหัสห้อง</label>
+          <button id="host" data-sfx="create">Create room</button>
+          <p class="or">or</p>
+          <label for="code">Room code</label>
           <div class="code-row">
             <input id="code" class="code-input" maxlength="4" autocomplete="off">
             <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
           </div>
-          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+          <button id="join" class="alt" data-sfx="join">Join</button>`;
         app.querySelector("#host").onclick = () => {
           const name = app.querySelector("#name").value.trim();
           if (!name) return show({ error: "ใส่ชื่อก่อน" });
@@ -438,18 +438,18 @@
         const set = [{ key: "target", label: "เป้าหมาย", value: v.target, unit: "แต้ม", min: 1, max: 50 }, { key: "time", label: "ตาละ", value: v.time / 1000, unit: "วิ", min: 5, max: 60, step: 5 }];
         app.innerHTML = `
           <div class="room-row">
-            <span class="hint">ห้อง</span>
+            <span class="hint">Room</span>
             <p class="room">${esc(v.code)}</p>
             <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
-            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+            <span class="good" id="copied" hidden>Copied</span>
           </div>
-          <h2>ตั้งค่า</h2>
+          <h2>Settings</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/8</h2>
+          <h2 style="margin-top: 16px">Players ${v.players.length}/8</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${v.players.length >= 3 ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
-               <button id="start" data-sfx="start" ${v.players.length >= 3 ? "" : "disabled"}>เริ่ม</button>`
+               <button id="start" data-sfx="start" ${v.players.length >= 3 ? "" : "disabled"}>Start</button>`
             : `<p class="hint">รอเริ่มเกม</p>`}`;
         app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
           const done = app.querySelector("#copied");
@@ -473,14 +473,14 @@
       const fresh = new Set(v.trade ? (v.trade.give ? v.trade.got : v.trade.back || []).map((c) => c.id) : []);
       // คนที่ยังต้องกดอะไรอยู่
       const waiting = new Set(v.screen === "trade" ? v.seats.filter((s) => v.waiting.includes(s.name)).map((s) => s.id) : v.screen === "play" ? [v.turn] : []);
-      const status = v.screen === "over" ? `<span class="hl">จบเกม</span>`
-        : v.screen === "end" ? `<span class="hl">จบรอบ</span>`
+      const status = v.screen === "over" ? `<span class="hl">Game over</span>`
+        : v.screen === "end" ? `<span class="hl">Round over</span>`
         : v.screen === "trade" ? (giving ? `<span class="hl">เลือกคืน ${v.trade.k} ใบ</span>` : "รอแลกไพ่")
-        : myTurn ? `<span class="hl">${v.pile ? "ตาคุณ" : "เริ่มกองใหม่"}</span>`
+        : myTurn ? `<span class="hl">${v.pile ? "Your turn" : "เริ่มกองใหม่"}</span>`
         : me && me.place >= 0 ? `<span class="good">ที่ ${me.place + 1}</span>`
         : `รอ ${esc(nameOf(v.turn))}`;
       const pts = (id) => `<span class="pts" aria-label="แต้ม">${v.players.find((p) => p.id === id).score}</span>`;
-      const seatInfo = (s) => (v.screen === "play" && s.place >= 0 ? `<span class="good">ที่ ${s.place + 1}</span>` : v.screen === "play" && s.passed ? `<span class="hint">ผ่าน</span>` : "");
+      const seatInfo = (s) => (v.screen === "play" && s.place >= 0 ? `<span class="good">ที่ ${s.place + 1}</span>` : v.screen === "play" && s.passed ? `<span class="hint">Pass</span>` : "");
       const seatHtml = (s) => `
         <div class="seat${waiting.has(s.id) ? " now" : ""}${v.screen === "play" && (s.passed || s.place >= 0) ? " out" : ""}" data-seat="${s.id}">
           <div class="who"><span class="name">${esc(s.name)}</span><span>${titleTag(s.title)} ${pts(s.id)}</span></div>
@@ -499,7 +499,7 @@
       const swept = oldPile && oldPile.querySelector(".play") && !v.stack.length ? { el: oldPile.cloneNode(true), rect: oldPile.getBoundingClientRect() } : null;
       const shown = v.stack.slice(-8); // ชุดล่าง ๆ ถูกทับจนมองไม่เห็นแล้ว
       app.innerHTML = `
-        <p class="hint round">รอบ ${v.screen === "end" || v.screen === "over" ? v.round : v.round + 1} · เป้า ${v.target} แต้ม</p>
+        <p class="hint round">Round ${v.screen === "end" || v.screen === "over" ? v.round : v.round + 1} · Target ${v.target}</p>
         <div class="seats">${v.seats.filter((s) => s.id !== v.me).map(seatHtml).join("")}</div>
         <div class="table">
           <div class="pile" aria-label="กองกลาง">${shown.length ? shown.map((p, j) => playHtml(p, v.stack.length - shown.length + j)).join("") : `<div class="pile-empty" aria-hidden="true"></div>`}</div>
@@ -514,14 +514,14 @@
             </div>
             ${waiting.has(v.me) ? `<div class="timer" aria-hidden="true"><i></i></div>` : ""}
           </div>` : ""}
-        ${myTurn ? `<div class="actions"><button id="play" data-sfx="confirm">ลง</button><button id="pass" class="alt" data-sfx="vote">ผ่าน</button></div>` : ""}
-        ${giving ? `<button id="give" data-sfx="confirm">ให้</button>` : ""}
+        ${myTurn ? `<div class="actions"><button id="play" data-sfx="confirm">Play</button><button id="pass" class="alt" data-sfx="vote">Pass</button></div>` : ""}
+        ${giving ? `<button id="give" data-sfx="confirm">Give</button>` : ""}
         ${v.screen === "trade" || v.screen === "play" ? tradeHtml() : ""}
         ${v.result && (v.screen === "end" || v.screen === "over") ? `
-          <h2 style="margin-top: 24px">รอบนี้</h2>
+          <h2 style="margin-top: 24px">This round</h2>
           <ul>${v.result.map((r) => `<li class="row"><span>${esc(r.name)}${titleTag(r.title)}</span><span>+${r.pts}</span></li>`).join("")}</ul>` : ""}
-        ${v.screen === "end" ? `<button id="ready" data-sfx="next" ${v.ready ? "disabled" : ""}>ต่อ ${v.readyCount}/${v.seats.length}</button>` : ""}
-        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
+        ${v.screen === "end" ? `<button id="ready" data-sfx="next" ${v.ready ? "disabled" : ""}>Next ${v.readyCount}/${v.seats.length}</button>` : ""}
+        ${v.screen === "over" ? (v.isHost ? `<button id="newgame" data-sfx="start">New game</button>` : `<p class="hint">รอเกมใหม่</p>`) : ""}`;
 
       // ปุ่มลงเปิดเมื่อไพ่ที่เลือกลงทับกองได้ ปุ่มให้เปิดเมื่อเลือกครบ
       const playBtn = app.querySelector("#play"), passBtn = app.querySelector("#pass"), giveBtn = app.querySelector("#give");
