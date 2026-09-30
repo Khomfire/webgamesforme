@@ -3,13 +3,13 @@
 // หน้าเกมเรียก pauseUi(view, send) ทุกครั้งที่วาดใหม่
 const pauseStyle = document.createElement("style");
 pauseStyle.textContent = `
-  .top .pause-btn { --c: var(--cyan); position: relative; margin: 0 16px 0 auto; }
+  .top .pause-btn { --c: var(--cyan); position: relative; margin: 0 1rem 0 auto; }
   .top .pause-btn[hidden] { display: none; }
-  .pause-btn::before, .pause-btn::after { content: ""; position: absolute; top: 11px; width: 5px; height: 16px; background: currentColor; }
-  .pause-btn::before { left: 12px; }
-  .pause-btn::after { right: 12px; }
+  .pause-btn::before, .pause-btn::after { content: ""; position: absolute; top: 0.6875rem; width: 0.3125rem; height: 1rem; background: currentColor; }
+  .pause-btn::before { left: 0.75rem; }
+  .pause-btn::after { right: 0.75rem; }
   #paused { text-align: center; }
-  #paused h2 { margin: 8px 0 4px; color: var(--yellow); }
+  #paused h2 { margin: 0.5rem 0 0.25rem; color: var(--yellow); }
 `;
 document.head.append(pauseStyle);
 

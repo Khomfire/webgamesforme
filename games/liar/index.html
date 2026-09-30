@@ -11,6 +11,10 @@
   <style>
     :root {
       color-scheme: dark;
+      /* ขนาดทั้งหน้าเป็น rem: ย่อขยายตามจอ ให้หน้าเล่น (สูงราว 620px ที่ 16px) พอดีจอ
+         มือถือ 16px จอเตี้ยย่อได้ถึง 14px จอใหญ่อย่าง iPad และคอมขยายได้ถึง 28px */
+      font-size: clamp(14px, min(max(16px, 3.34vw), 100vh * 16 / 620), 28px);
+      font-size: clamp(14px, min(max(16px, 3.34vw), 100dvh * 16 / 620), 28px);
       --screen: #0d0b1f;
       --text: #f4f4f4;
       --dim: #a9a6c9;
@@ -33,120 +37,120 @@
       pointer-events: none;
       background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
     }
-    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    main { max-width: 27.5rem; margin: 0 auto; padding: 1.25rem 1.25rem 2rem; }
     .top { display: flex; justify-content: space-between; align-items: center; }
     a.icon-btn {
       display: grid;
       place-items: center;
-      border: 3px solid var(--c, var(--yellow));
+      border: 0.1875rem solid var(--c, var(--yellow));
       color: var(--c, var(--yellow));
       text-decoration: none;
     }
-    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
-    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    a.icon-btn:active { transform: translate(0.25rem, 0.25rem); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 0.1875rem dashed var(--text); outline-offset: 0.375rem; }
     .icon-btn {
-      width: 44px;
-      height: 44px;
+      width: 2.75rem;
+      height: 2.75rem;
       margin: 0;
       padding: 0;
       font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
-      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+      box-shadow: 0.25rem 0.25rem 0 var(--c, var(--yellow));
     }
     .help { --c: var(--cyan); }
     dialog {
-      width: min(400px, calc(100% - 32px));
-      padding: 20px;
-      border: 4px solid var(--yellow);
+      width: min(25rem, calc(100% - 2rem));
+      padding: 1.25rem;
+      border: 0.25rem solid var(--yellow);
       background: var(--screen);
       color: var(--text);
     }
     dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
     #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    dialog h2 { margin-top: 20px; color: var(--yellow); }
-    dialog ol { margin: 0; padding-left: 20px; }
-    dialog li { padding: 4px 0; border: 0; }
-    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    dialog h2 { margin-top: 1.25rem; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 1.25rem; }
+    dialog li { padding: 0.25rem 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem/1.4 "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
-    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
-    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    h1 { margin: 1rem 0 1.25rem; font: 400 1.8rem/1.4 "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 0.75rem; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 1rem 0 0.375rem; color: var(--dim); }
     input {
       width: 100%;
-      padding: 12px;
-      border: 3px solid var(--dim);
+      padding: 0.75rem;
+      border: 0.1875rem solid var(--dim);
       background: transparent;
       color: var(--text);
       font: inherit;
     }
     input:focus { outline: none; border-color: var(--yellow); }
     .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
-    .code-row { display: flex; align-items: center; gap: 16px; }
+    .code-row { display: flex; align-items: center; gap: 1rem; }
     /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
     .paste { --c: var(--cyan); position: relative; flex: none; }
-    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
-    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    .paste::before { content: ""; position: absolute; left: 0.5rem; top: 0.5rem; width: 1rem; height: 1.25rem; border: 0.1875rem solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 0.8125rem; top: 0.25rem; width: 0.375rem; height: 0.3125rem; border: 0.1875rem solid currentColor; background: var(--screen); }
     button {
       display: block;
       width: 100%;
-      margin-top: 16px;
-      padding: 12px;
-      border: 3px solid var(--c, var(--yellow));
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border: 0.1875rem solid var(--c, var(--yellow));
       background: var(--screen);
       color: var(--c, var(--yellow));
       font: 700 1.05rem "Chakra Petch", sans-serif;
-      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      box-shadow: 0.3125rem 0.3125rem 0 var(--c, var(--yellow));
       cursor: pointer;
     }
-    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
-    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:active:not(:disabled) { transform: translate(0.3125rem, 0.3125rem); box-shadow: none; }
+    button:focus-visible { outline: 0.1875rem dashed var(--text); outline-offset: 0.375rem; }
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
-    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .or { margin: 1.75rem 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
-    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .room-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
     .copy { --c: var(--cyan); position: relative; }
-    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
-    .copy::before { left: 9px; top: 7px; }
-    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 0.8125rem; height: 1rem; border: 0.1875rem solid currentColor; }
+    .copy::before { left: 0.5625rem; top: 0.4375rem; }
+    .copy::after { left: 1rem; top: 0.875rem; background: var(--screen); }
     ul { margin: 0; padding: 0; list-style: none; }
-    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    li { padding: 0.5rem 0; border-bottom: 0.125rem dotted #2c2950; }
     .hint { color: var(--dim); }
     .word {
-      margin: 8px 0 24px;
-      padding: 20px 12px;
-      border: 4px solid var(--yellow);
+      margin: 0.5rem 0 1.5rem;
+      padding: 1.25rem 0.75rem;
+      border: 0.25rem solid var(--yellow);
       text-align: center;
       font-size: 1.6rem;
       font-weight: 700;
     }
-    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
-    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .tag { margin-left: 0.5rem; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 0.75rem; }
     /* หลอดเวลาของตานี้ */
-    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer { height: 0.375rem; margin: 0.5rem 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     /* คะแนนแถวเดียว ยาวเกินขึ้นบรรทัดใหม่ */
     /* คะแนนระหว่างเล่น: การ์ดละคน หลอดคือระยะถึงเป้า */
-    .board-goal { margin: 0 0 6px; text-align: right; font-size: 0.8rem; color: var(--dim); }
-    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; margin-bottom: 16px; }
-    .board li { min-width: 0; padding: 6px 8px 8px; background: #15122c; border: 2px solid #2c2950; }
-    .board li.now { border-color: var(--yellow); box-shadow: 3px 3px 0 #6b5510; }
+    .board-goal { margin: 0 0 0.375rem; text-align: right; font-size: 0.8rem; color: var(--dim); }
+    .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
+    .board li { min-width: 0; padding: 0.375rem 0.5rem 0.5rem; background: #15122c; border: 0.125rem solid #2c2950; }
+    .board li.now { border-color: var(--yellow); box-shadow: 0.1875rem 0.1875rem 0 #6b5510; }
     .board li.now::before { content: none; }
     .board li.out { opacity: 0.45; }
     .board .name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.85rem; color: var(--dim); }
     .board .now .name { color: var(--text); }
     .board .name.hl { color: var(--yellow); }
     .board .out .name { text-decoration: line-through; }
-    .board b { display: block; margin-top: 4px; font: 400 0.75rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); white-space: nowrap; }
-    .board b small { margin-left: 4px; font-size: 0.6rem; color: var(--cyan); }
-    .board .meter { display: block; height: 4px; margin-top: 6px; background: #2c2950; }
+    .board b { display: block; margin-top: 0.25rem; font: 400 0.75rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); white-space: nowrap; }
+    .board b small { margin-left: 0.25rem; font-size: 0.6rem; color: var(--cyan); }
+    .board .meter { display: block; height: 0.25rem; margin-top: 0.375rem; background: #2c2950; }
     .board .meter i { display: block; width: var(--p); max-width: 100%; height: 100%; background: var(--m, var(--yellow)); }
-    .board .pips { display: flex; gap: 3px; margin-top: 6px; }
-    .board .pips i { width: 10px; height: 10px; border: 2px solid #2c2950; }
+    .board .pips { display: flex; gap: 0.1875rem; margin-top: 0.375rem; }
+    .board .pips i { width: 0.625rem; height: 0.625rem; border: 0.125rem solid #2c2950; }
     .board .pips i.on { border-color: var(--yellow); background: var(--yellow); }
     .now::before { content: "> "; color: var(--yellow); font-family: "Press Start 2P", "Chakra Petch", monospace; font-size: 0.8rem; }
-    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.75rem; }
 
     /* ลูกเต๋า: จุด 3x3 ติดเฉพาะช่องของหน้านั้น */
     .die {
@@ -155,9 +159,9 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 12%;
       margin: 0;
-      padding: 8px;
+      padding: 0.5rem;
       aspect-ratio: 1;
-      border: 3px solid var(--c);
+      border: 0.1875rem solid var(--c);
       background: var(--screen);
       color: var(--c);
       box-shadow: none;
@@ -165,32 +169,32 @@
     .die span { aspect-ratio: 1; }
     .die span.on { background: currentColor; }
     /* เต๋าในข้อความกฎ */
-    .die.inline { display: inline-grid; width: 1.4em; padding: 2px; border-width: 2px; gap: 8%; vertical-align: middle; }
+    .die.inline { display: inline-grid; width: 1.4em; padding: 0.125rem; border-width: 0.125rem; gap: 8%; vertical-align: middle; }
     /* เต๋าในมือ: แถวละ 5 ลูก อยู่กลางแถว */
-    .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 12px 0; }
-    .dice .die { flex: 0 0 min(64px, calc((100% - 48px) / 5)); padding: 10px; border-width: 4px; }
+    .dice { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin: 0.75rem 0; }
+    .dice .die { flex: 0 0 min(4rem, calc((100% - 3rem) / 5)); padding: 0.625rem; border-width: 0.25rem; }
     /* เต๋าเล็กตอนเปิดเต๋า: หน้าที่เสนอเป็นสีเหลือง */
-    .dice.small { justify-content: flex-end; gap: 4px; margin: 0; }
-    .dice.small .die { --c: var(--dim); flex: 0 0 26px; padding: 3px; border-width: 2px; }
+    .dice.small { justify-content: flex-end; gap: 0.25rem; margin: 0; }
+    .dice.small .die { --c: var(--dim); flex: 0 0 1.625rem; padding: 0.1875rem; border-width: 0.125rem; }
     .dice.small .die.hit { --c: var(--yellow); }
     /* เลือกหน้าเต๋าที่จะเสนอ */
-    .faces { gap: 8px; }
-    .faces .die { --c: var(--dim); flex-basis: min(48px, calc((100% - 40px) / 6)); padding: 6px; border-width: 3px; }
+    .faces { gap: 0.5rem; }
+    .faces .die { --c: var(--dim); flex-basis: min(3rem, calc((100% - 2.5rem) / 6)); padding: 0.375rem; border-width: 0.1875rem; }
     .faces .die.picked { --c: var(--yellow); }
-    .bid { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 12px 0 4px; font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
-    .bid .die { --c: var(--yellow); width: 56px; padding: 8px; border-width: 4px; }
-    .stepper { display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 20px; }
+    .bid { display: flex; justify-content: center; align-items: center; gap: 1rem; margin: 0.75rem 0 0.25rem; font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
+    .bid .die { --c: var(--yellow); width: 3.5rem; padding: 0.5rem; border-width: 0.25rem; }
+    .stepper { display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-top: 1.25rem; }
     .stepper .qty { min-width: 2.5em; text-align: center; font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
     .liar { --c: var(--red); }
     /* กฎเสริม: ปิดอยู่เป็นสีจาง กดแล้วเป็นสีเหลือง */
     .center { text-align: center; }
     /* ทอยหาคนเริ่ม: เต๋าเรา 2 ลูกวางแยกกันตรงกลาง */
-    .pair { display: flex; justify-content: center; gap: 32px; margin: 24px 0 8px; }
-    .pair .die { --c: var(--text); width: 88px; padding: 12px; border-width: 4px; transform: rotate(-8deg); }
+    .pair { display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0 0.5rem; }
+    .pair .die { --c: var(--text); width: 5.5rem; padding: 0.75rem; border-width: 0.25rem; transform: rotate(-8deg); }
     .pair .die + .die { transform: rotate(12deg); }
-    .roll-sum { display: flex; align-items: center; gap: 8px; }
-    .roll-sum .dice { margin: 0; gap: 4px; }
-    .roll-sum .dice .die { --c: var(--text); flex: 0 0 26px; padding: 3px; border-width: 2px; }
+    .roll-sum { display: flex; align-items: center; gap: 0.5rem; }
+    .roll-sum .dice { margin: 0; gap: 0.25rem; }
+    .roll-sum .dice .die { --c: var(--text); flex: 0 0 1.625rem; padding: 0.1875rem; border-width: 0.125rem; }
     .dim { opacity: 0.45; }
     /* เต๋าที่เพิ่งทอยหาคนเริ่ม: หมุนเร็วแล้วช้าลงจนหยุด ลูกที่สองหมุนสวนทาง (1.6s ต้องตรงกับ SPIN)
        --left = เวลาที่ยังหมุนเหลือ วาดใหม่กลางคันก็หมุนต่อจากเดิม ผลแต้มรอโชว์ตอนหยุด */
@@ -203,8 +207,8 @@
     .rolling { pointer-events: none; }
     .rolling .die { animation: shake 140ms steps(2) infinite; }
     @keyframes shake {
-      from { transform: translate(-3px, 2px) rotate(-8deg); }
-      to { transform: translate(3px, -2px) rotate(8deg); }
+      from { transform: translate(-0.1875rem, 0.125rem) rotate(-8deg); }
+      to { transform: translate(0.1875rem, -0.125rem) rotate(8deg); }
     }
     /* จับโกหก: ป้าย "โกหก!" ทับจอ แล้วเปิดเต๋าทีละคน หน้าที่นับได้เด้งเป็นสีเหลือง สุดท้ายค่อยโชว์ผล
        --t = เวลาที่เต๋าลูกนั้นพลิก, --end = เวลาโชว์ผล, --shift = เวลาที่ผ่านไปแล้ว (วาดใหม่กลางคันไม่เริ่มใหม่) */
@@ -213,8 +217,8 @@
       top: 40%;
       left: 50%;
       z-index: 10;
-      padding: 4px 20px;
-      border: 6px solid var(--red);
+      padding: 0.25rem 1.25rem;
+      border: 0.375rem solid var(--red);
       background: var(--screen);
       color: var(--red);
       font: 700 3.5rem "Chakra Petch", sans-serif;
@@ -244,7 +248,7 @@
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
-    .status { margin: 16px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .status { margin: 1rem 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
     .error { color: var(--red); }
   </style>
 </head>
@@ -436,7 +440,7 @@
         <div class="pair${me.out ? " dim" : ""}${me.dice ? spin(me) : ""}" style="--left: ${left(me)}ms">${me.dice ? me.dice.map(face).join("") : blank + blank}</div>
         <p class="status landing" style="--left: ${Math.max(0, statusAt - now)}ms">${status}</p>
         ${o.mine ? `<button id="first-roll">ทอย</button>` : o.starter ? "" : `<p class="hint center">รอคนอื่นทอย</p>`}
-        <ul style="margin-top: 24px">${others.map((p) => `
+        <ul style="margin-top: 1.5rem">${others.map((p) => `
           <li class="row${p.out ? " dim" : ""}"><span${p.name === o.starter ? ' class="hl"' : ""}>${esc(p.name)}</span>${p.dice
             ? `<span class="roll-sum" style="--left: ${left(p)}ms"><span class="dice${spin(p)}">${p.dice.map(face).join("")}</span><span class="landing">${sum(p.dice)}</span></span>`
             : `<span class="hint">?</span>`}</li>`).join("")}
@@ -563,7 +567,7 @@
           </div>
           <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}</h2>
+          <h2 style="margin-top: 1rem">ผู้เล่น ${v.players.length}</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `<p class="hint">ส่งรหัสให้เพื่อน (2 คนขึ้นไป)</p>
@@ -600,7 +604,7 @@
                <p class="center">${esc(v.bid.name)}</p>`
             : ""}
           <p class="hint center">ทั้งวง ${v.total} ลูก${v.pal ? ` <span class="hl">ปาลิฟิโก</span>` : ""}</p>
-          <h2 style="margin-top: 24px">เต๋าของคุณ</h2>
+          <h2 style="margin-top: 1.5rem">เต๋าของคุณ</h2>
           ${v.out ? `<p class="bad">ตกรอบ</p>` : `<div class="dice" id="hand">${v.hand.map((d) => die(d)).join("")}</div>`}
           ${v.myTurn
             ? `<div class="stepper">
@@ -639,7 +643,7 @@
               : v.out ? `<p class="hint center">รอคนอื่น</p>`
               : v.ready ? `<p class="good center">รอคนอื่น</p>` : `<button id="next" data-sfx="next">รอบต่อไป</button>`}
             ${v.screen === "reveal" ? `<p class="hint center">พร้อม ${v.readyCount}/${v.aliveCount}</p>` : ""}
-            <div style="margin-top: 24px">${scorebar(v)}</div>
+            <div style="margin-top: 1.5rem">${scorebar(v)}</div>
           </div>
         </div>`;
       if (app.querySelector("#next")) app.querySelector("#next").onclick = () => send({ t: "ready" });
