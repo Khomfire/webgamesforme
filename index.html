@@ -145,6 +145,7 @@
       { id: "go", name: "GO", desc: "วางหมากล้อมพื้นที่ ได้มากกว่าชนะ", players: "2 คน" },
       { id: "dominoes", name: "DOMINOES", desc: "ต่อแต้มให้ตรงปลายแถว หมดมือก่อนชนะ", players: "2-4 คน" },
       { id: "reversi", name: "REVERSI", desc: "หนีบแล้วพลิกหมาก สีไหนมากกว่าชนะ", players: "2 คน" },
+      { id: "splendor", name: "SPLENDOR", desc: "เก็บเพชร ซื้อการ์ด ถึง 15 แต้มก่อนชนะ", players: "2-4 คน" },
     ];
 
     // ภาพประจำเกม (SVG ขนาด 48x48) ใช้ currentColor เป็นสีของกล่อง
@@ -202,6 +203,10 @@
       // กระดาน 4x4 สี่ช่องกลางมีหมากสองสีไขว้กันแบบตอนเริ่มเกม
       reversi: `<path d="M4 4h40v40H4zM14 4v40M24 4v40M34 4v40M4 14h40M4 24h40M4 34h40" fill="none" stroke="currentColor" stroke-width="2.5"/>
         ${[[19, 19, face], [29, 29, face], [29, 19, ink], [19, 29, ink]].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="4" fill="${c}" stroke="${c === ink ? face : ink}" stroke-width="1.5"/>`).join("")}`,
+      // การ์ดเอียงอยู่ข้างหลัง เพชรเจียระไนอยู่ข้างหน้า
+      splendor: `<rect x="22" y="3" width="22" height="30" rx="3" fill="${face}" stroke="${ink}" stroke-width="2" transform="rotate(12 33 18)"/>
+        <path d="M4 22 11 13h22l7 9-18 22z" fill="currentColor" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M4 22h36M11 13l6 9 5-9 5 9 6-9M17 22l5 22 5-22" fill="none" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`,
     };
 
     const list = document.getElementById("games");
