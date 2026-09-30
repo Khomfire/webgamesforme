@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPLENDOR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --screen: #0d0b1f;
+      --text: #f4f4f4;
+      --dim: #a9a6c9;
+      --yellow: #ffd23f;
+      --red: #ff4d4d;
+      --cyan: #3ee0e0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--screen);
+      color: var(--text);
+      font: 400 1.05rem/1.6 "Chakra Petch", system-ui, sans-serif;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+    }
+    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    a.icon-btn {
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--c, var(--yellow));
+      color: var(--c, var(--yellow));
+      text-decoration: none;
+    }
+    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
+      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+    }
+    .help { --c: var(--cyan); }
+    dialog {
+      width: min(400px, calc(100% - 32px));
+      padding: 20px;
+      border: 4px solid var(--yellow);
+      background: var(--screen);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
+    #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    dialog h2 { margin-top: 20px; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 20px; }
+    dialog li { padding: 4px 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dialog-top h2 { margin: 0; }
+    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 3px solid var(--dim);
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--yellow); }
+    .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
+    .code-row { display: flex; align-items: center; gap: 16px; }
+    /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
+    .paste { --c: var(--cyan); position: relative; flex: none; }
+    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      border: 3px solid var(--c, var(--yellow));
+      background: var(--screen);
+      color: var(--c, var(--yellow));
+      font: 700 1.05rem "Chakra Petch", sans-serif;
+      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      cursor: pointer;
+    }
+    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
+    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
+    .alt { --c: var(--cyan); }
+    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
+    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .room-row .room { margin: 0; }
+    /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
+    .copy { --c: var(--cyan); position: relative; }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
+    .copy::before { left: 9px; top: 7px; }
+    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    ul { margin: 0; padding: 0; list-style: none; }
+    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    .hint { color: var(--dim); }
+    .word {
+      margin: 8px 0 24px;
+      padding: 20px 12px;
+      border: 4px solid var(--yellow);
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 12px; }
+    /* หลอดเวลาของตานี้ */
+    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
+    .center { text-align: center; }
+    .hl { color: var(--yellow); }
+    .good { color: var(--cyan); }
+    .bad { color: var(--red); }
+    .status { margin: 16px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .error { color: var(--red); }
+    .info { display: flex; justify-content: space-between; margin: 0 0 6px; color: var(--dim); font-size: 0.9rem; }
+    #log { min-height: 1.6em; margin: 8px 0 0; text-align: center; }
+    /* สีเพชร: --g สีพื้น --t สีตัวเลข */
+    .c-w { --g: #f4f4f4; --t: #1b1830; }
+    .c-u { --g: #3e8ee0; --t: #f4f4f4; }
+    .c-g { --g: #3ec46d; --t: #1b1830; }
+    .c-r { --g: #ff4d4d; --t: #1b1830; }
+    .c-k { --g: #2a2640; --t: #f4f4f4; }
+    .c-y { --g: #ffd23f; --t: #1b1830; }
+    /* วงกลมคือเพชร สี่เหลี่ยมคือส่วนลด (การ์ดที่ซื้อแล้ว) */
+    .chip {
+      display: inline-grid;
+      place-items: center;
+      flex: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(0, 0, 0, 0.35);
+      background: var(--g);
+      color: var(--t);
+      font: 400 0.6rem "Press Start 2P", "Chakra Petch", monospace;
+      vertical-align: middle;
+    }
+    .chip.gem { border-radius: 50%; }
+    .chip.bon { border-radius: 3px; }
+    .chip.c-k { border-color: #8a86b0; }
+    .chip.z { opacity: 0.25; }
+    .chip.s { width: 16px; height: 16px; font-size: 0.5rem; }
+    /* ปุ่มที่เป็นการ์ด กอง เพชร ขุนนาง ไม่ใช้หน้าตาปุ่มปกติ */
+    .card, .deck, .tok, .noble { display: block; width: auto; margin: 0; padding: 0; box-shadow: none; font: inherit; }
+    .card:disabled, .deck:disabled, .tok:disabled, .noble:disabled { opacity: 1; cursor: default; }
+    /* แถบผู้เล่น: ชื่อ การ์ดที่จอง แต้ม แล้วส่วนลดกับเพชรแต่ละสี */
+    .seats { display: grid; gap: 8px; margin-bottom: 12px; }
+    .seat { padding: 6px 8px; background: #15122c; border: 2px solid #2c2950; }
+    .seat.on { border-color: var(--yellow); box-shadow: 3px 3px 0 var(--yellow); }
+    .seat-top { display: flex; align-items: center; gap: 6px; }
+    .seat .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.9rem; }
+    .seat .pts { min-width: 2.2em; text-align: right; font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
+    .back-card { display: inline-block; width: 10px; height: 14px; border: 2px solid var(--dim); border-radius: 2px; }
+    .crown { font: 400 0.6rem "Press Start 2P", "Chakra Petch", monospace; color: #c9a0ff; }
+    .wallet { display: flex; justify-content: space-between; margin-top: 4px; }
+    .cell { display: flex; gap: 2px; }
+    /* ขุนนาง: 3 แต้ม กับส่วนลดที่ต้องมี */
+    .nobles { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+    .noble { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 60px; padding: 4px; border: 2px solid #8a86b0; background: #2a2045; color: var(--text); }
+    .noble b { font: 400 0.8rem "Press Start 2P", "Chakra Petch", monospace; color: #c9a0ff; }
+    .noble .need { display: flex; gap: 2px; }
+    .noble.ok { border-color: var(--yellow); cursor: pointer; animation: blink 0.6s steps(2) infinite; }
+    @keyframes blink { 50% { border-color: var(--red); } }
+    /* การ์ดบนโต๊ะ: แถวละระดับ กองคว่ำซ้ายสุด */
+    .tier { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 6px; }
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      border: 2px solid #3a3560;
+      border-radius: 4px;
+      background: #1d1934;
+      text-align: left;
+      transition: transform 0.15s;
+    }
+    .card .band { display: flex; justify-content: space-between; align-items: center; height: 32%; padding: 0 5px; background: var(--g); color: var(--t); }
+    .card .band b { font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; }
+    .card .band i { width: 10px; height: 10px; margin-right: 2px; border: 2px solid var(--t); transform: rotate(45deg); }
+    .card .cost { display: flex; flex-wrap: wrap-reverse; gap: 3px; margin-top: auto; padding: 4px; }
+    .card .chip { width: 18px; height: 18px; font-size: 0.55rem; }
+    .card.ok { border-color: var(--yellow); }
+    .card.sel { outline: 3px solid var(--yellow); outline-offset: 2px; transform: translateY(-4px); }
+    .card.empty { border-style: dashed; background: none; }
+    .card.new { animation: pop 0.35s ease-out; }
+    @keyframes pop { from { transform: scale(1.4); opacity: 0; } }
+    .l1 { --lv: #3ec46d; }
+    .l2 { --lv: #ffd23f; }
+    .l3 { --lv: #3e8ee0; }
+    .deck, .card.back {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 3 / 4;
+      border: 2px solid var(--lv);
+      border-radius: 4px;
+      background: repeating-linear-gradient(45deg, #15122c 0 6px, #1d1934 6px 12px);
+      color: var(--lv);
+      font: 400 0.65rem/1.8 "Press Start 2P", "Chakra Petch", monospace;
+      text-align: center;
+    }
+    .deck.sel { outline: 3px solid var(--yellow); outline-offset: 2px; }
+    .deck:empty { border-style: dashed; background: none; }
+    /* กองเพชรกลางโต๊ะ แตะเพื่อเลือกหยิบ */
+    .bank { display: flex; justify-content: space-between; margin: 16px 0 0; }
+    .tok {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(0, 0, 0, 0.35);
+      border-radius: 50%;
+      background: var(--g);
+      color: var(--t);
+      font: 400 0.85rem "Press Start 2P", "Chakra Petch", monospace;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+      transition: transform 0.15s;
+    }
+    .tok.c-k { border-color: #8a86b0; }
+    .tok.none { opacity: 0.3; }
+    .tok.picked { outline: 3px solid var(--yellow); outline-offset: 3px; transform: translateY(-5px); }
+    .tok .n { position: absolute; top: -10px; right: -10px; display: grid; place-items: center; width: 22px; height: 22px; background: var(--yellow); color: #1b1830; font-size: 0.6rem; }
+    .acts { display: flex; gap: 12px; }
+    .acts button { flex: 1; }
+    .acts small { margin-left: 6px; font-weight: 400; }
+    .mine { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+    @media (prefers-reduced-motion: reduce) {
+      .card.new, .noble.ok { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <a class="icon-btn back" href="../../" aria-label="กลับไปเลือกเกม">&lt;</a>
+      <button class="icon-btn help" id="rules-open" aria-label="ดูกฎเกม">?</button>
+    </div>
+    <h1>SPLENDOR</h1>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <div class="dialog-top">
+        <h2 id="rules-title">กติกา</h2>
+        <button class="icon-btn" id="rules-close" aria-label="ปิดกฎเกม">&times;</button>
+      </div>
+      <ol>
+        <li>ตาละ 1 อย่าง:<br>
+          - หยิบเพชร 3 สีไม่ซ้ำ<br>
+          - หยิบเพชรสีเดียว 2 เหรียญ (กองนั้นต้องมีอย่างน้อย 4)<br>
+          - จองการ์ดบนโต๊ะหรือบนกองคว่ำ ได้ทอง 1 จองไว้ได้ไม่เกิน 3 ใบ<br>
+          - ซื้อการ์ดบนโต๊ะหรือที่จองไว้</li>
+        <li>การ์ดที่ซื้อเป็นส่วนลดถาวรสีละ 1 <span class="chip bon c-u s"></span> ทอง <span class="chip gem c-y s"></span> ใช้แทนเพชรสีไหนก็ได้</li>
+        <li>ถือเพชรได้ไม่เกิน 10 เกินต้องคืน</li>
+        <li>ส่วนลดครบตามขุนนาง ขุนนางมาหาเอง ได้ 3 แต้ม (ตาละ 1)</li>
+        <li>มีคนถึง 15 แต้ม เล่นต่อจนครบรอบ แต้มมากสุดชนะ เสมอกันการ์ดน้อยกว่าชนะ</li>
+        <li>ตาละ <span id="rule-time">60</span>s หมดเวลา: ข้ามตา</li>
+        <li>แตะเพชรหรือการ์ดเพื่อเลือก แตะเพชรสีเดิมซ้ำเพื่อหยิบ 2</li>
+      </ol>
+    </dialog>
+    <dialog id="winner" aria-labelledby="winner-title">
+      <div class="dialog-top">
+        <h2 id="winner-title">ผู้ชนะ</h2>
+        <button class="icon-btn" id="winner-close" aria-label="ปิด">&times;</button>
+      </div>
+      <div id="winner-body"></div>
+      <canvas id="fireworks" aria-hidden="true"></canvas>
+    </dialog>
+    <div id="app"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="../../net.js"></script>
+  <script src="../../sfx.js"></script>
+  <script src="../../fireworks.js"></script>
+  <script src="../../pause.js"></script>
+  <script src="../../resign.js"></script>
+  <script src="../../setup.js"></script>
+  <script>
+    const app = document.getElementById("app");
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+    const savedName = () => { try { return localStorage.getItem("wgfm-name") || ""; } catch { return ""; } };
+    const saveName = (n) => { try { localStorage.setItem("wgfm-name", n); } catch {} };
+
+    let view = { screen: "home" }, viewAt = 0; // viewAt: เวลาที่ได้สถานะล่าสุด ไว้นับเวลาที่เหลือของตา
+    function show(next) { view = { ...view, ...next }; render(); }
+
+    // ที่เลือกไว้ในตาเรา: pick เพชรที่จะหยิบ, sel การ์ด { card } หรือกอง { deck }, back เพชรที่จะคืน
+    // fresh: การ์ดที่เพิ่งเปิดบนโต๊ะ (เล่นแอนิเมชันครั้งเดียวตอนได้สถานะใหม่)
+    let pick = [], sel = null, back = [], fresh = new Set(), seen = null;
+
+    let room;
+    const send = (msg) => room.send(msg);
+    // เข้าห้อง (ไม่มีรหัส = สร้างห้องใหม่) ตัวคุมเกมอยู่ที่ server ส่งสถานะของเรามาให้วาด
+    function enter(name, code, saved) {
+      room = openRoom("splendor", (v) => {
+        view = v;
+        viewAt = performance.now();
+        pick = []; sel = null; back = [];
+        const ids = v.market ? v.market.flat().filter(Boolean).map((c) => c.id) : [];
+        fresh = new Set(seen ? ids.filter((id) => !seen.has(id)) : []);
+        seen = v.market ? new Set(ids) : null;
+        render();
+        fresh = new Set();
+      }, (error) => show({ screen: "home", error }), saved);
+      if (saved) room.resume();
+      else if (code) room.join(code, name);
+      else room.create(name);
+    }
+
+    // ---------- เพชร การ์ด ขุนนาง ----------
+    const GEMS = ["w", "u", "g", "r", "k"];
+    const NAMES = { w: "ขาว", u: "น้ำเงิน", g: "เขียว", r: "แดง", k: "ดำ", y: "ทอง" };
+    const LV = ["", "I", "II", "III"];
+    const chip = (c, n, cls) => `<span class="chip ${cls} c-${c}${n ? "" : " z"}">${n}</span>`;
+    const costText = (cost) => GEMS.filter((c, i) => cost[i]).map((c) => `${NAMES[c]} ${cost[GEMS.indexOf(c)]}`).join(" ");
+
+    function cardHtml(card, cls = "", enabled = false) {
+      if (!card) return `<span class="card empty"></span>`;
+      if (!card.b) return `<span class="card back l${card.l}" role="img" aria-label="การ์ดคว่ำ ระดับ ${card.l}">${LV[card.l]}</span>`;
+      return `<button class="card ${cls}${fresh.has(card.id) ? " new" : ""}" data-card="${card.id}" ${enabled ? "" : "disabled"}
+        aria-label="การ์ด${NAMES[card.b]} ${card.p} แต้ม ราคา ${costText(card.c)}">
+        <span class="band c-${card.b}"><b>${card.p || ""}</b><i></i></span>
+        <span class="cost">${GEMS.map((c, i) => (card.c[i] ? chip(c, card.c[i], "gem") : "")).join("")}</span></button>`;
+    }
+
+    const nobleHtml = (n, ok) => `
+      <button class="noble${ok ? " ok" : ""}" data-noble="${n.id}" ${ok ? "" : "disabled"} aria-label="ขุนนาง 3 แต้ม ต้องมีส่วนลด ${costText(n.need)}">
+        <b>3</b><span class="need">${GEMS.map((c, i) => (n.need[i] ? chip(c, n.need[i], "bon s") : "")).join("")}</span></button>`;
+
+    // ทองที่ต้องใช้ซื้อ ซื้อไม่ได้คืน -1 (สำเนาจาก server: supabase/functions/game/splendor.js ต้องแก้ให้ตรงกัน)
+    function goldNeeded(p, card) {
+      const need = GEMS.reduce((m, c, i) => m + Math.max(0, card.c[i] - p.bonus[i] - p.gems[c]), 0);
+      return need <= p.gems.y ? need : -1;
+    }
+    // หยิบได้ไหม (สำเนาจาก server ต้องแก้ให้ตรงกัน)
+    function canTake(bank, gems) {
+      if (gems.length === 2 && gems[0] === gems[1]) return bank[gems[0]] >= 4;
+      const left = GEMS.filter((c) => bank[c] > 0).length;
+      return gems.length === Math.min(3, left) && gems.length > 0 && new Set(gems).size === gems.length && gems.every((c) => bank[c] > 0);
+    }
+
+    const seatsBar = (v) => `
+      <ul class="seats" aria-label="ผู้เล่น">${v.seats.map((p) => `
+        <li class="seat${p.id === v.turn ? " on" : ""}">
+          <div class="seat-top">
+            <span class="name">${p.id === v.me ? `<span class="hl">${esc(p.name)}</span>` : esc(p.name)}</span>
+            ${p.reserved.map(() => `<span class="back-card"></span>`).join("")}
+            ${p.nobles.length ? `<span class="crown" aria-label="ขุนนาง ${p.nobles.length}">N${p.nobles.length}</span>` : ""}
+            <b class="pts" aria-label="${p.points} แต้ม">${p.points}</b>
+          </div>
+          <div class="wallet">${GEMS.map((c, i) => `<span class="cell" aria-label="${NAMES[c]} ส่วนลด ${p.bonus[i]} เพชร ${p.gems[c]}">${chip(c, p.bonus[i], "bon")}${chip(c, p.gems[c], "gem")}</span>`).join("")}
+            <span class="cell" aria-label="ทอง ${p.gems.y}">${chip("y", p.gems.y, "gem")}</span></div>
+        </li>`).join("")}
+      </ul>`;
+
+    const scoreboard = (v) => {
+      const win = (v.winner || "").split(", ");
+      const ranked = [...v.seats].sort((a, b) => b.points - a.points || a.cards - b.cards);
+      return `<h2>แต้ม</h2>
+        <ul>${ranked.map((p) => `
+          <li class="row"><span>${v.screen === "over" && win.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}</span>
+            <span>${p.points} <small class="hint">${p.cards} ใบ</small></span></li>`).join("")}
+          ${v.out.map((p) => `<li class="row hint"><span>${esc(p.name)}</span><span>-</span></li>`).join("")}
+        </ul>`;
+    };
+
+    function logText(v) {
+      const g = v.log;
+      if (!g) return "";
+      const name = (id) => (id === v.me ? "คุณ" : esc((v.seats.find((p) => p.id === id) || { name: "?" }).name));
+      const out = [];
+      if (g.late) out.push(`<span class="bad">${name(g.late)} หมดเวลา</span>`);
+      if (g.t === "take") out.push(`${name(g.by)} หยิบ ${g.gems.map((c) => chip(c, "", "gem s")).join(" ")}`);
+      if (g.t === "buy") out.push(`${name(g.by)} ซื้อ ${chip(g.card.b, g.card.p || "", "bon")}`);
+      if (g.t === "reserve") out.push(`${name(g.by)} จอง ${g.card ? chip(g.card.b, g.card.p || "", "bon") : `กอง ${LV[g.l]}`}`);
+      if (g.t === "skip" && !g.late) out.push(`${name(g.by)} ผ่าน`);
+      if (g.back) out.push(`คืน ${g.back.map((c) => chip(c, "", "gem s")).join(" ")}`);
+      if (g.noble !== undefined) out.push(`<span class="hl">ขุนนางมาหา${name(g.by)}</span>`);
+      return out.join(" / ");
+    }
+
+    // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 10 วิสุดท้ายเป็นสีแดง
+    // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
+    let timeoutTimer;
+    function runTimer(v) {
+      const bar = app.querySelector(".timer i");
+      if (!bar) return;
+      const left = Math.max(0, v.turnLeft - (performance.now() - viewAt)), total = v.time, warn = 10000;
+      const red = "var(--red)", yellow = "var(--yellow)";
+      const frames = left > warn
+        ? [
+          { transform: `scaleX(${left / total})`, background: yellow },
+          { transform: `scaleX(${warn / total})`, background: yellow, offset: 1 - warn / left },
+          { transform: `scaleX(${warn / total})`, background: red, offset: 1 - warn / left },
+          { transform: "scaleX(0)", background: red },
+        ]
+        : [{ transform: `scaleX(${left / total})`, background: red }, { transform: "scaleX(0)", background: red }];
+      const anim = bar.animate(frames, { duration: left, fill: "forwards" });
+      if (v.paused) return anim.pause(); // หยุดเกมอยู่ หลอดค้างไว้ ไม่แจ้งหมดเวลา
+      timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
+    }
+
+    // ปุ่มของตาเรา: หยิบเพชรที่เลือก ซื้อหรือจองการ์ดที่เลือก คืนเพชร
+    function actsHtml(v, me) {
+      if (!v.myTurn) return "";
+      if (v.stage === "discard") {
+        return `<p class="hint center">เลือกเพชรที่จะคืน ${back.length}/${v.discard}</p>
+          <div class="bank">${[...GEMS, "y"].map((c) => {
+            const n = back.filter((x) => x === c).length;
+            return `<button class="tok c-${c}${n ? " picked" : ""}${me.gems[c] ? "" : " none"}" data-back="${c}" ${me.gems[c] ? "" : "disabled"} aria-label="${NAMES[c]} ${me.gems[c]}">${me.gems[c]}${n ? `<span class="n">-${n}</span>` : ""}</button>`;
+          }).join("")}</div>
+          <button id="discard" ${back.length === v.discard ? "" : "disabled"}>คืน</button>`;
+      }
+      if (v.stage !== "act") return "";
+      const out = [];
+      if (sel && sel.card !== undefined) {
+        const card = [...v.market.flat(), ...me.reserved].find((c) => c && c.id === sel.card);
+        const gold = goldNeeded(me, card);
+        out.push(`<button id="buy" data-sfx="confirm" ${gold < 0 ? "disabled" : ""}>ซื้อ${gold > 0 ? `<small>ใช้ทอง ${gold}</small>` : ""}</button>`);
+        if (!me.reserved.some((c) => c.id === sel.card)) out.push(`<button id="reserve" class="alt" ${me.reserved.length >= 3 ? "disabled" : ""}>จอง</button>`);
+      } else if (sel) out.push(`<button id="reserve" class="alt" ${me.reserved.length >= 3 ? "disabled" : ""}>จองกอง ${LV[sel.deck]}</button>`);
+      else if (pick.length) out.push(`<button id="take" data-sfx="confirm" ${canTake(v.bank, pick) ? "" : "disabled"}>หยิบ</button>`);
+      if (v.canPass) out.push(`<button id="pass">ผ่าน</button>`);
+      return out.length ? `<div class="acts">${out.join("")}</div>` : `<p class="hint center" style="margin: 16px 0 0">แตะเพชรหรือการ์ด</p>`;
+    }
+
+    // แตะเพชรสีเดิมที่เลือกไว้สีเดียว = หยิบ 2 (ถ้ากองมีพอ) แตะอีกครั้งยกเลิก
+    function tapGem(c) {
+      if (pick.length === 1 && pick[0] === c) pick = view.bank[c] >= 4 ? [c, c] : [];
+      else if (pick.includes(c)) pick = pick.filter((x) => x !== c);
+      else if (pick.length === 2 && pick[0] === pick[1]) pick = [c];
+      else if (pick.length < 3) pick = [...pick, c];
+      sel = null;
+      render();
+    }
+
+    let lastScreen, lastMyTurn, lastLog;
+    function render() {
+      const v = view;
+      pauseUi(v, send);
+      resignUi(v, send);
+      clearTimeout(timeoutTimer);
+      if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
+      const gameOver = v.screen === "over" && lastScreen !== "over";
+      if (v.screen !== "over" && winner.open) winner.close();
+      if (gameOver) playSfx("win");
+      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
+      const logKey = JSON.stringify(v.log || null);
+      if (lastLog !== undefined && logKey !== lastLog && v.log && v.screen === "play" && v.log.by !== v.me) playSfx(v.log.t === "buy" ? "place" : "confirm");
+      if (lastLog !== undefined && logKey !== lastLog && v.log && v.log.noble !== undefined && v.log.by === v.me) playSfx("win");
+      lastScreen = v.screen;
+      lastMyTurn = v.myTurn;
+      lastLog = logKey;
+
+      if (v.screen === "home") {
+        app.innerHTML = `
+          ${v.error ? `<p class="error">${esc(v.error)}</p>` : ""}
+          <label for="name">ชื่อ</label>
+          <input id="name" maxlength="20" value="${esc(savedName())}" autocomplete="nickname">
+          <button id="host" data-sfx="create">สร้างห้อง</button>
+          <p class="or">หรือ</p>
+          <label for="code">รหัสห้อง</label>
+          <div class="code-row">
+            <input id="code" class="code-input" maxlength="4" autocomplete="off">
+            <button class="icon-btn paste" id="paste" aria-label="วางรหัสห้อง"></button>
+          </div>
+          <button id="join" class="alt" data-sfx="join">เข้าห้อง</button>`;
+        app.querySelector("#host").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          app.innerHTML = `<p class="hint">กำลังสร้างห้อง...</p>`;
+          enter(name);
+        };
+        // วางรหัสห้องจากคลิปบอร์ด เก็บเฉพาะตัวอักษร 4 ตัวแรก วางไม่ได้ให้โฟกัสช่องไว้วางเอง
+        app.querySelector("#paste").onclick = () => {
+          const input = app.querySelector("#code");
+          navigator.clipboard.readText()
+            .then((text) => (input.value = text.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)))
+            .catch(() => input.focus());
+        };
+        app.querySelector("#join").onclick = () => {
+          const name = app.querySelector("#name").value.trim();
+          const code = app.querySelector("#code").value.trim().toUpperCase();
+          if (!name) return show({ error: "ใส่ชื่อก่อน" });
+          saveName(name);
+          if (code.length !== 4) return show({ error: "รหัสมี 4 ตัว" });
+          app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(code)}...</p>`;
+          enter(name, code);
+        };
+        return;
+      }
+
+      if (v.screen === "lobby") {
+        const enough = v.players.length >= 2;
+        const set = [{ key: "time", label: "ตาละ", value: v.time / 1000, unit: "s", min: 30, max: 180, step: 30 }];
+        app.innerHTML = `
+          <div class="room-row">
+            <span class="hint">ห้อง</span>
+            <p class="room">${esc(v.code)}</p>
+            <button class="icon-btn copy" id="copy" data-sfx="confirm" aria-label="คัดลอกรหัสห้อง"></button>
+            <span class="good" id="copied" hidden>คัดลอกแล้ว</span>
+          </div>
+          <h2>ตั้งค่า</h2>
+          ${setupHtml(set, v.isHost)}
+          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/4</h2>
+          <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
+          ${v.isHost
+            ? `${enough ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
+               <button id="start" data-sfx="start" ${enough ? "" : "disabled"}>เริ่ม</button>`
+            : `<p class="hint">รอเริ่มเกม</p>`}`;
+        app.querySelector("#copy").onclick = () => navigator.clipboard.writeText(v.code).then(() => {
+          const done = app.querySelector("#copied");
+          done.hidden = false;
+          setTimeout(() => (done.hidden = true), 1500);
+        });
+        setupBind(app, set, send);
+        if (v.isHost) app.querySelector("#start").onclick = () => send({ t: "start" });
+        return;
+      }
+
+      if (v.screen === "over") {
+        app.innerHTML = `${scoreboard(v)}
+          ${v.isHost ? `<button id="newgame" data-sfx="start">เกมใหม่</button>` : `<p class="hint">รอเกมใหม่</p>`}`;
+        if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
+        if (gameOver) {
+          document.getElementById("winner-body").innerHTML = `<p class="word hl">${esc(v.winner)}</p>${scoreboard(v)}`;
+          winner.showModal();
+          fireworks();
+        }
+        return;
+      }
+
+      // play: ตาเราเลือกการ์ด กอง หรือเพชรได้
+      const me = v.seats.find((p) => p.id === v.me);
+      const acting = v.myTurn && v.stage === "act";
+      const turnP = v.seats.find((p) => p.id === v.turn);
+      const cardCls = (c) => `${acting && goldNeeded(me, c) >= 0 ? "ok" : ""}${sel && sel.card === c.id ? " sel" : ""}`;
+      const status = !v.myTurn ? `ตา ${turnP ? esc(turnP.name) : ""}`
+        : `<span class="hl">${v.stage === "discard" ? "เพชรเกิน 10" : v.stage === "noble" ? "เลือกขุนนาง" : "ตาคุณ"}</span>`;
+      app.innerHTML = `
+        ${seatsBar(v)}
+        ${v.final ? `<p class="info"><span class="bad">รอบสุดท้าย</span></p>` : ""}
+        <p class="status">${status}</p>
+        <div class="timer" aria-hidden="true"><i></i></div>
+        <div class="nobles" aria-label="ขุนนาง">${v.nobles.map((n) => nobleHtml(n, v.choose.includes(n.id))).join("")}</div>
+        <div aria-label="การ์ดบนโต๊ะ">${[3, 2, 1].map((l) => `
+          <div class="tier">
+            <button class="deck l${l}${sel && sel.deck === l ? " sel" : ""}" data-deck="${l}" ${acting && v.decks[l - 1] && me.reserved.length < 3 ? "" : "disabled"}
+              aria-label="กองระดับ ${l} เหลือ ${v.decks[l - 1]}">${v.decks[l - 1] ? `${LV[l]}<br>${v.decks[l - 1]}` : ""}</button>
+            ${v.market[l - 1].map((c) => cardHtml(c, c ? cardCls(c) : "", acting)).join("")}
+          </div>`).join("")}
+        </div>
+        <div class="bank" aria-label="กองเพชร">${[...GEMS, "y"].map((c) => {
+          const n = pick.filter((x) => x === c).length;
+          return `<button class="tok c-${c}${n ? " picked" : ""}${v.bank[c] ? "" : " none"}" data-gem="${c}" ${acting && c !== "y" && v.bank[c] ? "" : "disabled"}
+            aria-label="${NAMES[c]} ${v.bank[c]}">${v.bank[c]}${n ? `<span class="n">+${n}</span>` : ""}</button>`;
+        }).join("")}</div>
+        ${actsHtml(v, me)}
+        ${me.reserved.length ? `<h2 style="margin: 16px 0 0">จองไว้</h2><div class="mine">${me.reserved.map((c) => cardHtml(c, cardCls(c), acting)).join("")}</div>` : ""}
+        <p id="log">${logText(v)}</p>`;
+
+      app.querySelectorAll(".card[data-card]").forEach((b) => (b.onclick = () => {
+        const id = Number(b.dataset.card);
+        sel = sel && sel.card === id ? null : { card: id };
+        pick = [];
+        render();
+      }));
+      app.querySelectorAll("[data-deck]").forEach((b) => (b.onclick = () => {
+        const l = Number(b.dataset.deck);
+        sel = sel && sel.deck === l ? null : { deck: l };
+        pick = [];
+        render();
+      }));
+      app.querySelectorAll("[data-gem]").forEach((b) => (b.onclick = () => tapGem(b.dataset.gem)));
+      // คืนเพชร: แตะเพิ่มทีละเหรียญ ครบที่ถือหรือครบที่ต้องคืนแล้วแตะอีกครั้งยกเลิกสีนั้น
+      app.querySelectorAll("[data-back]").forEach((b) => (b.onclick = () => {
+        const c = b.dataset.back;
+        if (back.length < v.discard && back.filter((x) => x === c).length < me.gems[c]) back.push(c);
+        else back = back.filter((x) => x !== c);
+        render();
+      }));
+      app.querySelectorAll(".noble.ok").forEach((b) => (b.onclick = () => send({ t: "noble", noble: Number(b.dataset.noble) })));
+      const on = (id, fn) => app.querySelector(id) && (app.querySelector(id).onclick = fn);
+      on("#take", () => send({ t: "take", gems: pick }));
+      on("#buy", () => send({ t: "buy", card: sel.card }));
+      on("#reserve", () => send(sel.card !== undefined ? { t: "reserve", card: sel.card } : { t: "reserve", l: sel.deck }));
+      on("#discard", () => send({ t: "discard", gems: back }));
+      on("#pass", () => send({ t: "pass" }));
+      runTimer(v);
+    }
+
+    const rules = document.getElementById("rules");
+    document.getElementById("rules-open").onclick = () => rules.showModal();
+    document.getElementById("rules-close").onclick = () => rules.close();
+    const winner = document.getElementById("winner");
+    document.getElementById("winner-close").onclick = () => winner.close();
+
+    // กด < ออกจากห้องทันที ส่วนปิดแท็บหรือรีเฟรชไม่ออก (รีเฟรชแล้วกลับเข้าห้องเดิม ปิดแท็บไปเกิน 1 นาทีคนอื่นจะเอาออกให้)
+    document.querySelector(".back").addEventListener("click", () => room && room.leave());
+
+    const saved = savedRoom("splendor");
+    if (saved) {
+      app.innerHTML = `<p class="hint">กำลังเข้าห้อง ${esc(saved.code)}...</p>`;
+      enter(null, null, saved);
+    } else render();
+  </script>
+</body>
+</html>
