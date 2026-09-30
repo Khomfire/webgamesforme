@@ -3,12 +3,12 @@
 // หน้าเกมใส่ไฟล์นี้หลัง pause.js แล้วเรียก resignUi(view, send) ทุกครั้งที่วาดใหม่
 const resignStyle = document.createElement("style");
 resignStyle.textContent = `
-  .top .resign-btn { --c: var(--red); position: relative; margin: 0 16px 0 auto; }
+  .top .resign-btn { --c: var(--red); position: relative; margin: 0 1rem 0 auto; }
   .top .resign-btn[hidden] { display: none; }
   .top .resign-btn:not([hidden]) + .pause-btn { margin-left: 0; }
   /* ธงขาว: เสาหนึ่งเส้นกับผืนธง */
-  .resign-btn::before { content: ""; position: absolute; left: 12px; top: 8px; width: 3px; height: 24px; background: currentColor; }
-  .resign-btn::after { content: ""; position: absolute; left: 15px; top: 8px; width: 14px; height: 10px; background: currentColor; }
+  .resign-btn::before { content: ""; position: absolute; left: 0.75rem; top: 0.5rem; width: 0.1875rem; height: 1.5rem; background: currentColor; }
+  .resign-btn::after { content: ""; position: absolute; left: 0.9375rem; top: 0.5rem; width: 0.875rem; height: 0.625rem; background: currentColor; }
   #resign-yes { --c: var(--red); }
 `;
 document.head.append(resignStyle);

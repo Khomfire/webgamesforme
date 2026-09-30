@@ -11,6 +11,10 @@
   <style>
     :root {
       color-scheme: dark;
+      /* ขนาดทั้งหน้าเป็น rem: ย่อขยายตามจอ ให้หน้าเล่น (สูงราว 1080px ที่ 16px) พอดีจอ
+         มือถือ 16px จอเตี้ยย่อได้ถึง 14px จอใหญ่อย่าง iPad และคอมขยายได้ถึง 28px */
+      font-size: clamp(14px, min(max(16px, 3.34vw), 100vh * 16 / 1080), 28px);
+      font-size: clamp(14px, min(max(16px, 3.34vw), 100dvh * 16 / 1080), 28px);
       --screen: #0d0b1f;
       --text: #f4f4f4;
       --dim: #a9a6c9;
@@ -33,107 +37,107 @@
       pointer-events: none;
       background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
     }
-    main { max-width: 440px; margin: 0 auto; padding: 32px 20px 64px; }
+    main { max-width: 27.5rem; margin: 0 auto; padding: 1.25rem 1.25rem 2rem; }
     .top { display: flex; justify-content: space-between; align-items: center; }
     a.icon-btn {
       display: grid;
       place-items: center;
-      border: 3px solid var(--c, var(--yellow));
+      border: 0.1875rem solid var(--c, var(--yellow));
       color: var(--c, var(--yellow));
       text-decoration: none;
     }
-    a.icon-btn:active { transform: translate(4px, 4px); box-shadow: none; }
-    a.icon-btn:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    a.icon-btn:active { transform: translate(0.25rem, 0.25rem); box-shadow: none; }
+    a.icon-btn:focus-visible { outline: 0.1875rem dashed var(--text); outline-offset: 0.375rem; }
     .icon-btn {
-      width: 44px;
-      height: 44px;
+      width: 2.75rem;
+      height: 2.75rem;
       margin: 0;
       padding: 0;
       font: 400 1rem "Press Start 2P", "Chakra Petch", monospace;
-      box-shadow: 4px 4px 0 var(--c, var(--yellow));
+      box-shadow: 0.25rem 0.25rem 0 var(--c, var(--yellow));
     }
     .help { --c: var(--cyan); }
     dialog {
-      width: min(400px, calc(100% - 32px));
-      padding: 20px;
-      border: 4px solid var(--yellow);
+      width: min(25rem, calc(100% - 2rem));
+      padding: 1.25rem;
+      border: 0.25rem solid var(--yellow);
       background: var(--screen);
       color: var(--text);
     }
     dialog::backdrop { background: rgba(13, 11, 31, 0.85); }
     #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    dialog h2 { margin-top: 20px; color: var(--yellow); }
-    dialog ol { margin: 0; padding-left: 20px; }
-    dialog li { padding: 4px 0; border: 0; }
-    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    dialog h2 { margin-top: 1.25rem; color: var(--yellow); }
+    dialog ol { margin: 0; padding-left: 1.25rem; }
+    dialog li { padding: 0.25rem 0; border: 0; }
+    .dialog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
     .dialog-top h2 { margin: 0; }
-    h1 { margin: 20px 0 28px; font: 400 1.8rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
-    h2 { margin: 0 0 12px; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
-    label { display: block; margin: 16px 0 6px; color: var(--dim); }
+    h1 { margin: 1rem 0 1.25rem; font: 400 1.8rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
+    h2 { margin: 0 0 0.75rem; font-size: 1.1rem; color: var(--dim); font-weight: 400; }
+    label { display: block; margin: 1rem 0 0.375rem; color: var(--dim); }
     input {
       width: 100%;
-      padding: 12px;
-      border: 3px solid var(--dim);
+      padding: 0.75rem;
+      border: 0.1875rem solid var(--dim);
       background: transparent;
       color: var(--text);
       font: inherit;
     }
     input:focus { outline: none; border-color: var(--yellow); }
     .code-input { text-transform: uppercase; letter-spacing: 0.3em; }
-    .code-row { display: flex; align-items: center; gap: 16px; }
+    .code-row { display: flex; align-items: center; gap: 1rem; }
     /* ไอคอนวาง: คลิปบอร์ด วาดด้วย CSS */
     .paste { --c: var(--cyan); position: relative; flex: none; }
-    .paste::before { content: ""; position: absolute; left: 8px; top: 8px; width: 16px; height: 20px; border: 3px solid currentColor; }
-    .paste::after { content: ""; position: absolute; left: 13px; top: 4px; width: 6px; height: 5px; border: 3px solid currentColor; background: var(--screen); }
+    .paste::before { content: ""; position: absolute; left: 0.5rem; top: 0.5rem; width: 1rem; height: 1.25rem; border: 0.1875rem solid currentColor; }
+    .paste::after { content: ""; position: absolute; left: 0.8125rem; top: 0.25rem; width: 0.375rem; height: 0.3125rem; border: 0.1875rem solid currentColor; background: var(--screen); }
     button {
       display: block;
       width: 100%;
-      margin-top: 16px;
-      padding: 12px;
-      border: 3px solid var(--c, var(--yellow));
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border: 0.1875rem solid var(--c, var(--yellow));
       background: var(--screen);
       color: var(--c, var(--yellow));
       font: 700 1.05rem "Chakra Petch", sans-serif;
-      box-shadow: 5px 5px 0 var(--c, var(--yellow));
+      box-shadow: 0.3125rem 0.3125rem 0 var(--c, var(--yellow));
       cursor: pointer;
     }
-    button:active:not(:disabled) { transform: translate(5px, 5px); box-shadow: none; }
-    button:focus-visible { outline: 3px dashed var(--text); outline-offset: 6px; }
+    button:active:not(:disabled) { transform: translate(0.3125rem, 0.3125rem); box-shadow: none; }
+    button:focus-visible { outline: 0.1875rem dashed var(--text); outline-offset: 0.375rem; }
     button:disabled { --c: var(--dim); opacity: 0.5; cursor: not-allowed; }
     .alt { --c: var(--cyan); }
-    .or { margin: 28px 0 0; text-align: center; color: var(--dim); }
+    .or { margin: 1.75rem 0 0; text-align: center; color: var(--dim); }
     .room { font: 400 1.6rem "Press Start 2P", "Chakra Petch", monospace; color: var(--cyan); letter-spacing: 0.1em; }
-    .room-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .room-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
     .room-row .room { margin: 0; }
     /* ไอคอนคัดลอก: กระดาษสองแผ่นซ้อนกัน วาดด้วย CSS */
     .copy { --c: var(--cyan); position: relative; }
-    .copy::before, .copy::after { content: ""; position: absolute; width: 13px; height: 16px; border: 3px solid currentColor; }
-    .copy::before { left: 9px; top: 7px; }
-    .copy::after { left: 16px; top: 14px; background: var(--screen); }
+    .copy::before, .copy::after { content: ""; position: absolute; width: 0.8125rem; height: 1rem; border: 0.1875rem solid currentColor; }
+    .copy::before { left: 0.5625rem; top: 0.4375rem; }
+    .copy::after { left: 1rem; top: 0.875rem; background: var(--screen); }
     ul { margin: 0; padding: 0; list-style: none; }
-    li { padding: 8px 0; border-bottom: 2px dotted #2c2950; }
+    li { padding: 0.5rem 0; border-bottom: 0.125rem dotted #2c2950; }
     .hint { color: var(--dim); }
     .word {
-      margin: 8px 0 24px;
-      padding: 20px 12px;
-      border: 4px solid var(--yellow);
+      margin: 0.5rem 0 1.5rem;
+      padding: 1.25rem 0.75rem;
+      border: 0.25rem solid var(--yellow);
       text-align: center;
       font-size: 1.6rem;
       font-weight: 700;
     }
-    .tag { margin-left: 8px; font-size: 0.85rem; font-weight: 700; }
-    .row { display: flex; justify-content: space-between; gap: 12px; }
+    .tag { margin-left: 0.5rem; font-size: 0.85rem; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 0.75rem; }
     /* หลอดเวลาของตานี้ */
-    .timer { height: 6px; margin: 8px 0 0; background: #2c2950; }
+    .timer { height: 0.375rem; margin: 0.5rem 0 0; background: #2c2950; }
     .timer i { display: block; height: 100%; background: var(--yellow); transform-origin: left; }
     .center { text-align: center; }
     .hl { color: var(--yellow); }
     .good { color: var(--cyan); }
     .bad { color: var(--red); }
-    .status { margin: 16px 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+    .status { margin: 1rem 0 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
     .error { color: var(--red); }
-    .info { display: flex; justify-content: space-between; margin: 0 0 6px; color: var(--dim); font-size: 0.9rem; }
-    #log { min-height: 1.6em; margin: 8px 0 0; text-align: center; }
+    .info { display: flex; justify-content: space-between; margin: 0 0 0.375rem; color: var(--dim); font-size: 0.9rem; }
+    #log { min-height: 1.6em; margin: 0.5rem 0 0; text-align: center; }
     /* สีเพชร: --g สีพื้น --t สีตัวเลข --gs ขอบของเพชรในภาพการ์ด */
     .c-w { --g: #f4f4f4; --t: #1b1830; --gs: rgba(0, 0, 0, 0.55); }
     .c-u { --g: #3e8ee0; --t: #f4f4f4; --gs: rgba(0, 0, 0, 0.55); }
@@ -147,9 +151,9 @@
       display: inline-grid;
       place-items: center;
       flex: none;
-      width: 22px;
-      height: 22px;
-      border: 2px solid rgba(0, 0, 0, 0.35);
+      width: 1.375rem;
+      height: 1.375rem;
+      border: 0.125rem solid rgba(0, 0, 0, 0.35);
       background: var(--g);
       color: var(--t);
       font: 400 0.6rem "Press Start 2P", "Chakra Petch", monospace;
@@ -157,60 +161,60 @@
     }
     .chip.gem { position: relative; border: 0; background: none; }
     .chip.gem svg, .tok svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .chip.gem b, .tok b { position: relative; font-weight: 400; text-shadow: 0 0 2px var(--g), 0 0 2px var(--g), 0 0 2px var(--g); }
-    .chip.bon { position: relative; place-items: end center; width: 18px; height: 24px; overflow: hidden; border: 2px solid var(--g); border-radius: 3px; background: #2b1d14; }
+    .chip.gem b, .tok b { position: relative; font-weight: 400; text-shadow: 0 0 0.125rem var(--g), 0 0 0.125rem var(--g), 0 0 0.125rem var(--g); }
+    .chip.bon { position: relative; place-items: end center; width: 1.125rem; height: 1.5rem; overflow: hidden; border: 0.125rem solid var(--g); border-radius: 0.1875rem; background: #2b1d14; }
     .chip.bon.c-k { border-color: #8a86b0; }
     .chip.bon svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .chip.bon b { position: relative; font-weight: 400; color: #f4f4f4; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000; }
-    .chip.bon.s { width: 14px; height: 18px; border-width: 1.5px; }
+    .chip.bon b { position: relative; font-weight: 400; color: #f4f4f4; text-shadow: 0 0 0.125rem #000, 0 0 0.125rem #000, 0 0 0.125rem #000; }
+    .chip.bon.s { width: 0.875rem; height: 1.125rem; border-width: 0.0938rem; }
     .chip.z { opacity: 0.25; }
-    .chip.s { width: 16px; height: 16px; font-size: 0.5rem; }
+    .chip.s { width: 1rem; height: 1rem; font-size: 0.5rem; }
     /* ปุ่มที่เป็นการ์ด กอง เพชร ขุนนาง ไม่ใช้หน้าตาปุ่มปกติ */
     .card, .deck, .tok, .noble { display: block; width: auto; margin: 0; padding: 0; box-shadow: none; font: inherit; }
     .card:disabled, .deck:disabled, .tok:disabled, .noble:disabled { opacity: 1; cursor: default; }
     /* แถบผู้เล่น: ชื่อ การ์ดที่จอง แต้ม แล้วส่วนลดกับเพชรแต่ละสี */
-    .seats { display: grid; gap: 8px; margin-bottom: 12px; }
-    .seat { padding: 6px 8px; background: #15122c; border: 2px solid #2c2950; }
-    .seat.on { border-color: var(--yellow); box-shadow: 3px 3px 0 var(--yellow); }
-    .seat-top { display: flex; align-items: center; gap: 6px; }
+    .seats { display: grid; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .seat { padding: 0.375rem 0.5rem; background: #15122c; border: 0.125rem solid #2c2950; }
+    .seat.on { border-color: var(--yellow); box-shadow: 0.1875rem 0.1875rem 0 var(--yellow); }
+    .seat-top { display: flex; align-items: center; gap: 0.375rem; }
     .seat .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.9rem; }
     .seat .pts { min-width: 2.2em; text-align: right; font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; color: var(--yellow); }
-    .back-card { display: inline-block; width: 10px; height: 14px; border: 2px solid var(--dim); border-radius: 2px; }
+    .back-card { display: inline-block; width: 0.625rem; height: 0.875rem; border: 0.125rem solid var(--dim); border-radius: 0.125rem; }
     .crown { font: 400 0.6rem "Press Start 2P", "Chakra Petch", monospace; color: #c9a0ff; }
-    .wallet { display: flex; justify-content: space-between; margin-top: 4px; }
-    .cell { display: flex; gap: 2px; }
+    .wallet { display: flex; justify-content: space-between; margin-top: 0.25rem; }
+    .cell { display: flex; gap: 0.125rem; }
     /* ขุนนาง: 3 แต้ม กับส่วนลดที่ต้องมี */
-    .nobles { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+    .nobles { display: flex; justify-content: center; gap: 0.5rem; margin: 0.75rem 0; }
     /* ภาพเหมือนเต็มป้าย แต้มมุมซ้ายบน ส่วนลดที่ต้องมีอยู่แถบล่าง */
-    .noble { position: relative; width: 60px; height: 76px; overflow: hidden; border: 2px solid #8a86b0; background: #1b1530; color: var(--text); }
-    .noble .art { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% - 22px); }
-    .noble b { position: absolute; top: 3px; left: 4px; font: 400 0.8rem "Press Start 2P", "Chakra Petch", monospace; color: #f4f4f4; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000; }
-    .noble .need { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 2px; height: 22px; }
+    .noble { position: relative; width: 3.75rem; height: 4.75rem; overflow: hidden; border: 0.125rem solid #8a86b0; background: #1b1530; color: var(--text); }
+    .noble .art { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% - 1.375rem); }
+    .noble b { position: absolute; top: 0.1875rem; left: 0.25rem; font: 400 0.8rem "Press Start 2P", "Chakra Petch", monospace; color: #f4f4f4; text-shadow: 0 0 0.125rem #000, 0 0 0.125rem #000, 0 0 0.125rem #000; }
+    .noble .need { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 0.125rem; height: 1.375rem; }
     .noble.ok { border-color: var(--yellow); cursor: pointer; animation: blink 0.6s steps(2) infinite; }
     @keyframes blink { 50% { border-color: var(--red); } }
     /* การ์ดบนโต๊ะ: แถวละระดับ กองคว่ำซ้ายสุด */
-    .tier { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 6px; }
+    .tier { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.375rem; margin-bottom: 0.375rem; }
     .card {
       position: relative;
       display: flex;
       flex-direction: column;
       aspect-ratio: 3 / 4;
       overflow: hidden;
-      border: 2px solid #3a3560;
-      border-radius: 4px;
+      border: 0.125rem solid #3a3560;
+      border-radius: 0.25rem;
       background: #1d1934;
       text-align: left;
       transition: transform 0.15s;
     }
     /* ภาพเต็มใบ แถบบนโปร่งแสงมีแต้มกับเพชรส่วนลด ราคาอยู่มุมล่าง */
     .card .art { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .card .band { position: relative; display: flex; justify-content: space-between; align-items: center; height: 32%; padding: 0 4px 0 5px; background: rgba(244, 244, 244, 0.85); color: #1b1830; }
+    .card .band { position: relative; display: flex; justify-content: space-between; align-items: center; height: 32%; padding: 0 0.25rem 0 0.3125rem; background: rgba(244, 244, 244, 0.85); color: #1b1830; }
     .card .band b { font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; }
-    .card .band svg { width: 18px; height: 18px; }
-    .card .cost { position: relative; display: flex; flex-wrap: wrap-reverse; gap: 3px; margin-top: auto; padding: 4px; }
-    .card .chip { width: 18px; height: 18px; font-size: 0.55rem; }
+    .card .band svg { width: 1.125rem; height: 1.125rem; }
+    .card .cost { position: relative; display: flex; flex-wrap: wrap-reverse; gap: 0.1875rem; margin-top: auto; padding: 0.25rem; }
+    .card .chip { width: 1.125rem; height: 1.125rem; font-size: 0.55rem; }
     .card.ok { border-color: var(--yellow); }
-    .card.sel { outline: 3px solid var(--yellow); outline-offset: 2px; transform: translateY(-4px); }
+    .card.sel { outline: 0.1875rem solid var(--yellow); outline-offset: 0.125rem; transform: translateY(-0.25rem); }
     .card.empty { border-style: dashed; background: none; }
     .card.new { animation: pop 0.35s ease-out; }
     @keyframes pop { from { transform: scale(1.4); opacity: 0; } }
@@ -227,38 +231,49 @@
       aspect-ratio: 3 / 4;
       overflow: hidden;
       padding: 7% 0;
-      border: 2px solid var(--lv);
-      border-radius: 4px;
+      border: 0.125rem solid var(--lv);
+      border-radius: 0.25rem;
       background: #15122c;
       color: var(--lv);
       font: 400 0.6rem/1 "Press Start 2P", "Chakra Petch", monospace;
       text-align: center;
     }
     .deck svg, .card.back svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .deck span, .card.back span { position: relative; padding: 2px 3px; background: #15122c; }
-    .deck.sel { outline: 3px solid var(--yellow); outline-offset: 2px; }
+    .deck span, .card.back span { position: relative; padding: 0.125rem 0.1875rem; background: #15122c; }
+    .deck.sel { outline: 0.1875rem solid var(--yellow); outline-offset: 0.125rem; }
     .deck:empty { border-style: dashed; background: none; }
     /* กองเพชรกลางโต๊ะ แตะเพื่อเลือกหยิบ */
-    .bank { display: flex; justify-content: space-between; margin: 16px 0 0; }
+    .bank { display: flex; justify-content: space-between; margin: 1rem 0 0; }
     .tok {
       position: relative;
-      width: 50px;
-      height: 50px;
+      width: 3.125rem;
+      height: 3.125rem;
       border: 0;
       background: none;
       color: var(--t);
       font: 400 0.85rem "Press Start 2P", "Chakra Petch", monospace;
       transition: transform 0.15s;
     }
-    .tok svg { filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.6)); }
+    .tok svg { filter: drop-shadow(0 0.1875rem 0 rgba(0, 0, 0, 0.6)); }
     .tok.none { opacity: 0.3; }
-    .tok.picked { transform: translateY(-5px); }
-    .tok.picked svg { filter: drop-shadow(0 0 2px var(--yellow)) drop-shadow(0 0 2px var(--yellow)); }
-    .tok .n { position: absolute; top: -10px; right: -10px; display: grid; place-items: center; width: 22px; height: 22px; background: var(--yellow); color: #1b1830; font-size: 0.6rem; }
-    .acts { display: flex; gap: 12px; }
+    .tok.picked { transform: translateY(-0.3125rem); }
+    .tok.picked svg { filter: drop-shadow(0 0 0.125rem var(--yellow)) drop-shadow(0 0 0.125rem var(--yellow)); }
+    .tok .n { position: absolute; top: -0.625rem; right: -0.625rem; display: grid; place-items: center; width: 1.375rem; height: 1.375rem; background: var(--yellow); color: #1b1830; font-size: 0.6rem; }
+    .acts { display: flex; gap: 0.75rem; }
     .acts button { flex: 1; }
-    .acts small { margin-left: 6px; font-weight: 400; }
-    .mine { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+    .acts small { margin-left: 0.375rem; font-weight: 400; }
+    .mine { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.375rem; margin-top: 0.5rem; }
+    /* จอแนวนอน: โต๊ะ (ขุนนาง การ์ด เพชร) อยู่ซ้าย ผู้เล่นเรียงทางขวา หน้าเล่นสูงราว 800px ที่ 16px */
+    @media (min-aspect-ratio: 5/4) {
+      :root {
+        font-size: clamp(14px, min(2vw, 100vh * 16 / 800), 28px);
+        font-size: clamp(14px, min(2vw, 100dvh * 16 / 800), 28px);
+      }
+      main:has(#app > .seats) { max-width: none; width: fit-content; }
+      #app:has(> .seats) { display: grid; grid-template-columns: 25rem 18rem; grid-template-rows: repeat(12, auto) 1fr; column-gap: 2rem; align-items: start; }
+      #app:has(> .seats) > * { grid-column: 1; }
+      #app:has(> .seats) > .seats { grid-column: 2; grid-row: 1 / -1; margin: 0; }
+    }
     @media (prefers-reduced-motion: reduce) {
       .card.new, .noble.ok { animation: none; }
     }
@@ -662,7 +677,7 @@
       } else if (sel) out.push(`<button id="reserve" class="alt" ${me.reserved.length >= 3 ? "disabled" : ""}>จองกอง ${LV[sel.deck]}</button>`);
       else if (pick.length) out.push(`<button id="take" data-sfx="confirm" ${canTake(v.bank, pick) ? "" : "disabled"}>หยิบ</button>`);
       if (v.canPass) out.push(`<button id="pass">ผ่าน</button>`);
-      return out.length ? `<div class="acts">${out.join("")}</div>` : `<p class="hint center" style="margin: 16px 0 0">แตะเพชรหรือการ์ด</p>`;
+      return out.length ? `<div class="acts">${out.join("")}</div>` : `<p class="hint center" style="margin: 1rem 0 0">แตะเพชรหรือการ์ด</p>`;
     }
 
     // แตะเพชรสีเดิมที่เลือกไว้สีเดียว = หยิบ 2 (ถ้ากองมีพอ) แตะอีกครั้งยกเลิก
@@ -744,7 +759,7 @@
           </div>
           <h2>ตั้งค่า</h2>
           ${setupHtml(set, v.isHost)}
-          <h2 style="margin-top: 16px">ผู้เล่น ${v.players.length}/4</h2>
+          <h2 style="margin-top: 1rem">ผู้เล่น ${v.players.length}/4</h2>
           <ul class="chips">${v.players.map((p) => `<li>${esc(p.name)}</li>`).join("")}</ul>
           ${v.isHost
             ? `${enough ? "" : `<p class="hint">ส่งรหัสให้เพื่อน</p>`}
@@ -798,7 +813,7 @@
             aria-label="${NAMES[c]} ${v.bank[c]}">${gem(c)}<b>${v.bank[c]}</b>${n ? `<span class="n">+${n}</span>` : ""}</button>`;
         }).join("")}</div>
         ${actsHtml(v, me)}
-        ${me.reserved.length ? `<h2 style="margin: 16px 0 0">จองไว้</h2><div class="mine">${me.reserved.map((c) => cardHtml(c, cardCls(c), acting)).join("")}</div>` : ""}
+        ${me.reserved.length ? `<h2 style="margin: 1rem 0 0">จองไว้</h2><div class="mine">${me.reserved.map((c) => cardHtml(c, cardCls(c), acting)).join("")}</div>` : ""}
         <p id="log">${logText(v)}</p>`;
 
       app.querySelectorAll(".card[data-card]").forEach((b) => (b.onclick = () => {

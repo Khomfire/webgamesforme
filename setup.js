@@ -5,22 +5,22 @@
 // รายชื่อในห้องรอใช้ <ul class="chips"> เรียงชื่อต่อกันเป็นป้าย
 const setupStyle = document.createElement("style");
 setupStyle.textContent = `
-  .setup { margin: 0 0 8px; }
-  .set { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; border-bottom: 2px dotted #2c2950; }
+  .setup { margin: 0 0 0.5rem; }
+  .set { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3.25rem; border-bottom: 0.125rem dotted #2c2950; }
   .set > span { color: var(--dim); }
   .set b { font-weight: 700; color: var(--yellow); }
-  .set small { margin-left: 6px; color: var(--dim); font-size: 0.85rem; }
-  .step { display: flex; align-items: center; gap: 8px; }
+  .set small { margin-left: 0.375rem; color: var(--dim); font-size: 0.85rem; }
+  .step { display: flex; align-items: center; gap: 0.5rem; }
   .step output { min-width: 7em; text-align: center; }
-  .step button { --c: var(--cyan); width: 36px; height: 36px; margin: 0; padding: 0; box-shadow: 3px 3px 0 var(--c); font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; }
-  .step button:active:not(:disabled) { transform: translate(3px, 3px); }
+  .step button { --c: var(--cyan); width: 2.25rem; height: 2.25rem; margin: 0; padding: 0; box-shadow: 0.1875rem 0.1875rem 0 var(--c); font: 400 0.9rem "Press Start 2P", "Chakra Petch", monospace; }
+  .step button:active:not(:disabled) { transform: translate(0.1875rem, 0.1875rem); }
   /* สวิตช์เปิด/ปิด: กล่องยาวมีก้อนสี่เหลี่ยม ปิดอยู่ซ้าย เปิดอยู่ขวา */
-  .switch { position: relative; display: block; width: 60px; height: 32px; margin: 0; padding: 0; border: 3px solid var(--dim); box-shadow: none; background: var(--screen); }
-  .switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; background: var(--dim); }
+  .switch { position: relative; display: block; width: 3.75rem; height: 2rem; margin: 0; padding: 0; border: 0.1875rem solid var(--dim); box-shadow: none; background: var(--screen); }
+  .switch::after { content: ""; position: absolute; top: 0.25rem; left: 0.25rem; width: 1.125rem; height: 1.125rem; background: var(--dim); }
   .switch.on { border-color: var(--cyan); }
-  .switch.on::after { left: 32px; background: var(--cyan); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chips li { padding: 2px 10px; border: 2px solid #2c2950; }
+  .switch.on::after { left: 2rem; background: var(--cyan); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chips li { padding: 0.125rem 0.625rem; border: 0.125rem solid #2c2950; }
 `;
 document.head.append(setupStyle);
 
