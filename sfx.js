@@ -17,6 +17,7 @@ const SOUNDS = {
 let audio;
 function playSfx(name) {
   if (name === "place") return playPlace();
+  if (name === "capture") return playCapture();
   audio ??= new AudioContext();
   let t = audio.currentTime;
   for (const [from, to, length] of SOUNDS[name] || SOUNDS.click) {
@@ -87,4 +88,33 @@ function playPlace() {
   body.connect(bodyGain).connect(audio.destination);
   body.start(t);
   body.stop(t + 0.1);
+}
+
+// เสียงกินหมาก ("capture"): หมากกระทบกัน ตามด้วยเสียงแตกกรอบ (noise ผ่าน highpass) กับเสียงตู้เกมดิ่งลง
+function playCapture() {
+  playPlace();
+  const t = audio.currentTime + 0.03;
+  const length = 0.12;
+  const buffer = audio.createBuffer(1, audio.sampleRate * length, audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) ** 2;
+  const crack = audio.createBufferSource();
+  crack.buffer = buffer;
+  const filter = audio.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.value = 2500;
+  const crackGain = audio.createGain();
+  crackGain.gain.value = 0.3;
+  crack.connect(filter).connect(crackGain).connect(audio.destination);
+  crack.start(t);
+  const zap = audio.createOscillator();
+  zap.type = "square";
+  zap.frequency.setValueAtTime(1100, t);
+  zap.frequency.exponentialRampToValueAtTime(140, t + 0.16);
+  const zapGain = audio.createGain();
+  zapGain.gain.setValueAtTime(0.06, t);
+  zapGain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+  zap.connect(zapGain).connect(audio.destination);
+  zap.start(t);
+  zap.stop(t + 0.16);
 }

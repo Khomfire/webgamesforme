@@ -162,6 +162,18 @@
     .board .pcs { pointer-events: none; }
     /* ช่องที่เพิ่งมีหมากโดนกิน กระพริบแดงแล้วจาง */
     .board .hit-flash { fill: var(--red); }
+    /* รุกจน: แสงวาบ คลื่นสี่เหลี่ยม เศษ pixel และป้ายกลางกระดาน */
+    .board .fx { pointer-events: none; }
+    .fx-flash { fill: var(--text); }
+    .fx-ring { fill: none; stroke: var(--red); stroke-width: 0.6; }
+    .fx-ring.y { stroke: var(--yellow); }
+    .fx-bit { fill: var(--red); }
+    .fx-bit.y { fill: var(--yellow); }
+    .fx-bit.w { fill: var(--text); }
+    .fx-band { fill: var(--screen); opacity: 0.9; }
+    .fx-line { fill: var(--yellow); }
+    .fx-text { font: 700 18px "Chakra Petch", sans-serif; fill: var(--yellow); text-anchor: middle; dominant-baseline: central; }
+    .fx-text.sh { fill: var(--red); }
     /* หมากที่กินได้ของแต่ละคน อยู่ใต้ชื่อ เรียงจากตัวแพงสุด ตัวชนิดเดียวกันซ้อนกัน */
     .tray { display: flex; align-items: center; min-height: 1.625rem; padding: 0 0 0.25rem 1.625rem; border: 0; }
     .tray svg { display: block; width: 1.375rem; height: 1.375rem; }
@@ -402,6 +414,60 @@
       if (P === "K" && Math.abs(to - from) === 2) slide(to > from ? from + 3 : from - 4, to > from ? from + 1 : from - 1);
     }
 
+    // รุกจน: พอหมากเลื่อนถึงช่อง กระดานสั่น คลื่นกับเศษ pixel แตกออกจากคิงที่แพ้ คิงล้มหนีหมากที่รุก
+    // แล้วป้าย "รุกจน" กระแทกลงกลางกระดาน
+    const MATE_HIT = 300, MATE_BANNER = 900;
+    function animateMate(v) {
+      const svg = app.querySelector(".board"), k = v.check, [kx, ky] = xyOf(v, k), [ax] = xyOf(v, v.last[1]);
+      const ns = "http://www.w3.org/2000/svg", fx = document.createElementNS(ns, "g");
+      fx.setAttribute("class", "fx");
+      svg.append(fx);
+      const add = (tag, attrs, text = "") => {
+        const el = document.createElementNS(ns, tag);
+        for (const [a, val] of Object.entries(attrs)) el.setAttribute(a, val);
+        el.textContent = text;
+        el.style.transformBox = "fill-box";
+        el.style.transformOrigin = "center";
+        fx.append(el);
+        return el;
+      };
+      const shake = (delay, d) => svg.animate([0, -d, d, -d / 2, d / 2, 0].map((x, j) => ({ transform: `translate(${x}px, ${j % 2 ? -x / 2 : x / 2}px)` })), { duration: 400, delay });
+      setTimeout(playBoom, MATE_HIT);
+      shake(MATE_HIT, 6);
+      add("rect", { class: "fx-flash", x: 0, y: 0, width: 112, height: 112 }).animate([{ opacity: 0.6 }, { opacity: 0 }], { duration: 300, delay: MATE_HIT, fill: "both" });
+      const king = svg.querySelector(`.pcs [data-at="${k}"]`), s = kx >= ax ? 1 : -1;
+      king.style.transformBox = "view-box"; // หมุนรอบโคนหมาก (fill-box ของ <use> ที่มี x y หมุนเพี้ยน)
+      king.style.transformOrigin = `${kx + 7}px ${ky + 12}px`;
+      king.animate([
+        { transform: "rotate(0)" },
+        { transform: `rotate(${-12 * s}deg)`, offset: 0.2 },
+        { transform: `rotate(${8 * s}deg)`, offset: 0.4, easing: "cubic-bezier(0.5, 0, 1, 1)" },
+        { transform: `rotate(${90 * s}deg)`, offset: 0.75 },
+        { transform: `rotate(${76 * s}deg)`, offset: 0.87 },
+        { transform: `rotate(${90 * s}deg)` },
+      ], { duration: 900, delay: MATE_HIT, fill: "forwards" });
+      for (let j = 0; j < 3; j++) {
+        add("rect", { class: `fx-ring${j % 2 ? " y" : ""}`, x: kx, y: ky, width: 14, height: 14 })
+          .animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(7)", opacity: 0 }], { duration: 700, delay: MATE_HIT + j * 130, easing: "ease-out", fill: "both" });
+      }
+      for (let j = 0; j < 18; j++) {
+        const a = Math.random() * Math.PI * 2, r = 18 + Math.random() * 26;
+        add("rect", { class: `fx-bit ${"ryw"[j % 3]}`, x: kx + 6.2, y: ky + 6.2, width: 1.6, height: 1.6 })
+          .animate([{ transform: "none", opacity: 1 }, { transform: `translate(${Math.cos(a) * r}px, ${Math.sin(a) * r}px) rotate(${Math.random() * 720 - 360}deg)`, opacity: 0 }],
+            { duration: 700 + Math.random() * 400, delay: MATE_HIT, easing: "cubic-bezier(0.2, 0.8, 0.3, 1)", fill: "both" });
+      }
+      add("rect", { class: "fx-band", x: 0, y: 42, width: 112, height: 28 }).animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: 220, delay: MATE_BANNER, easing: "ease-out", fill: "backwards" });
+      for (const y of [41, 70]) add("rect", { class: "fx-line", x: 0, y, width: 112, height: 1 }).animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: 300, delay: MATE_BANNER, easing: "ease-out", fill: "backwards" });
+      for (const [cls, d] of [["fx-text sh", 1], ["fx-text", 0]]) {
+        add("text", { class: cls, x: 56 + d, y: 56 + d }, "รุกจน").animate([
+          { transform: "scale(3)", opacity: 0 },
+          { transform: "scale(0.9)", opacity: 1, offset: 0.7 },
+          { transform: "scale(1)" },
+        ], { duration: 320, delay: MATE_BANNER + 120, easing: "ease-in", fill: "backwards" });
+      }
+      shake(MATE_BANNER + 340, 3);
+    }
+
     // นาฬิกา: ฝ่ายที่ถึงตานับถอยหลังจากตอนได้สถานะ เหลือต่ำกว่า 20 วิเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน อีกคนรอเผื่อเขาหลุด
     let tick, timeoutTimer;
@@ -429,7 +495,8 @@
       if (v.screen !== "over" && winner.open) winner.close();
       const meP = (v.players || []).find((p) => p.id === v.me) || {};
       const iWon = v.result && v.result.winner === meP.name;
-      if (gameOver && lastScreen === "play") playSfx(iWon ? "win" : "vote");
+      const mate = gameOver && lastScreen === "play" && v.result.reason === "checkmate" && !still.matches;
+      if (gameOver && lastScreen === "play") setTimeout(() => playSfx(iWon ? "win" : "vote"), mate ? MATE_BANNER + 340 : 0);
       if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx(v.check !== null ? "vote" : "next");
       lastScreen = v.screen;
       lastMyTurn = v.myTurn;
@@ -559,11 +626,12 @@
         const count = (b) => b.replace(/\./g, "").length;
         if (v.screen === "play") {
           const at = still.matches ? 0 : 220; // ตอนหมากเลื่อนไปถึงช่อง
-          setTimeout(() => playSfx("place"), at);
-          if (count(v.board) < count(lastBoard)) setTimeout(() => playSfx("place"), at + 90); // กิน: กระทบสองที
+          const sound = count(v.board) < count(lastBoard) ? "capture" : "place";
+          setTimeout(() => playSfx(sound), at);
         }
         animateMove(v, lastBoard);
       }
+      if (mate) animateMate(v);
       lastBoard = v.board;
       if (gameOver) {
         setTimeout(() => {
@@ -573,7 +641,7 @@
           document.getElementById("winner-body").innerHTML = `<p class="word hl">${r.winner ? esc(r.winner) : "เสมอ"}</p><p class="hint">${REASON[r.reason]}</p>${scoreboard(view)}`;
           winner.showModal();
           if (r.winner) fireworks();
-        }, 600);
+        }, mate ? 2800 : 600);
       }
       if (app.querySelector("#newgame")) app.querySelector("#newgame").onclick = () => send({ t: "newgame" });
     }
