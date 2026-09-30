@@ -690,7 +690,7 @@
       render();
     }
 
-    let lastScreen, lastMyTurn, lastLog;
+    let lastScreen, lastLog;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -699,13 +699,9 @@
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
-      if (gameOver) playSfx("win");
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       const logKey = JSON.stringify(v.log || null);
-      if (lastLog !== undefined && logKey !== lastLog && v.log && v.screen === "play" && v.log.by !== v.me) playSfx(v.log.t === "buy" ? "place" : "confirm");
-      if (lastLog !== undefined && logKey !== lastLog && v.log && v.log.noble !== undefined && v.log.by === v.me) playSfx("win");
+      if (lastLog !== undefined && logKey !== lastLog && v.log && v.screen === "play" && v.log.by !== v.me) playSfx(v.log.t === "buy" ? "card" : "chips");
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
       lastLog = logKey;
 
       if (v.screen === "home") {

@@ -160,6 +160,15 @@
     .dw { fill: #a9a6c9; }
     .db { fill: #4d4886; }
     .board .pcs { pointer-events: none; }
+    /* คิงที่โดนรุกสั่นเป็นพักๆ */
+    .board .threat { animation: threat 1s infinite; }
+    @keyframes threat {
+      0%, 45%, 100% { transform: none; }
+      5%, 25% { transform: translate(-0.7px, 0.2px); }
+      10%, 30% { transform: translate(0.7px, -0.2px); }
+      15%, 35% { transform: translate(-0.5px, -0.2px); }
+      20%, 40% { transform: translate(0.5px, 0.2px); }
+    }
     /* ช่องที่เพิ่งมีหมากโดนกิน กระพริบแดงแล้วจาง */
     .board .hit-flash { fill: var(--red); }
     /* รุกจน: กระดานมืดลง เลเซอร์ รอยร้าว และตัวอักษร */
@@ -196,6 +205,7 @@
     .error { color: var(--red); }
     @media (prefers-reduced-motion: reduce) {
       .tray svg.new { animation: none; }
+      .board .threat { animation: none; }
     }
     /* จอแนวนอน: กระดานอยู่ซ้ายสูงเต็มจอ ผู้เล่นกับสถานะเรียงทางขวา */
     @media (min-aspect-ratio: 5/4) {
@@ -370,7 +380,7 @@
           (d & 7) === 0 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 0.5}" y="${y + 2.7}">${8 - (i >> 3)}</text>` : "",
           d >> 3 === 7 ? `<text class="coord${dark ? " on-dk" : ""}" x="${x + 11.3}" y="${y + 13.5}">${FILES[i & 7]}</text>` : "",
         ].join("");
-        if (p !== ".") pcs += `<use data-at="${i}" href="#${p === p.toUpperCase() ? "w" : "b"}${p.toUpperCase()}" x="${x + 1}" y="${y + 1}" width="12" height="12"/>`;
+        if (p !== ".") pcs += `<use data-at="${i}"${i === v.check && v.screen === "play" ? ' class="threat"' : ""} href="#${p === p.toUpperCase() ? "w" : "b"}${p.toUpperCase()}" x="${x + 1}" y="${y + 1}" width="12" height="12"/>`;
         // ช่องที่ไปได้: จุดกลางช่อง ถ้ามีหมากให้กิน (รวม En passant) เป็นสามเหลี่ยมสี่มุม
         const to = !targets.includes(i) ? "" : p === "." && !(v.board[sel].toUpperCase() === "P" && (i & 7) !== (sel & 7))
           ? `<rect class="to" x="${x + 5}" y="${y + 5}" width="4" height="4"/>`
@@ -470,12 +480,11 @@
         }
         kg = add("g", {});
         kg.append(layer.querySelector(`[data-at="${k}"]`));
-        playSfx("laser");
       });
       at(MATE.crack, () => {
         draw(add("path", { class: `fx-crack ${c}`, d: `M${kx + 6.5} ${ky + 2.5}l1.5 2.5l-2 2l2.5 2.5l-1 3M${kx + 8} ${ky + 7}l2 1`, pathLength: 1 }, kg), 150);
         kg.animate(Array.from({ length: 10 }, (_, j) => ({ transform: j % 9 ? `translate(${Math.random() * 1.4 - 0.7}px, ${Math.random() * 1.4 - 0.7}px)` : "none" })), { duration: 400 });
-        playSfx("place");
+        playSfx("snap");
       });
       at(MATE.shatter, () => {
         kg.remove();
@@ -495,7 +504,7 @@
         }
         shake(6);
         playBoom();
-        playSfx("shatter");
+        playSfx("chips");
       });
       at(MATE.text, () => {
         // แต่ละตัวมีเงาแดงเยื้องไว้ข้างหลัง วัดความกว้างก่อนแล้วเรียงให้อยู่กลางกระดาน
@@ -538,7 +547,7 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
     }
 
-    let lastScreen, lastMyTurn, lastBoard = null, sel = null, seenTaken = {};
+    let lastScreen, lastBoard = null, sel = null, seenTaken = {};
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -551,10 +560,7 @@
       const meP = (v.players || []).find((p) => p.id === v.me) || {};
       const iWon = v.result && v.result.winner === meP.name;
       const mate = gameOver && lastScreen === "play" && v.result.reason === "checkmate" && !still.matches;
-      if (gameOver && lastScreen === "play") setTimeout(() => playSfx(iWon ? "win" : "vote"), mate ? MATE.end : 0);
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx(v.check !== null ? "vote" : "next");
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -660,7 +666,6 @@
           sel = null;
         } else {
           sel = sel === i || !v.moves.some((m) => m[0] === i) ? null : i;
-          if (sel !== null) playSfx("click");
         }
         render();
         const again = app.querySelector(`.sq[data-i="${i}"]`);
@@ -679,11 +684,8 @@
       // เดินใหม่: เสียงกินหรือเดิน (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard) {
         const count = (b) => b.replace(/\./g, "").length;
-        if (v.screen === "play") {
-          const at = still.matches ? 0 : 220; // ตอนหมากเลื่อนไปถึงช่อง
-          const sound = count(v.board) < count(lastBoard) ? "capture" : "place";
-          setTimeout(() => playSfx(sound), at);
-        }
+        const sound = count(v.board) < count(lastBoard) ? "capture" : "place";
+        setTimeout(() => playSfx(sound), still.matches ? 0 : 220); // ตอนหมากเลื่อนไปถึงช่อง
         animateMove(v, lastBoard);
       }
       if (mate) animateMate(v);

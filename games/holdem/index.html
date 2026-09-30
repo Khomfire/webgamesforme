@@ -467,7 +467,7 @@
         <li class="row"><span>${v.screen === "over" && v.winner === p.name ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${p.out ? `<span class="tag bad">ตกรอบ</span>` : ""}</span><span class="stake"><span class="coin small"></span><span class="money">${p.chips}</span></span></li>`).join("")}
       </ul>`;
 
-    let timeoutTimer, lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, lastTurn, overTimer;
+    let timeoutTimer, lastScreen, lastHand, lastLog = "", lastBoard = 0, lastSeen = {}, lastBets = {}, lastResult = false, overTimer;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -644,14 +644,14 @@
         ord.forEach((s, j) => [0, 1].forEach((k) => {
           const fly = (k * ord.length + j) * gap;
           items.push({ sel: `[data-seat="${s.id}"] .cards .card:nth-child(${k + 1})`, fly, flip: s.id === v.me ? fly + 400 : undefined });
-          sounds.push([fly, "click"]);
+          sounds.push([fly, "card"]);
         }));
         at = (2 * ord.length - 1) * gap + 500;
       }
       // จบรอบเดิมพัน: ชิปที่ลงไว้ไปกองกลาง
       if (!dealt) for (const s of v.seats) if (lastBets[s.id] && !s.bet) chips(s.id, "pot");
       if (!dealt && Object.keys(lastBets).some((id) => lastBets[id] && !(v.seats.find((s) => s.id === id) || {}).bet)) {
-        sounds.push([0, "confirm"]);
+        sounds.push([0, "chips"]);
         at = 500;
       }
       // ไพ่กลางที่เพิ่งเปิด: 3 ใบแรกพร้อมกัน ใบที่ 4 และ 5 ทีละใบ (ออลอินแล้วเปิดรวดก็เว้นจังหวะให้ลุ้น)
@@ -659,7 +659,7 @@
       groups.forEach((g, gi) => g.forEach((k, j) => {
         const t = at + gi * 900 + j * 120;
         items.push({ sel: `#board .card:nth-child(${k + 1})`, fly: t, flip: t + 400 });
-        sounds.push([t, "click"]);
+        sounds.push([t, "card"]);
       }));
       if (groups.length) at += (groups.length - 1) * 900 + 640 + 300;
       // เปิดไพ่: พลิกทีละคน
@@ -667,7 +667,7 @@
       for (const s of v.seats) if (s.cards && lastSeen[s.id] === false) {
         for (let k = 0; k < s.cards.length; k++) items.push({ sel: `[data-seat="${s.id}"] .cards .card:nth-child(${k + 1})`, flip: at + j * 200 });
         items.push({ sel: `[data-seat="${s.id}"] .info > span:first-child`, fade: at + j * 200 + 240 });
-        sounds.push([at + j * 200, "click"]);
+        sounds.push([at + j * 200, "snap"]);
         j++;
       }
       if (j) at += (j - 1) * 200 + 240;
@@ -677,23 +677,18 @@
         for (const id of Object.keys(r.won)) setTimeout(() => chips("pot", id), payAt);
         for (const id of bestIds) items.push({ sel: `[data-id="${id}"]`, best: payAt });
         for (const s of v.seats) if (r.won[s.id]) items.push({ sel: `[data-seat="${s.id}"] .won`, fade: payAt + 300 });
-        if (r.won[v.me]) {
-          setTimeout(() => shout(`+${r.won[v.me]}`, true), payAt + 300);
-          sounds.push([payAt + 300, "win"]);
-        } else if (me && !me.folded && r.hands) sounds.push([payAt + 300, "vote"]);
-        sounds.push([payAt, "confirm"]);
+        if (r.won[v.me]) setTimeout(() => shout(`+${r.won[v.me]}`, true), payAt + 300);
+        sounds.push([payAt, "chips"]);
       }
       // เสียงของสิ่งที่คนเพิ่งทำ ออลอินตะโกนให้ทุกคนเห็น
       if (fresh && ACT[v.log.t] && v.log.n === v.handNo - 1) {
         if (v.log.allin) {
           const s = v.seats.find((x) => x.id === v.log.by);
           if (s) shout("ออลอิน", s.id === v.me);
-          sounds.push([0, "start"]);
-        } else if (v.log.by !== v.me) sounds.push([0, v.log.t === "fold" ? "vote" : v.log.t === "check" ? "click" : "confirm"]);
+          sounds.push([0, "chips"]);
+        } else if (v.log.by !== v.me) sounds.push([0, v.log.t === "fold" ? "card" : v.log.t === "check" ? "knock" : "chips"]);
       }
-      if (fresh && v.log.t === "muck" && v.log.by !== v.me) sounds.push([0, "vote"]);
-      if ((o || myShow) && lastTurn !== v.me) sounds.push([at, "next"]);
-      lastTurn = v.turn;
+      if (fresh && v.log.t === "muck" && v.log.by !== v.me) sounds.push([0, "card"]);
       for (const [t, name] of sounds) setTimeout(() => playSfx(name), t);
       if (items.length) plans.push({ start: performance.now(), items, end: payAt + 1000 });
       applyPlans();

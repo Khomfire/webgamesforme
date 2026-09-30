@@ -448,7 +448,7 @@
       }
     }
 
-    let lastScreen, lastTurn, lastOk = 0;
+    let lastScreen;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -539,18 +539,9 @@
         strokes = (v.iDraw && keptInk(v)) || [];
         redraw();
         if (!v.iDraw && v.screen !== "choose") room.ink({ k: "need", n: inkTurn });
-        lastOk = v.chat.filter((c) => c.ok).length;
       }
       if (v.screen !== "draw") endStroke();
-
-      // เสียง: ถึงตาเราวาด มีคนทายถูก เฉลย
-      const ok = v.chat.filter((c) => c.ok).length;
-      if (v.screen === "choose" && v.iDraw && (lastScreen !== "choose" || lastTurn !== v.turnNo)) playSfx("next");
-      else if (ok > lastOk) playSfx("confirm");
-      else if (v.screen === "reveal" && lastScreen === "draw") playSfx("next");
-      lastOk = ok;
       lastScreen = v.screen;
-      lastTurn = v.turnNo;
 
       const status = v.screen === "choose" ? (v.iDraw ? `<span class="hl">ตาคุณ</span>` : `ตา ${esc(v.drawerName)}`)
         : v.screen === "draw" ? (v.iDraw ? `วาด <span class="hl">${esc(v.word)}</span>` : v.word ? `<span class="good">ถูก</span> ${esc(v.word)}` : clue(v.hint))
@@ -594,7 +585,6 @@
 
       runTimer(v);
       if (gameOver) {
-        playSfx("win");
         setTimeout(() => {
           if (view.screen !== "over") return;
           document.getElementById("winner-body").innerHTML = `<p class="word hl">${view.winners.map(esc).join(", ")}</p>${scoreboard(view)}`;

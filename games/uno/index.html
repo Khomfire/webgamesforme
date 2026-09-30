@@ -515,7 +515,7 @@
         { transform: start, opacity: 1, offset: 0.01 },
         { transform: end, opacity: 1 },
       ], { duration: 420, delay, easing: "cubic-bezier(.2,.8,.3,1.1)", fill: "backwards" });
-      if (sound) setTimeout(() => playSfx("click"), delay);
+      if (sound) setTimeout(() => playSfx("card"), delay);
     }
     // ไพ่เดิมในมือเลื่อนไปที่ใหม่ (ตอนมีไพ่แทรกเข้ามาหรือลงไพ่ไป) แทนการกระโดด
     function slide(el, from) {
@@ -551,34 +551,17 @@
         { duration: 450 },
       );
     }
-    // เสียงตะลึงตอนลง +2/+4: ตึง ตึง แล้วคอร์ดยาวดิ่งลง ยิ่งยอดสูงยิ่งต่ำ ยิ่งดัง ยิ่งยาว
+    // เสียงตอนลง +2/+4: ตบไพ่ลงโต๊ะแรงๆ ยอดตั้งแต่ 4 ตบซ้ำ ยอดตั้งแต่ 8 มีเสียงระเบิด
     function playStack(n) {
-      audio ??= new AudioContext();
-      const level = Math.min(n, 16) / 16;
-      const base = 220 / (1 + level);
-      const vol = 0.05 + 0.08 * level;
-      const t = audio.currentTime;
-      const tone = (freq, start, length, type, slide = 1) => {
-        const osc = audio.createOscillator(), gain = audio.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, t + start);
-        osc.frequency.exponentialRampToValueAtTime(freq * slide, t + start + length);
-        gain.gain.setValueAtTime(vol, t + start);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + start + length);
-        osc.connect(gain).connect(audio.destination);
-        osc.start(t + start);
-        osc.stop(t + start + length);
-      };
-      tone(base, 0, 0.12, "square");
-      tone(base, 0.18, 0.12, "square");
-      for (const r of [1, 1.2, 1.41]) tone(base * r, 0.36, 0.6 + level, "sawtooth", 0.7);
+      playSfx("slap");
+      if (n >= 4) setTimeout(() => playSfx("slap"), 180);
       if (n >= 8) setTimeout(playBoom, 360);
     }
     // กองจั่วหมด สับกองทิ้งมาเป็นกองจั่วใหม่: หลังไพ่บินจากกองทิ้งไปกองจั่ว แล้วกองจั่วสับไปมา
     function reshuffle() {
       const pile = app.querySelector(".pile"), deck = app.querySelector("#deck");
       if (still.matches || !pile || !deck) return;
-      playSfx("roll");
+      playSfx("slide");
       const a = pile.getBoundingClientRect(), b = deck.getBoundingClientRect();
       for (let i = 0; i < 8; i++) {
         const box = document.createElement("div");
@@ -652,7 +635,7 @@
     }));
     document.getElementById("pick-close").onclick = () => { picking = null; pick.close(); };
 
-    let lastScreen, lastMyTurn, lastLog = "", lastHand = [], lastCounts = {}, timeoutTimer, lastShuffles;
+    let lastScreen, lastLog = "", lastHand = [], lastCounts = {}, timeoutTimer, lastShuffles;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -660,12 +643,9 @@
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen !== "play" || !v.myTurn) { picking = null; if (pick.open) pick.close(); }
-      if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.result && v.result.name === (v.players.find((p) => p.id === v.me) || {}).name ? "win" : "vote");
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const wasScreen = lastScreen;
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -765,7 +745,7 @@
         </div>
         <div class="table">
           <div class="deck-wrap">
-            <button class="card back${canDraw ? " can" : ""}" id="deck" aria-label="${v.pending && v.myTurn ? `จั่ว ${v.pending.n} ใบ` : "จั่ว"} (เหลือ ${v.deck})" data-sfx="roll" ${canDraw ? "" : "disabled"}><span>UNO</span></button>
+            <button class="card back${canDraw ? " can" : ""}" id="deck" aria-label="${v.pending && v.myTurn ? `จั่ว ${v.pending.n} ใบ` : "จั่ว"} (เหลือ ${v.deck})" data-sfx="card" ${canDraw ? "" : "disabled"}><span>UNO</span></button>
             <span class="deck-count" aria-hidden="true">${v.deck}</span>
           </div>
           <div class="pile ${v.color || ""}" aria-label="สีที่ต้องลง ${NAME[v.color] || "อะไรก็ได้"}">
@@ -853,7 +833,7 @@
           playStack(total);
           quake(total);
           if (total > (v.log.card.v === "d2" ? 2 : 4)) shout("+" + total); // ทับกัน
-        } else if (v.log.by !== v.me) playSfx("confirm");
+        } else if (v.log.by !== v.me) playSfx("card");
       }
       dropFlying();
       // มีคนจั่วตามยอด +2/+4
@@ -861,15 +841,13 @@
       if (fresh && v.log.hit) {
         if (v.log.t === "challenge") setTimeout(() => shout("+" + v.log.hit.n), 900);
         else shout("+" + v.log.hit.n);
-        playSfx("vote");
         setTimeout(() => { const el = seat(v.log.hit.id); if (el) el.classList.add("shake"); }, 450);
       }
-      if (fresh && v.log.t === "draw" && v.log.by !== v.me) playSfx("roll");
-      if (fresh && v.log.t === "uno") { shout("UNO!"); playSfx("create"); }
+      if (fresh && v.log.t === "draw" && v.log.by !== v.me) playSfx("card");
+      if (fresh && v.log.t === "uno") shout("UNO!");
       // ไม่กด UNO ทันก่อนคนถัดไปเล่น
       if (fresh && v.log.missed) {
         if (!v.log.hit) shout("+2");
-        playSfx("vote");
         const el = seat(v.log.missed);
         if (el) el.classList.add("shake");
       }

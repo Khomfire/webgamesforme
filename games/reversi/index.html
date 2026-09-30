@@ -300,7 +300,7 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left + (v.myTurn ? 200 : 1500));
     }
 
-    let lastScreen, lastMyTurn, lastBoard = null, ghost = null;
+    let lastScreen, lastBoard = null, ghost = null;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -311,10 +311,7 @@
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
       const meP = (v.players || []).find((p) => p.id === v.me) || {};
-      if (gameOver && lastScreen === "play") playSfx(v.winner === meP.name ? "win" : "vote");
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -418,7 +415,6 @@
           ghost = null;
         } else {
           ghost = i;
-          playSfx("click");
         }
         lastBoard = null; // วาดใหม่เพราะเลือกช่อง ไม่ใช่มีคนวาง ไม่ต้องพลิกซ้ำ
         render();

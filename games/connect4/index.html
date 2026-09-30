@@ -290,7 +290,7 @@
       ], { duration: 260 + row * 50, easing: "ease-in" });
     }
 
-    let lastScreen, lastMyTurn, lastDrop = null;
+    let lastScreen, lastDrop = null;
     // หลอดเวลา: นับจากตอนได้สถานะ (วาดใหม่ระหว่างตาไม่เริ่มนับใหม่) ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     // หมดแล้วแจ้ง server คนที่ถึงตาแจ้งก่อน คนอื่นรอเผื่อเขาหลุด
     let timeoutTimer;
@@ -320,10 +320,7 @@
       if (v.time) document.getElementById("rule-time").textContent = v.time / 1000;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
-      if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.won ? "win" : v.lost ? "vote" : "next");
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
 
       if (v.screen === "home") {
         app.innerHTML = `
