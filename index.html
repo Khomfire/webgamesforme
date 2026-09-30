@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Web Games For Me</title>
+  <title>PIXPLAY</title>
+  <link rel="icon" href="logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
@@ -32,12 +33,13 @@
       background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
     }
     main { max-width: 960px; margin: 0 auto; padding: 56px 20px 80px; }
+    .logo { display: block; width: 120px; height: auto; margin: 0 auto 24px; }
 
     h1 {
       margin: 0;
       text-align: center;
       color: var(--yellow);
-      font: 400 clamp(1.25rem, 5.5vw, 2.75rem)/1.4 "Press Start 2P", "Chakra Petch", monospace;
+      font: 400 clamp(2rem, 10vw, 3.5rem)/1.4 "Press Start 2P", "Chakra Petch", monospace;
       text-shadow: 4px 4px 0 #c2410c;
       text-wrap: balance;
     }
@@ -110,7 +112,8 @@
 </head>
 <body>
   <main>
-    <h1>Web Games For Me</h1>
+    <img class="logo" src="logo.svg" alt="" width="120" height="72">
+    <h1>PIXPLAY</h1>
     <p class="sub">เลือกเกม เล่นกับเพื่อน</p>
     <div class="name">
       <label for="name">ชื่อ</label>
