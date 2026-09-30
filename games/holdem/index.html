@@ -237,6 +237,20 @@
     }
     .actions { display: flex; gap: 0.75rem; }
     .fly { position: fixed; z-index: 5; margin: 0; pointer-events: none; }
+    /* จอแนวนอน: โต๊ะ สถานะ และไพ่ของเราอยู่ซ้าย ผู้เล่นคนอื่นเรียงทางขวา หน้าเล่นสูงราว 770px ที่ 16px */
+    @media (min-aspect-ratio: 5/4) {
+      :root {
+        font-size: clamp(14px, min(1.65vw, 100vh * 16 / 770), 28px);
+        font-size: clamp(14px, min(1.65vw, 100dvh * 16 / 770), 28px);
+      }
+      main:has(#app > .seats) { max-width: none; width: fit-content; }
+      #app:has(> .seats) { display: grid; grid-template-columns: 25rem 20rem; grid-template-rows: repeat(12, auto) 1fr; column-gap: 2rem; align-items: start; }
+      #app:has(> .seats) > * { grid-column: 1; }
+      #app:has(> .seats) > .seats { grid-column: 2; grid-row: 1 / -1; }
+      /* คนอื่น 7 คนขึ้นไป เรียงแถวละ 3 จะได้ไม่ยาวเกินจอ */
+      #app:has(> .seats > :nth-child(7)) { grid-template-columns: 25rem 29rem; }
+      #app > .seats:has(> :nth-child(7)) { grid-template-columns: repeat(3, 1fr); }
+    }
     @media (prefers-reduced-motion: reduce) {
       .shout { display: none; }
     }
