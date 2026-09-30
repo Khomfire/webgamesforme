@@ -217,17 +217,25 @@
     .l1 { --lv: #3ec46d; }
     .l2 { --lv: #ffd23f; }
     .l3 { --lv: #3e8ee0; }
+    /* หลังการ์ด: ลายตาข่าย กรอบ และตราเพชรสีตามระดับ เลขระดับบน จำนวนที่เหลือล่าง */
     .deck, .card.back {
-      display: grid;
-      place-items: center;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
       aspect-ratio: 3 / 4;
+      overflow: hidden;
+      padding: 7% 0;
       border: 2px solid var(--lv);
       border-radius: 4px;
-      background: repeating-linear-gradient(45deg, #15122c 0 6px, #1d1934 6px 12px);
+      background: #15122c;
       color: var(--lv);
-      font: 400 0.65rem/1.8 "Press Start 2P", "Chakra Petch", monospace;
+      font: 400 0.6rem/1 "Press Start 2P", "Chakra Petch", monospace;
       text-align: center;
     }
+    .deck svg, .card.back svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .deck span, .card.back span { position: relative; padding: 2px 3px; background: #15122c; }
     .deck.sel { outline: 3px solid var(--yellow); outline-offset: 2px; }
     .deck:empty { border-style: dashed; background: none; }
     /* กองเพชรกลางโต๊ะ แตะเพื่อเลือกหยิบ */
@@ -312,6 +320,19 @@
       <rect x="16" y="16" width="28" height="3" rx="1" fill="#1b1830"/>
       <path d="M39 15q7-12 11-6-6 1.5-11 6z" fill="#ff4d4d"/>
       <rect x=".5" y=".5" width="59" height="53" fill="none" stroke="#c9a06a" opacity=".6"/>
+    </symbol>
+    <!-- หลังการ์ด: สีตามระดับ (--lv) -->
+    <symbol id="card-back" viewBox="0 0 60 80">
+      <rect width="60" height="80" fill="#15122c"/>
+      <path d="M-80 0l80 80M-70 0l80 80M-60 0l80 80M-50 0l80 80M-40 0l80 80M-30 0l80 80M-20 0l80 80M-10 0l80 80M0 0l80 80M10 0l80 80M20 0l80 80M30 0l80 80M40 0l80 80M50 0l80 80M10 0l-80 80M20 0l-80 80M30 0l-80 80M40 0l-80 80M50 0l-80 80M60 0l-80 80M70 0l-80 80M80 0l-80 80M90 0l-80 80M100 0l-80 80M110 0l-80 80M120 0l-80 80M130 0l-80 80M140 0l-80 80" stroke="var(--lv)" stroke-width=".5" opacity=".22"/>
+      <rect x="4" y="4" width="52" height="72" rx="3" fill="none" stroke="var(--lv)" stroke-width="1.2"/>
+      <rect x="6.5" y="6.5" width="47" height="67" rx="2" fill="none" stroke="var(--lv)" stroke-width=".5" opacity=".6"/>
+      <path d="M4 1.5 6.5 4 4 6.5 1.5 4zM56 1.5 58.5 4 56 6.5 53.5 4zM4 73.5 6.5 76 4 78.5 1.5 76zM56 73.5 58.5 76 56 78.5 53.5 76z" fill="var(--lv)"/>
+      <circle cx="30" cy="40" r="14" fill="#15122c" stroke="var(--lv)" stroke-width="1.2"/>
+      <circle cx="30" cy="40" r="11.5" fill="none" stroke="var(--lv)" stroke-width=".5" opacity=".6"/>
+      <path d="M21 37.5 25 32.5h10l4 5L30 49.5z" fill="var(--lv)"/>
+      <path d="M21 37.5h18M25 32.5l2.5 5 2.5-5 2.5 5 2.5-5M27.5 37.5l2.5 12 2.5-12" fill="none" stroke="#15122c" stroke-width=".7" opacity=".6"/>
+      <path d="M25.6 33.6 23.6 36.4h2.6z" fill="#fff" opacity=".8"/>
     </symbol>
     <!-- การ์ดจิ๋ว (ส่วนลด): ผลึกเพชรสีของการ์ดบนหิน -->
     <symbol id="art-mini" viewBox="0 0 18 24">
@@ -535,7 +556,7 @@
 
     function cardHtml(card, cls = "", enabled = false) {
       if (!card) return `<span class="card empty"></span>`;
-      if (!card.b) return `<span class="card back l${card.l}" role="img" aria-label="การ์ดคว่ำ ระดับ ${card.l}">${LV[card.l]}</span>`;
+      if (!card.b) return `<span class="card back l${card.l}" role="img" aria-label="การ์ดคว่ำ ระดับ ${card.l}"><svg viewBox="0 0 60 80" preserveAspectRatio="none" aria-hidden="true"><use href="#card-back"/></svg><span>${LV[card.l]}</span></span>`;
       return `<button class="card c-${card.b} ${cls}${fresh.has(card.id) ? " new" : ""}" data-card="${card.id}" ${enabled ? "" : "disabled"}
         aria-label="การ์ด${NAMES[card.b]} ${card.p} แต้ม ราคา ${costText(card.c)}">
         <svg class="art" viewBox="0 0 60 80" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><use href="#art-${card.l}${card.id % 2 ? "b" : "a"}"/></svg>
@@ -767,7 +788,7 @@
         <div aria-label="การ์ดบนโต๊ะ">${[3, 2, 1].map((l) => `
           <div class="tier">
             <button class="deck l${l}${sel && sel.deck === l ? " sel" : ""}" data-deck="${l}" ${acting && v.decks[l - 1] && me.reserved.length < 3 ? "" : "disabled"}
-              aria-label="กองระดับ ${l} เหลือ ${v.decks[l - 1]}">${v.decks[l - 1] ? `${LV[l]}<br>${v.decks[l - 1]}` : ""}</button>
+              aria-label="กองระดับ ${l} เหลือ ${v.decks[l - 1]}">${v.decks[l - 1] ? `<svg viewBox="0 0 60 80" preserveAspectRatio="none" aria-hidden="true"><use href="#card-back"/></svg><span>${LV[l]}</span><span>${v.decks[l - 1]}</span>` : ""}</button>
             ${v.market[l - 1].map((c) => cardHtml(c, c ? cardCls(c) : "", acting)).join("")}
           </div>`).join("")}
         </div>
