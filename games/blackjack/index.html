@@ -395,7 +395,7 @@
           { transform: `translate(${rb.left + rb.width / 2 - 12 - x}px, ${rb.top + rb.height / 2 - 12 - y}px)`, opacity: 1 },
         ], { duration: 500, delay: i * 70, easing: "ease-in-out", fill: "both" }).onfinish = () => el.remove();
       }
-      playSfx("confirm");
+      playSfx("chips");
     }
     // หลอดเวลา: ลดลงจนหมด 5 วิสุดท้ายเป็นสีแดง
     function drainTimer(bar, left, total) {
@@ -583,7 +583,7 @@
         ${canInsure ? `<div class="actions"><button id="insure" data-sfx="confirm">ซื้อประกัน ${me.bet / 2}</button><button id="no-insure" class="alt">ไม่ซื้อ</button></div>` : ""}
         ${myTurn ? `
           <div class="actions">
-            <button id="hit" data-sfx="roll">จั่ว</button>
+            <button id="hit">จั่ว</button>
             <button id="stand" class="alt">พอ</button>
             <button id="double" class="alt" ${v.can.double ? "" : "disabled"}>ดับเบิล</button>
             <button id="split" class="alt" ${v.can.split ? "" : "disabled"}>สปลิท</button>
@@ -606,7 +606,7 @@
         keys.forEach((key, j) => [0, 1].forEach((k) => {
           const fly = (k * keys.length + j) * 160;
           items.push({ key, k, fly });
-          sounds.push([fly, "click"]);
+          sounds.push([fly, "card"]);
         }));
         at = (2 * keys.length - 1) * 160 + 400;
         items.push({ sel: ".hand .total, .dealer .total", at });
@@ -614,7 +614,6 @@
         const mine = me && me.hands[0];
         if (mine && mine.bj) {
           setTimeout(() => shout("แบล็คแจ็ค!", true), at);
-          sounds.push([at, "win"]);
         }
       } else {
         // ไพ่ที่เพิ่งจั่ว (hit, double, split) บินจากกอง
@@ -623,7 +622,7 @@
           if (key === "dealer") continue;
           for (let k = lastCount[key] || 0; k < count[key]; k++) {
             items.push({ key, k, fly: j * 250 });
-            sounds.push([j * 250, "click"]);
+            sounds.push([j * 250, "card"]);
             j++;
           }
         }
@@ -631,11 +630,11 @@
         // เจ้ามือเปิดใบคว่ำ แล้วจั่วทีละใบ
         if (d && d.shown && !lastShown) {
           items.push({ key: "dealer", k: 1, flip: at });
-          sounds.push([at, "click"]);
+          sounds.push([at, "snap"]);
           at += 400;
           for (let k = 2; k < d.cards.length; k++) {
             items.push({ key: "dealer", k, fly: at });
-            sounds.push([at, "click"]);
+            sounds.push([at, "card"]);
             at += 600;
           }
           items.push({ sel: ".dealer .total", at });
@@ -645,7 +644,6 @@
         // มือของเราที่เพิ่ง Bust
         if (me && !lastWon[me.id] && me.hands.some((h, i) => h.total.t > 21 && (lastCount[`${me.id}:${i}`] || 0) < h.cards.length)) {
           setTimeout(() => shout("เกิน!"), at);
-          sounds.push([at, "vote"]);
         }
       }
       // จ่ายเงิน: ชิปบินระหว่างเจ้ามือกับคนได้เสีย
@@ -656,7 +654,6 @@
         if (s.won) setTimeout(() => (s.won > 0 ? chips("dealer", s.id) : chips(s.id, "dealer")), payAt);
         if (s.id === v.me) {
           setTimeout(() => shout(wonText(s.won), s.won > 0), payAt + 300);
-          sounds.push([payAt + 300, s.won > 0 ? "win" : s.won < 0 ? "vote" : "next"]);
         }
       }
       for (const [t, name] of sounds) setTimeout(() => playSfx(name), t);

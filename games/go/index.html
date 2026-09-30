@@ -314,7 +314,7 @@
       timeoutTimer = setTimeout(() => send({ t: "timeout" }), left() + (v.myTurn ? 200 : 1500));
     }
 
-    let lastScreen, lastMyTurn, lastBoard = null, ghost = null;
+    let lastScreen, lastBoard = null, ghost = null;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -327,11 +327,7 @@
       if (v.screen !== "over" && winner.open) winner.close();
       const meP = (v.players || []).find((p) => p.id === v.me) || {};
       const iWon = v.result && v.result.winner === meP.name;
-      if (gameOver && (lastScreen === "play" || lastScreen === "score")) playSfx(iWon ? "win" : "vote");
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
-      if (v.screen === "score" && lastScreen === "play") playSfx("confirm");
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
 
       if (v.screen === "home") {
         app.innerHTML = `
@@ -443,7 +439,6 @@
           ghost = null;
         } else {
           ghost = i;
-          playSfx("click");
         }
         render();
         const again = app.querySelector(`.pt[data-i="${i}"]`);
@@ -462,11 +457,11 @@
       if (app.querySelector("#done")) app.querySelector("#done").onclick = () => send({ t: "done" });
       if (app.querySelector("#resume-play")) app.querySelector("#resume-play").onclick = () => send({ t: "play" });
       runClock(v);
-      // วางหมากใหม่: เสียงกินหรือวาง (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
+      // วางหมากใหม่: เสียงวาง ถ้ากินได้มีเสียงเม็ดหมากที่ถูกเก็บกระทบกันตาม (วาดใหม่ด้วยสถานะเดิมไม่เล่นซ้ำ รีเฟรชแล้วไม่เล่น)
       if (lastBoard !== null && v.board !== lastBoard && v.screen === "play") {
         const stones = (b) => b.replace(/\./g, "").length;
-        playSfx("place");
-        if (stones(v.board) <= stones(lastBoard)) setTimeout(() => playSfx("place"), 90); // กิน: กระทบสองที
+        playSfx("stone");
+        if (stones(v.board) <= stones(lastBoard)) setTimeout(() => playSfx("chips"), 120);
       }
       lastBoard = v.board;
       if (gameOver) {

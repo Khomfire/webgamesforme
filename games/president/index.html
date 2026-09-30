@@ -401,7 +401,7 @@
         <li class="row"><span>${v.screen === "over" && v.winners.includes(p.name) ? `<span class="hl">${esc(p.name)}</span><span class="tag hl">ผู้ชนะ</span>` : esc(p.name)}${titleTag(p.title)}</span><span>${p.score}</span></li>`).join("")}
       </ul>`;
 
-    let timeoutTimer, lastScreen, lastLog = "", lastTurn, lastTitle, overTimer;
+    let timeoutTimer, lastScreen, lastLog = "", lastTitle, overTimer;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -584,22 +584,18 @@
         const rect = from && from.getBoundingClientRect();
         const landed = app.querySelector(".pile .play:last-child");
         if (landed) slam(landed, rect);
-        playSfx("click");
+        playSfx("card");
       }
       if (swept) sweep(swept.el, swept.rect);
       if (freshLog && v.log.t === "deal" && !still.matches) {
         app.querySelectorAll(".hand .card").forEach((el, i) => el.animate([{ transform: "translateY(-40px)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 250, delay: i * 30, fill: "backwards" }));
       }
-      if (freshLog && v.log.t === "pass" && v.log.by !== v.me) playSfx("vote");
-      const turnKey = v.screen + (giving ? "give" : myTurn ? "me" : "");
-      if ((myTurn || giving) && lastTurn !== turnKey) setTimeout(() => playSfx("next"), 300);
-      lastTurn = turnKey;
+      if (freshLog && v.log.t === "pass" && v.log.by !== v.me) playSfx("knock");
       // จบรอบ: ตะโกนตำแหน่งที่ได้
       if (v.screen === "end" || v.screen === "over") {
         const r = v.result && v.result.find((x) => x.name === (me && me.name));
         if (r && lastTitle !== v.round) {
           shout(TITLE[r.title], r.title !== "slave" && r.title !== "vice");
-          if (r.title === "king") playSfx("win");
         }
         lastTitle = v.round;
       }

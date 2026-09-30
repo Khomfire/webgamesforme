@@ -273,7 +273,6 @@
       const v = view;
       pauseUi(v, send);
       const gameOver = v.screen === "over" && lastScreen !== "over";
-      if (gameOver) playSfx("win");
       if (v.screen !== "over" && winner.open) winner.close();
       if (v.screen !== lastScreen && (v.screen === "word" || v.screen === "guess")) crossed.clear();
       lastScreen = v.screen;

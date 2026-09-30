@@ -379,7 +379,7 @@
 
     // ตัวในมือที่เลือกไว้ (ต่อได้สองปลาย รอแตะปลาย) เก็บเป็น "a:b"
     let choosing = null;
-    let lastScreen, lastMyTurn, lastLog;
+    let lastScreen, lastLog;
     function render() {
       const v = view;
       pauseUi(v, send);
@@ -389,16 +389,11 @@
       if (v.target) document.getElementById("rule-target").textContent = v.target;
       const gameOver = v.screen === "over" && lastScreen !== "over";
       if (v.screen !== "over" && winner.open) winner.close();
-      const myName = v.players && (v.players.find((p) => p.id === v.me) || {}).name;
-      if ((v.screen === "end" || v.screen === "over") && lastScreen === "play") playSfx(v.result && v.result.winner === myName ? "win" : "vote");
-      else if (gameOver) playSfx("win");
-      if (v.screen === "play" && v.myTurn && !lastMyTurn && lastScreen === "play") playSfx("next");
       const logKey = JSON.stringify(v.log || null);
       const freshLog = lastLog !== undefined && logKey !== lastLog && v.log;
       if (freshLog && v.screen === "play" && (v.log.t === "play" || v.log.t === "set")) playSfx("place");
-      if (freshLog && v.screen === "play" && v.log.t === "draw" && v.log.by !== v.me) playSfx("roll");
+      if (freshLog && v.screen === "play" && v.log.t === "draw") playSfx("slide");
       lastScreen = v.screen;
-      lastMyTurn = v.myTurn;
       lastLog = logKey;
       if (v.screen !== "play" || !v.myTurn) choosing = null;
 
@@ -486,7 +481,7 @@
             const key = t.join(":");
             return tileHtml(t, { tag: "button", cls: `v${ok ? " ok" : ""}${key === choosing ? " sel" : ""}`, attrs: `data-t="${key}" ${ok ? "" : "disabled"}` });
           }).join("")}</div>
-          ${v.canDraw ? `<button id="draw" data-sfx="roll">จั่ว</button>` : ""}
+          ${v.canDraw ? `<button id="draw">จั่ว</button>` : ""}
           <p id="log">${logText(v)}</p>` : `
           ${v.result ? `<p class="status">${resultText(v)}</p>
           <ul class="hands" style="margin-top: 0.75rem">${v.result.hands.map((h) => `
